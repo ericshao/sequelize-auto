@@ -413,3 +413,8 @@ Then run one of the test commands below:
     npm run test-sqlite
 
 Also see the [sample](https://github.com/sequelize/sequelize-auto/tree/master/sample) directory which has an example including database scripts, export script, and a sample app.
+
+
+./bin/sequelize-auto -h 192.168.3.66 -d qm_saas -u welo -x 123456 -p 3306  --dialect mysql -l ts --cm p --cp c  -o ./output -t tcs_general_tradeitem
+
+./bin/midway-auto -o ./output -n classifyTask -a clsTask -z 归类任务

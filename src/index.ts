@@ -1,4 +1,5 @@
 import { SequelizeAuto } from "./auto";
+import { MidwayAuto } from "./midway/midway-auto";
 import { FKSpec, FKRelation } from "./dialects/dialect-options";
 import { AutoOptions, CaseOption, TableData } from "./types";
 

@@ -4,7 +4,7 @@ import { DialectOptions, FKSpec } from "./dialects/dialect-options";
 import { AutoOptions, CaseFileOption, CaseOption, Field, IndexSpec, LangOption, makeIndent, makeTableName, pluralize, qNameJoin, qNameSplit, recase, Relation, singularize, TableData, TSField } from "./types";
 
 /** Generates text from each table in TableData */
-export class AutoGenerator {
+export class ModelGenerator {
   dialect: DialectOptions;
   tables: { [tableName: string]: { [fieldName: string]: ColumnDescription; }; };
   foreignKeys: { [tableName: string]: { [fieldName: string]: FKSpec; }; };
@@ -44,8 +44,12 @@ export class AutoGenerator {
     const sp = this.space[1];
 
     if (this.options.lang === 'ts') {
-      header += "import * as Sequelize from 'sequelize';\n";
-      header += "import { DataTypes, Model, Optional } from 'sequelize';\n";
+      header += "/* eslint-disable node/no-extraneous-import */\n";
+      header += "import { Column } from 'sequelize-typescript';\n";
+      header += "import { DataTypes } from 'sequelize';\n";
+      header += "import { BaseTable } from '@midwayjs/sequelize';\n";
+      header += "import { BaseModel } from '../../../base/base.model';\n"
+      // header += "import * as Sequelize from 'sequelize';\n";
     } else if (this.options.lang === 'es6') {
       header += "const Sequelize = require('sequelize');\n";
       header += "module.exports = (sequelize, DataTypes) => {\n";
@@ -99,57 +103,60 @@ export class AutoGenerator {
           str += ` } from './${filename}';\n`;
         });
 
-        str += "\nexport interface #TABLE#Attributes {\n";
-        str += this.addTypeScriptFields(table, true) + "}\n\n";
+        // str += "\nexport interface #TABLE#Attributes {\n";
+        // str += this.addTypeScriptFields(table, true) + "}\n\n";
 
         const primaryKeys = this.getTypeScriptPrimaryKeys(table);
 
-        if (primaryKeys.length) {
-          str += `export type #TABLE#Pk = ${primaryKeys.map((k) => `"${recase(this.options.caseProp, k)}"`).join(' | ')};\n`;
-          str += `export type #TABLE#Id = #TABLE#[#TABLE#Pk];\n`;
-        }
+        // if (primaryKeys.length) {
+        //   str += `export type #TABLE#Pk = ${primaryKeys.map((k) => `"${recase(this.options.caseProp, k)}"`).join(' | ')};\n`;
+        //   str += `export type #TABLE#Id = #TABLE#[#TABLE#Pk];\n`;
+        // }
 
         const creationOptionalFields = this.getTypeScriptCreationOptionalFields(table);
 
-        if (creationOptionalFields.length) {
-          str += `export type #TABLE#OptionalAttributes = ${creationOptionalFields.map((k) => `"${recase(this.options.caseProp, k)}"`).join(' | ')};\n`;
-          str += "export type #TABLE#CreationAttributes = Optional<#TABLE#Attributes, #TABLE#OptionalAttributes>;\n\n";
-        } else {
-          str += "export type #TABLE#CreationAttributes = #TABLE#Attributes;\n\n";
-        }
+        // if (creationOptionalFields.length) {
+        //   str += `export type #TABLE#OptionalAttributes = ${creationOptionalFields.map((k) => `"${recase(this.options.caseProp, k)}"`).join(' | ')};\n`;
+        //   str += "export type #TABLE#CreationAttributes = Optional<#TABLE#Attributes, #TABLE#OptionalAttributes>;\n\n";
+        // } else {
+        //   str += "export type #TABLE#CreationAttributes = #TABLE#Attributes;\n\n";
+        // }
 
-        str += "export class #TABLE# extends Model<#TABLE#Attributes, #TABLE#CreationAttributes> implements #TABLE#Attributes {\n";
-        str += this.addTypeScriptFields(table, false);
-        str += "\n" + associations.str;
-        str += "\n" + this.space[1] + "static initModel(sequelize: Sequelize.Sequelize): typeof #TABLE# {\n";
+        // str += "export class #TABLE# extends Model {\n";
+        // str += "export class #TABLE# extends Model<#TABLE#Attributes, #TABLE#CreationAttributes> implements #TABLE#Attributes {\n";
+        // str += this.addTypeScriptFields(table, false);
+        // str += "\n" + associations.str;
+        // str += "\n" + this.space[1] + "static initModel(sequelize: Sequelize.Sequelize): typeof #TABLE# {\n";
 
-        if (this.options.useDefine) {
-          str += this.space[2] + "return sequelize.define('#TABLE#', {\n";
+        // if (this.options.useDefine) {
+        //   str += this.space[2] + "return sequelize.define('#TABLE#', {\n";
 
-        } else {
-          str += this.space[2] + "return #TABLE#.init({\n";
-        }
+        // } else {
+        //   str += this.space[2] + "return #TABLE#.init({\n";
+        // }
       }
 
       str += this.addTable(table);
 
-      const lang = this.options.lang;
-      if (lang === 'ts' && this.options.useDefine) {
-        str += ") as typeof #TABLE#;\n";
-      } else {
-        str += ");\n";
-      }
+      // const lang = this.options.lang;
+      // if (lang === 'ts' && this.options.useDefine) {
+      //   str += ") as typeof #TABLE#;\n";
+      // } else {
+      //   str += ");\n";
+      // }
 
-      if (lang === 'es6' || lang === 'esm' || lang === 'ts') {
-        if (this.options.useDefine) {
-          str += this.space[1] + "}\n}\n";
-        } else {
-          // str += this.space[1] + "return #TABLE#;\n";
-          str += this.space[1] + "}\n}\n";
-        }
-      } else {
-        str += "};\n";
-      }
+      // if (lang === 'es6' || lang === 'esm' || lang === 'ts') {
+      //   if (this.options.useDefine) {
+      //     str += this.space[1] + "}\n}\n";
+      //   } else {
+      //     // str += this.space[1] + "return #TABLE#;\n";
+      //     str += this.space[1] + "}\n}\n";
+      //   }
+      // } else {
+      //   str += "};\n";
+      // }
+
+      str += "}\n";
 
       const re = new RegExp('#TABLE#', 'g');
       str = str.replace(re, tableName);
@@ -168,25 +175,19 @@ export class AutoGenerator {
     let timestamps = (this.options.additional && this.options.additional.timestamps === true) || false;
     let paranoid = (this.options.additional && this.options.additional.paranoid === true) || false;
 
-    // add all the fields
-    let str = '';
-    const fields = _.keys(this.tables[table]);
-    fields.forEach((field, index) => {
-      timestamps ||= this.isTimestampField(field);
-      paranoid ||= this.isParanoidField(field);
 
-      str += this.addField(table, field);
-    });
+    let str = '';
+
 
     // trim off last ",\n"
-    str = str.substring(0, str.length - 2) + "\n";
+    //str = str.substring(0, str.length - 2) + "\n";
 
     // add the table options
-    str += space[1] + "}, {\n";
-    if (!this.options.useDefine) {
-      str += space[2] + "sequelize,\n";
-    }
-    str += space[2] + "tableName: '" + tableNameOrig + "',\n";
+    // str += space[1] + "}, {\n";
+    // if (!this.options.useDefine) {
+    //   str += space[2] + "sequelize,\n";
+    // }
+    str += "@BaseTable({ tableName: '" + tableNameOrig + "',\n";
 
     if (schemaName && this.dialect.hasSchema) {
       str += space[2] + "schema: '" + schemaName + "',\n";
@@ -220,14 +221,26 @@ export class AutoGenerator {
       });
     }
 
+
     // add indexes
-    if (!this.options.noIndexes) {
-      str += this.addIndexes(table);
-    }
+    // if (!this.options.noIndexes) {
+    //   str += this.addIndexes(table);
+    // }
 
     str = space[2] + str.trim();
     str = str.substring(0, str.length - 1);
-    str += "\n" + space[1] + "}";
+    str += "\n" + space[1] + "})\n";
+
+    str += "export class #TABLE#Model extends BaseModel {\n";
+
+    // add all the fields
+    const fields = _.keys(this.tables[table]);
+    fields.forEach((field, index) => {
+      timestamps ||= this.isTimestampField(field);
+      paranoid ||= this.isParanoidField(field);
+
+      str += this.addField(table, field);
+    });
 
     return str;
   }
@@ -254,7 +267,7 @@ export class AutoGenerator {
     }
 
     const fieldName = recase(this.options.caseProp, field);
-    let str = this.quoteName(fieldName) + ": {\n";
+    let str = "@Column({\n";
 
     const quoteWrapper = '"';
 
@@ -422,8 +435,9 @@ export class AutoGenerator {
     }
 
     // removes the last `,` within the attribute options
-    str = str.trim().replace(/,+$/, '') + "\n";
-    str = space[2] + str + space[2] + "},\n";
+    // str = str.trim().replace(/,+$/, '') + "\n";
+    str = space[2] + str + space[2] + "})\n";
+    str += space[2] + this.quoteName(fieldName) + ": " + this.getTypeScriptType(table, field) + ";\n\n";
     return str;
   }
 

@@ -1,0 +1,58 @@
+#!/usr/bin/env node
+const MidwayAuto = require('../lib/midway/midway-auto');
+const path = require('path');
+const readline = require('readline');
+const _ = require('lodash');
+
+const argv = require('yargs')
+  .parserConfiguration({
+    "parse-numbers": false // disabled because of password field, other option can still be explicitly defined as number type
+  })
+  .usage(
+    'Usage: midway-auto -n <entityName> -a <abbrev> -z <中文名> -o [/path/to/models]'
+  )
+  .option('name', {
+    description: 'Entity name.',
+    type: 'string',
+    alias: 'n'
+  })
+  .option('abbrev', {
+    description: 'Entity abbreviation.',
+    type: 'string',
+    alias: 'a'
+  })
+  .option('zhLabel', {
+    description: 'Entity 中文名.',
+    type: 'string',
+    alias: 'z'
+  })
+  .option('output', {
+    description: 'What directory to place the models.',
+    type: 'string',
+    alias: 'o'
+  })
+  //.check(argv => Boolean(argv.name && argv.abbrev))
+  .argv;
+
+
+/* eslint-disable complexity, max-statements */
+(async function() {
+
+  const dir = !argv.noWrite && (argv.output || path.resolve(process.cwd() + '/models'));
+
+  /** @type {import('../types').SequelizeAuto}  */
+  const auto = new MidwayAuto({ lang: 'ts', directory: dir});
+
+  await auto.run(argv.name, argv.abbrev, argv.zhLabel);
+  console.log("Done!");
+
+}()).catch(err => {
+  if (err.stack) {
+    console.error(err.stack);
+  } else if (err.message) {
+    console.error(err.message);
+  } else {
+    console.error(err);
+  }
+  process.exitCode = 1;
+});

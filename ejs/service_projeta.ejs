@@ -1,0 +1,58 @@
+import { Provide, Scope, ScopeEnum } from '@midwayjs/decorator';
+import { nanoid } from 'nanoid';
+import { baseError } from '../../../base/base.error';
+import { BaseService, CrudService } from '../../../base/base.service';
+import { <%= PascalCase %>Dto, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto, Delete<%= PascalCase %>Dto } from '../dto/<%= lowerCase %>.dto';
+import { <%= PascalCase %>Model } from '../model/<%= lowerCase %>.model';
+
+@Provide()
+@Scope(ScopeEnum.Request, { allowDowngrade: true })
+export class <%= PascalCase %>Service extends BaseService implements CrudService<<%= PascalCase %>Dto> {
+  public async create(createDto: Create<%= PascalCase %>Dto): Promise<<%= PascalCase %>Dto> {
+    const <%= camelCase %> = await <%= PascalCase %>Model.create({
+      ...createDto,
+      <%= uidField %>: `${<%= PascalCase %>Model.PREFIX}${nanoid()}`,
+    });
+    return <%= camelCase %>.toJSON();
+  }
+
+  public async update(
+    updateDto: Update<%= PascalCase %>Dto
+  ): Promise<Record<string, number>> {
+    const updated = await <%= PascalCase %>Model.update(updateDto, {
+      where: {
+        <%= uidField %>: updateDto.<%= uidField %>,
+        tenantUid: updateDto.tenantUid,
+      },
+    });
+    return { updated: updated[0] };
+  }
+
+  public async delete(
+    deleteDto: Delete<%= PascalCase %>Dto
+  ): Promise<Record<string, number>> {
+    const deleted = await <%= PascalCase %>Model.destroy({
+      where: {
+        <%= uidField %>: deleteDto.<%= uidField %>,
+      },
+      force: deleteDto.force,
+    });
+    return { deleted };
+  }
+
+  public async omniQuery(
+    options?: API.ListOptions
+  ): Promise<API.ListResult<<%= PascalCase %>Dto>> {
+    const <%= camelCase %>List = await <%= PascalCase %>Model.omniQuery<typeof <%= PascalCase %>Model, <%= PascalCase %>Dto>(options);
+    return <%= camelCase %>List;
+  }
+
+  public async getByUid(
+    <%= uidField %>: string,
+    options?: API.QueryOptions
+  ): Promise<<%= PascalCase %>Dto> {
+    const <%= camelCase %> = await <%= PascalCase %>Model.findOneBykey('<%= uidField %>', <%= uidField %>, options);
+    if (!<%= camelCase %>) throw baseError.EntityNotExistsError;
+    return <%= camelCase %>;
+  }
+}

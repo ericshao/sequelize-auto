@@ -2,7 +2,9 @@
 import _ from "lodash";
 import { Dialect, Sequelize } from "sequelize";
 import { AutoBuilder } from "./auto-builder";
-import { AutoGenerator } from "./auto-generator";
+import { ModelGenerator } from "./model-generator";
+import { DtoGenerator } from "./dto-generator";
+import { TypeGenerator } from "./type-generator";
 import { AutoRelater } from "./auto-relater";
 import { AutoWriter } from "./auto-writer";
 import { dialects } from "./dialects/dialects";
@@ -50,9 +52,16 @@ export class SequelizeAuto {
   async run(): Promise<TableData> {
     let td = await this.build();
     td = this.relate(td);
-    const tt = this.generate(td);
+    const tt = this.generateModel(td);
     td.text = tt;
-    await this.write(td);
+    await this.write(td, 'model');
+    const dto = this.generateDto(td);
+    td.text = dto;
+    await this.write(td, 'dto');
+    const tp = this.generateType(td);
+    td.text = tp;
+    await this.write(td, 'd');
+    console.log(td);
     return td;
   }
 
@@ -71,14 +80,26 @@ export class SequelizeAuto {
     return relater.buildRelations(td);
   }
 
-  generate(tableData: TableData) {
+  generateModel(tableData: TableData) {
     const dialect = dialects[this.sequelize.getDialect() as Dialect];
-    const generator = new AutoGenerator(tableData, dialect, this.options);
+    const generator = new ModelGenerator(tableData, dialect, {...this.options, additional: { timestamps: true, createdAt: 'createdDate', updatedAt: 'lastUpdatedDate'}});
     return generator.generateText();
   }
 
-  write(tableData: TableData) {
-    const writer = new AutoWriter(tableData, this.options);
+  generateDto(tableData: TableData) {
+    const dialect = dialects[this.sequelize.getDialect() as Dialect];
+    const generator = new DtoGenerator(tableData, dialect, this.options);
+    return generator.generateText();
+  }
+
+  generateType(tableData: TableData) {
+    const dialect = dialects[this.sequelize.getDialect() as Dialect];
+    const generator = new TypeGenerator(tableData, dialect, this.options);
+    return generator.generateText();
+  }
+
+  write(tableData: TableData, surfix: string) {
+    const writer = new AutoWriter(tableData, surfix, this.options);
     return writer.write();
   }
 

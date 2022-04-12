@@ -12,6 +12,7 @@ export class AutoWriter {
   foreignKeys: { [tableName: string]: { [fieldName: string]: FKSpec } };
   relations: Relation[];
   space: string[];
+  surfix: string;
   options: {
     caseFile?: CaseFileOption;
     caseModel?: CaseOption;
@@ -26,10 +27,11 @@ export class AutoWriter {
     spaces?: boolean;
     indentation?: number;
   };
-  constructor(tableData: TableData, options: AutoOptions) {
+  constructor(tableData: TableData, surfix: string, options: AutoOptions) {
     this.tableText = tableData.text as { [name: string]: string };
     this.foreignKeys = tableData.foreignKeys;
     this.relations = tableData.relations;
+    this.surfix = surfix;
     this.options = options;
     this.space = makeIndent(this.options.spaces, this.options.indentation);
   }
@@ -60,13 +62,13 @@ export class AutoWriter {
     }).sort();
 
     // write the init-models file
-    if (!this.options.noInitModels) {
-      const initString = this.createInitString(tableNames, assoc, this.options.lang);
-      const initFilePath = path.join(this.options.directory, "init-models" + (isTypeScript ? '.ts' : '.js'));
-      const writeFile = util.promisify(fs.writeFile);
-      const initPromise = writeFile(path.resolve(initFilePath), initString);
-      promises.push(initPromise);
-    }
+    // if (!this.options.noInitModels) {
+    //   const initString = this.createInitString(tableNames, assoc, this.options.lang);
+    //   const initFilePath = path.join(this.options.directory, "init-models" + (isTypeScript ? '.ts' : '.js'));
+    //   const writeFile = util.promisify(fs.writeFile);
+    //   const initPromise = writeFile(path.resolve(initFilePath), initString);
+    //   promises.push(initPromise);
+    // }
 
     return Promise.all(promises);
   }
@@ -88,7 +90,7 @@ export class AutoWriter {
     // folders for each different schema.
     const [schemaName, tableName] = qNameSplit(table);
     const fileName = recase(this.options.caseFile, tableName, this.options.singularize);
-    const filePath = path.join(this.options.directory, fileName + (this.options.lang === 'ts' ? '.ts' : '.js'));
+    const filePath = path.join(this.options.directory, fileName + `.${this.surfix}` + (this.options.lang === 'ts' ? '.ts' : '.js'));
 
     const writeFile = util.promisify(fs.writeFile);
     return writeFile(path.resolve(filePath), this.tableText[table]);
