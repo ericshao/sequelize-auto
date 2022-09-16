@@ -61,7 +61,7 @@ export class SequelizeAuto {
     const tp = this.generateType(td);
     td.text = tp;
     await this.write(td, 'd');
-    console.log(td);
+    console.log(td.tables);
     return td;
   }
 

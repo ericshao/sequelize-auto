@@ -1,38 +1,63 @@
 import { Provide, Scope, ScopeEnum } from '@midwayjs/decorator';
-import { nanoid } from 'nanoid';
-import { baseError } from '../../../base/base.error';
-import { BaseService, CrudService } from '../../../base/base.service';
-import { <%= PascalCase %>Dto, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto, Delete<%= PascalCase %>Dto } from '../dto/<%= lowerCase %>.dto';
+import {
+  baseError,
+  CtxTransactional,
+  CtxTXParticipant,
+} from '@midwayjs-plus/common';
+import { TraceSpan } from '@midwayjs-plus/otel';
+import { TenancyService } from '@c2pkg/multi-tenancy';
+import { AuditLog } from '@c2pkg/auditlog';
+import { <%= PascalCase %>Dto, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../dto/<%= lowerCase %>.dto';
 import { <%= PascalCase %>Model } from '../model/<%= lowerCase %>.model';
 
 @Provide()
 @Scope(ScopeEnum.Request, { allowDowngrade: true })
-export class <%= PascalCase %>Service extends BaseService implements CrudService<<%= PascalCase %>Dto> {
+@CtxTXParticipant()
+export class <%= PascalCase %>Service extends TenancyService {
+
+  @CtxTransactional()
   public async create(createDto: Create<%= PascalCase %>Dto): Promise<<%= PascalCase %>Dto> {
-    const <%= camelCase %> = await <%= PascalCase %>Model.create(createDto);
+    const <%= camelCase %> = await <%= PascalCase %>Model.schema(
+      this.getTenantSchema()
+    ).create(
+      {
+        ...createDto,
+      },
+      {
+        transaction: this.getTransaction(),
+      }
+    );
     return <%= camelCase %>.toJSON();
   }
 
-  public async update(
+  @AuditLog('<%= PascalCase %>', 'req.Update<%= PascalCase %>Dto.identifiers', 'update')
+  @TraceSpan()
+  @CtxTransactional()
+  public async updateByUid(
     updateDto: Update<%= PascalCase %>Dto
   ): Promise<Record<string, number>> {
-    const updated = await <%= PascalCase %>Model.update(updateDto, {
+    const updated = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
+      updateDto, {
       where: {
-        id: updateDto.id,
-        tenantId: updateDto.tenantId,
+        uid: updateDto.identifiers,
       },
+      transaction: this.getTransaction(),
     });
     return { updated: updated[0] };
   }
 
-  public async delete(
-    deleteDto: Delete<%= PascalCase %>Dto
+  @TraceSpan()
+  @CtxTransactional()
+  @AuditLog('<%= PascalCase %>', 'req.Array', 'delete', '删除')
+  public async deleteByUid(
+    identifiers: string[]
   ): Promise<Record<string, number>> {
-    const deleted = await <%= PascalCase %>Model.destroy({
+    const deleted = await <%= PascalCase %>Model.schema(this.getTenantSchema()).destroy({
       where: {
-        id: deleteDto.id,
+        uid: identifiers,
+        tenantId: this.getTenantId(),
       },
-      force: deleteDto.force,
+      transaction: this.getTransaction(),
     });
     return { deleted };
   }
@@ -44,12 +69,17 @@ export class <%= PascalCase %>Service extends BaseService implements CrudService
     return <%= camelCase %>List;
   }
 
-  public async getById(
-    id: number,
+  public async getByUid(
+    uid: string,
     options?: API.QueryOptions
   ): Promise<<%= PascalCase %>Dto> {
-    const <%= camelCase %> = await <%= PascalCase %>Model.findById(id, options);
+    const <%= camelCase %> = await <%= PascalCase %>Model.schema(
+      this.getTenantSchema()
+    ).findOne({
+      attributes: this.generateAttributes(options?.columns, options?.exclusive),
+      where: { uid },
+    });
     if (!<%= camelCase %>) throw baseError.EntityNotExistsError;
-    return <%= camelCase %>;
+    return <%= camelCase %>.toJSON();
   }
 }

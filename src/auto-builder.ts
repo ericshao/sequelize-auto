@@ -34,6 +34,7 @@ export class AutoBuilder {
     if (this.dialect.showTablesQuery) {
       const showTablesSql = this.dialect.showTablesQuery(this.schema);
       prom = this.executeQuery<string>(showTablesSql);
+      console.log(showTablesSql)
     } else {
       prom = this.queryInterface.showAllTables();
     }
@@ -64,6 +65,7 @@ export class AutoBuilder {
     let tables = _.map(tableResult, t => {
       return {
         table_name: t.table_name || t.tableName || t.name || String(t),
+        table_comment: t.table_comment,
         table_schema: t.table_schema || t.tableSchema || t.schema || this.schema || null
       } as Table;
     });

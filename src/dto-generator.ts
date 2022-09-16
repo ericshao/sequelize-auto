@@ -50,9 +50,9 @@ export class DtoGenerator {
 
     if (this.options.lang === 'ts') {
       // header += "/* eslint-disable node/no-extraneous-import */\n";
-      header += "import { Rule, RuleType, OmitDto, PickDto } from '@midwayjs/validate';\n";
+      header += "import { Rule, RuleType, OmitDto } from '@midwayjs/validate';\n";
       header += "import { ApiProperty } from '@midwayjs/swagger';\n";
-      header += "import { BaseDto } from '../../../base/base.dto';\n"
+      header += "import { BaseDto, uidString } from '@midwayjs-plus/common';\n\n";
     }
     return header;
   }
@@ -79,17 +79,21 @@ export class DtoGenerator {
         str += '}\n\n';
       }
 
-      str += "export class Create#TABLE#Dto extends OmitDto(#TABLE#Dto, ['']) {}\n\n";
-      str += "export class Update#TABLE#Dto extends OmitDto(#TABLE#Dto, ['createdBy']) {}\n\n";
+      str += "export class Create#TABLE#Dto extends OmitDto(#TABLE#Dto, ['uid']) {}\n\n";
+      str += "export class Update#TABLE#Dto extends OmitDto(#TABLE#Dto, ['createdBy']) {\n";
+      str += "@ApiProperty({ description: '批量更新UID' })\n";
+      str += "@Rule(RuleType.array())\n";
+      str += "identifiers: number[] | string[];\n";
+      str += "}\n\n";
 
       const additional = this.options.additional;
-      str += "export class Delete#TABLE#Dto extends PickDto(#TABLE#Dto, ['Uid', 'tenantId']) {\n";
-      if (additional.paranoid) {
-        str += "@ApiProperty({ description: '是否强制删除' })\n";
-        str += '@Rule(RuleType.boolean())\n';
-        str += 'force?: boolean;\n';
-      }
-      str += '}\n';
+      // str += "export class Delete#TABLE#Dto extends PickDto(#TABLE#Dto, ['uid', 'tenantId']) {\n";
+      // if (additional.paranoid) {
+      //   str += "@ApiProperty({ description: '是否强制删除' })\n";
+      //   str += '@Rule(RuleType.boolean())\n';
+      //   str += 'force?: boolean;\n';
+      // }
+      // str += '}\n';
       const re = new RegExp('#TABLE#', 'g');
       str = str.replace(re, tableName);
 
@@ -106,10 +110,12 @@ export class DtoGenerator {
     let str = '';
     fields.forEach((field) => {
       if (!this.options.skipFields || !this.options.skipFields.includes(field)) {
-        const name = this.quoteName(recase(this.options.caseProp, field));
-        const isOptional = this.getTypeScriptFieldOptional(table, field);
-        str += this.getFieldAnnotation(table, field);
-        str += `${sp}${name}${isOptional ? '?' : notNull}: ${this.getTypeScriptType(table, field)};\n\n`;
+        if (!this.isDeprecated(table, field)) {
+          const name = this.quoteName(recase(this.options.caseProp, field));
+          const isOptional = this.getTypeScriptFieldOptional(table, field);
+          str += this.getFieldAnnotation(table, field);
+          str += `${sp}${name}${isOptional ? '?' : notNull}: ${this.getTypeScriptType(table, field)};\n\n`;
+        }
       }
     });
     return str;
@@ -120,13 +126,30 @@ export class DtoGenerator {
     return fieldObj.allowNull;
   }
 
+  private isDeprecated(table: string, field: string) {
+    return this.tables[table][field].comment && this.tables[table][field].comment?.startsWith('~');
+  }
+
   private getFieldAnnotation(table: string, field: string) {
     const fieldObj = this.tables[table][field] as TSField;
     let str = '';
+
+    const ruleType = this.getFieldRuleType(field, fieldObj, 'type');
+
     if (fieldObj.comment) {
-      str += `@ApiProperty({ description: '${fieldObj.comment}' })\n`;
+      const [comment, extra] = fieldObj.comment.split('#');
+      if (extra) {
+        const valueEnum: any[] = [];
+        extra.split(';').forEach((e) => {
+          const [key, value] = e.split(':');
+          valueEnum.push({ key, value });
+        });
+        str += `@ApiProperty({ description: '${comment}', enum:${JSON.stringify(valueEnum)} })\n`;
+      } else {
+        str += `@ApiProperty({ description: '${comment}' })\n`;
+      }
     }
-    const ruleType = this.getFieldRuleType(fieldObj, 'type');
+
     if (ruleType) {
       str += `@Rule(${ruleType})\n`;
     }
@@ -167,15 +190,16 @@ export class DtoGenerator {
     return jsType;
   }
 
-  private getFieldRuleType(fieldObj: TSField, attr: keyof TSField) {
+  private getFieldRuleType(field: string, fieldObj: TSField, attr: keyof TSField) {
     const rawFieldType = fieldObj[attr] || '';
     const fieldType = String(rawFieldType).toLowerCase();
+    const length = fieldType.match(/\(\d+\)/);
 
     let ruleType: string | undefined = '';
 
     if (this.isArray(fieldType)) {
       // const eltype = this.getTypeScriptFieldType(fieldObj, "elementType");
-      ruleType += `RuleType.array().items(${this.getFieldRuleType(fieldObj, 'elementType')})`;
+      ruleType += `RuleType.array().items(${this.getFieldRuleType(field, fieldObj, 'elementType')})`;
     } else if (this.isNumber(fieldType)) {
       ruleType += 'RuleType.number()';
     } else if (this.isBoolean(fieldType)) {
@@ -183,7 +207,19 @@ export class DtoGenerator {
     } else if (this.isDate(fieldType)) {
       ruleType += 'RuleType.date()';
     } else if (this.isString(fieldType)) {
-      ruleType += 'RuleType.string()';
+      if (this.isUid(field)) {
+        ruleType += 'Rule(uidString)';
+      } else {
+        ruleType += 'RuleType.string()';
+        if (!_.isNull(length)) {
+          if (this.isChar(fieldType)) {
+            ruleType += `.length(${length})`;
+          } else {
+            ruleType += `.max(${length})`;
+          }
+        }
+        ruleType += '.allow("")';
+      }
       // } else if (this.isEnum(fieldType)) {
       //   const values = this.getEnumValues(fieldObj);
       //   ruleType += values.join(' | ');
@@ -271,6 +307,10 @@ export class DtoGenerator {
     );
   }
 
+  private isChar(fieldType: string): boolean {
+    return /^(char)/.test(fieldType);
+  }
+
   private isArray(fieldType: string): boolean {
     return /(^array)|(range$)/.test(fieldType);
   }
@@ -281,5 +321,9 @@ export class DtoGenerator {
 
   private isJSON(fieldType: string): boolean {
     return /^(json|jsonb)/.test(fieldType);
+  }
+
+  private isUid(attr: string): boolean {
+    return /(uid)$/.test(attr);
   }
 }

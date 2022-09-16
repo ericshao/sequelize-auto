@@ -1,3 +1,11 @@
+./bin/sequelize-auto -h 192.168.3.61 -d welogix_saas -u root -p 9030  --dialect mysql -l ts --cm p --cp c  -o ./output -t sof_global_detail
+
+./bin/sequelize-auto -h 192.168.3.66 -u welo -x 123456 -p 3306  --dialect mysql -l ts --cm p --cp c  -o ./output -d qm_saas -t tcs_general_tradeitem
+
+./bin/midway-auto -o ./output -n classifyTask -a clsTask -z 归类任务
+
+
+
 # Sequelize-Auto
 
 <!-- [![Greenkeeper badge](https://badges.greenkeeper.io/sequelize/sequelize-auto.svg)](https://greenkeeper.io/) -->
@@ -414,7 +422,3 @@ Then run one of the test commands below:
 
 Also see the [sample](https://github.com/sequelize/sequelize-auto/tree/master/sample) directory which has an example including database scripts, export script, and a sample app.
 
-
-./bin/sequelize-auto -h 192.168.3.66 -d qm_saas -u welo -x 123456 -p 3306  --dialect mysql -l ts --cm p --cp c  -o ./output -t tcs_general_tradeitem
-
-./bin/midway-auto -o ./output -n classifyTask -a clsTask -z 归类任务

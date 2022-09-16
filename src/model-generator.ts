@@ -1,15 +1,32 @@
-import _ from "lodash";
-import { ColumnDescription } from "sequelize/types";
-import { DialectOptions, FKSpec } from "./dialects/dialect-options";
-import { AutoOptions, CaseFileOption, CaseOption, Field, IndexSpec, LangOption, makeIndent, makeTableName, pluralize, qNameJoin, qNameSplit, recase, Relation, singularize, TableData, TSField } from "./types";
+import _ from 'lodash';
+import { ColumnDescription } from 'sequelize/types';
+import { DialectOptions, FKSpec } from './dialects/dialect-options';
+import {
+  AutoOptions,
+  CaseFileOption,
+  CaseOption,
+  Field,
+  IndexSpec,
+  LangOption,
+  makeIndent,
+  makeTableName,
+  pluralize,
+  qNameJoin,
+  qNameSplit,
+  recase,
+  Relation,
+  singularize,
+  TableData,
+  TSField,
+} from './types';
 
 /** Generates text from each table in TableData */
 export class ModelGenerator {
   dialect: DialectOptions;
-  tables: { [tableName: string]: { [fieldName: string]: ColumnDescription; }; };
-  foreignKeys: { [tableName: string]: { [fieldName: string]: FKSpec; }; };
-  hasTriggerTables: { [tableName: string]: boolean; };
-  indexes: { [tableName: string]: IndexSpec[]; };
+  tables: { [tableName: string]: { [fieldName: string]: ColumnDescription } };
+  foreignKeys: { [tableName: string]: { [fieldName: string]: FKSpec } };
+  hasTriggerTables: { [tableName: string]: boolean };
+  indexes: { [tableName: string]: IndexSpec[] };
   relations: Relation[];
   space: string[];
   options: {
@@ -40,41 +57,18 @@ export class ModelGenerator {
   }
 
   makeHeaderTemplate() {
-    let header = "";
+    let header = '';
     const sp = this.space[1];
 
     if (this.options.lang === 'ts') {
-      header += "/* eslint-disable node/no-extraneous-import */\n";
-      header += "import { Column } from 'sequelize-typescript';\n";
+      header += '/* eslint-disable node/no-extraneous-import */\n';
+      header += "import { Column, Table } from 'sequelize-typescript';\n";
       header += "import { DataTypes } from 'sequelize';\n";
-      header += "import { BaseTable } from '@midwayjs/sequelize';\n";
-      header += "import { BaseModel } from '../../../base/base.model';\n"
+      header += "import { BaseModel } from '@midwayjs-plus/common';\n";
       // header += "import * as Sequelize from 'sequelize';\n";
-    } else if (this.options.lang === 'es6') {
-      header += "const Sequelize = require('sequelize');\n";
-      header += "module.exports = (sequelize, DataTypes) => {\n";
-      header += sp + "return #TABLE#.init(sequelize, DataTypes);\n";
-      header += "}\n\n";
-      header += "class #TABLE# extends Sequelize.Model {\n";
-      header += sp + "static init(sequelize, DataTypes) {\n";
-      if (this.options.useDefine) {
-        header += sp + "return sequelize.define('#TABLE#', {\n";
-      } else {
-        header += sp + "return super.init({\n";
-      }
-    } else if (this.options.lang === 'esm') {
-      header += "import _sequelize from 'sequelize';\n";
-      header += "const { Model, Sequelize } = _sequelize;\n\n";
-      header += "export default class #TABLE# extends Model {\n";
-      header += sp + "static init(sequelize, DataTypes) {\n";
-      if (this.options.useDefine) {
-        header += sp + "return sequelize.define('#TABLE#', {\n";
-      } else {
-        header += sp + "return super.init({\n";
-      }
     } else {
       header += "const Sequelize = require('sequelize');\n";
-      header += "module.exports = function(sequelize, DataTypes) {\n";
+      header += 'module.exports = function(sequelize, DataTypes) {\n';
       header += sp + "return sequelize.define('#TABLE#', {\n";
     }
     return header;
@@ -85,16 +79,22 @@ export class ModelGenerator {
 
     const header = this.makeHeaderTemplate();
 
-    const text: { [name: string]: string; } = {};
-    tableNames.forEach(table => {
+    const text: { [name: string]: string } = {};
+    tableNames.forEach((table) => {
       let str = header;
+      // console.warn('@@@@@@@@@@@@@', this.tables[table])
       const [schemaName, tableNameOrig] = qNameSplit(table);
-      const tableName = makeTableName(this.options.caseModel, tableNameOrig, this.options.singularize, this.options.lang);
+      const tableName = makeTableName(
+        this.options.caseModel,
+        tableNameOrig,
+        this.options.singularize,
+        this.options.lang
+      );
 
       if (this.options.lang === 'ts') {
         const associations = this.addTypeScriptAssociationMixins(table);
         const needed = _.keys(associations.needed).sort();
-        needed.forEach(fkTable => {
+        needed.forEach((fkTable) => {
           const set = associations.needed[fkTable];
           const [fkSchema, fkTableName] = qNameSplit(fkTable);
           const filename = recase(this.options.caseFile, fkTableName, this.options.singularize);
@@ -156,7 +156,7 @@ export class ModelGenerator {
       //   str += "};\n";
       // }
 
-      str += "}\n";
+      str += '}\n';
 
       const re = new RegExp('#TABLE#', 'g');
       str = str.replace(re, tableName);
@@ -169,15 +169,12 @@ export class ModelGenerator {
 
   // Create a string for the model of the table
   private addTable(table: string) {
-
     const [schemaName, tableNameOrig] = qNameSplit(table);
     const space = this.space;
     let timestamps = (this.options.additional && this.options.additional.timestamps === true) || false;
     let paranoid = (this.options.additional && this.options.additional.paranoid === true) || false;
 
-
     let str = '';
-
 
     // trim off last ",\n"
     //str = str.substring(0, str.length - 2) + "\n";
@@ -187,19 +184,19 @@ export class ModelGenerator {
     // if (!this.options.useDefine) {
     //   str += space[2] + "sequelize,\n";
     // }
-    str += "@BaseTable({ tableName: '" + tableNameOrig + "',\n";
+    str += "@Table({ tableName: '" + tableNameOrig + "',\n";
 
     if (schemaName && this.dialect.hasSchema) {
       str += space[2] + "schema: '" + schemaName + "',\n";
     }
 
     if (this.hasTriggerTables[table]) {
-      str += space[2] + "hasTrigger: true,\n";
+      str += space[2] + 'hasTrigger: true,\n';
     }
 
-    str += space[2] + "timestamps: " + timestamps + ",\n";
+    str += space[2] + 'timestamps: ' + timestamps + ',\n';
     if (paranoid) {
-      str += space[2] + "paranoid: true,\n";
+      str += space[2] + 'paranoid: true,\n';
     }
 
     // conditionally add additional options
@@ -208,19 +205,18 @@ export class ModelGenerator {
       _.each(this.options.additional, (value, key) => {
         if (key === 'name') {
           // name: true - preserve table name always
-          str += space[2] + "name: {\n";
+          str += space[2] + 'name: {\n';
           str += space[3] + "singular: '" + table + "',\n";
           str += space[3] + "plural: '" + table + "'\n";
-          str += space[2] + "},\n";
-        } else if (key === "timestamps" || key === "paranoid") {
+          str += space[2] + '},\n';
+        } else if (key === 'timestamps' || key === 'paranoid') {
           // handled above
         } else {
-          value = _.isBoolean(value) ? value : ("'" + value + "'");
-          str += space[2] + key + ": " + value + ",\n";
+          value = _.isBoolean(value) ? value : "'" + value + "'";
+          str += space[2] + key + ': ' + value + ',\n';
         }
       });
     }
-
 
     // add indexes
     // if (!this.options.noIndexes) {
@@ -229,9 +225,9 @@ export class ModelGenerator {
 
     str = space[2] + str.trim();
     str = str.substring(0, str.length - 1);
-    str += "\n" + space[1] + "})\n";
+    str += '\n' + space[1] + '})\n';
 
-    str += "export class #TABLE#Model extends BaseModel {\n";
+    str += 'export class #TABLE#Model extends BaseModel {\n';
 
     // add all the fields
     const fields = _.keys(this.tables[table]);
@@ -247,10 +243,13 @@ export class ModelGenerator {
 
   // Create a string containing field attributes (type, defaultValue, etc.)
   private addField(table: string, field: string): string {
-
     // ignore Sequelize standard fields
     const additional = this.options.additional;
-    if (additional && (additional.timestamps !== false) && (this.isTimestampField(field) || this.isParanoidField(field))) {
+    if (
+      additional &&
+      additional.timestamps !== false &&
+      (this.isTimestampField(field) || this.isParanoidField(field))
+    ) {
       return '';
     }
 
@@ -259,7 +258,8 @@ export class ModelGenerator {
     }
 
     // Find foreign key
-    const foreignKey = this.foreignKeys[table] && this.foreignKeys[table][field] ? this.foreignKeys[table][field] : null;
+    const foreignKey =
+      this.foreignKeys[table] && this.foreignKeys[table][field] ? this.foreignKeys[table][field] : null;
     const fieldObj = this.tables[table][field] as Field;
 
     if (_.isObject(foreignKey)) {
@@ -267,167 +267,111 @@ export class ModelGenerator {
     }
 
     const fieldName = recase(this.options.caseProp, field);
-    let str = "@Column({\n";
+    let str = '@Column({\n';
 
     const quoteWrapper = '"';
 
-    const unique = fieldObj.unique || fieldObj.foreignKey && fieldObj.foreignKey.isUnique;
+    const unique = fieldObj.unique || (fieldObj.foreignKey && fieldObj.foreignKey.isUnique);
 
-    const isSerialKey = (fieldObj.foreignKey && fieldObj.foreignKey.isSerialKey) ||
-      this.dialect.isSerialKey && this.dialect.isSerialKey(fieldObj);
+    const isSerialKey =
+      (fieldObj.foreignKey && fieldObj.foreignKey.isSerialKey) ||
+      (this.dialect.isSerialKey && this.dialect.isSerialKey(fieldObj));
 
     let wroteAutoIncrement = false;
     const space = this.space;
 
+    let isDeprecatedField;
     // column's attributes
     const fieldAttrs = _.keys(fieldObj);
-    fieldAttrs.forEach(attr => {
-
+    fieldAttrs.forEach((attr) => {
       // We don't need the special attribute from postgresql; "unique" is handled separately
-      if (attr === "special" || attr === "elementType" || attr === "unique") {
+      if (attr === 'special' || attr === 'elementType' || attr === 'unique') {
         return true;
       }
 
       if (isSerialKey && !wroteAutoIncrement) {
-        str += space[3] + "autoIncrement: true,\n";
+        str += space[3] + 'autoIncrement: true,\n';
         // Resort to Postgres' GENERATED BY DEFAULT AS IDENTITY instead of SERIAL
-        if (this.dialect.name === "postgres" && fieldObj.foreignKey && fieldObj.foreignKey.isPrimaryKey === true &&
-          (fieldObj.foreignKey.generation === "ALWAYS" || fieldObj.foreignKey.generation === "BY DEFAULT")) {
-          str += space[3] + "autoIncrementIdentity: true,\n";
+        if (
+          this.dialect.name === 'postgres' &&
+          fieldObj.foreignKey &&
+          fieldObj.foreignKey.isPrimaryKey === true &&
+          (fieldObj.foreignKey.generation === 'ALWAYS' || fieldObj.foreignKey.generation === 'BY DEFAULT')
+        ) {
+          str += space[3] + 'autoIncrementIdentity: true,\n';
         }
         wroteAutoIncrement = true;
       }
 
-      if (attr === "foreignKey") {
+      if (attr === 'foreignKey') {
         if (foreignKey && foreignKey.isForeignKey) {
-          str += space[3] + "references: {\n";
-          str += space[4] + "model: \'" + fieldObj[attr].foreignSources.target_table + "\',\n";
-          str += space[4] + "key: \'" + fieldObj[attr].foreignSources.target_column + "\'\n";
-          str += space[3] + "}";
+          str += space[3] + 'references: {\n';
+          str += space[4] + "model: '" + fieldObj[attr].foreignSources.target_table + "',\n";
+          str += space[4] + "key: '" + fieldObj[attr].foreignSources.target_column + "'\n";
+          str += space[3] + '}';
         } else {
           return true;
         }
-      } else if (attr === "references") {
+      } else if (attr === 'references') {
         // covered by foreignKey
         return true;
-      } else if (attr === "primaryKey") {
+      } else if (attr === 'primaryKey') {
         if (fieldObj[attr] === true && (!_.has(fieldObj, 'foreignKey') || !!fieldObj.foreignKey.isPrimaryKey)) {
-          str += space[3] + "primaryKey: true";
+          str += space[3] + 'primaryKey: true';
         } else {
           return true;
         }
-      } else if (attr === "autoIncrement") {
+      } else if (attr === 'autoIncrement') {
         if (fieldObj[attr] === true && !wroteAutoIncrement) {
-          str += space[3] + "autoIncrement: true,\n";
+          str += space[3] + 'autoIncrement: true,\n';
           // Resort to Postgres' GENERATED BY DEFAULT AS IDENTITY instead of SERIAL
-          if (this.dialect.name === "postgres" && fieldObj.foreignKey && fieldObj.foreignKey.isPrimaryKey === true && (fieldObj.foreignKey.generation === "ALWAYS" || fieldObj.foreignKey.generation === "BY DEFAULT")) {
-            str += space[3] + "autoIncrementIdentity: true,\n";
+          if (
+            this.dialect.name === 'postgres' &&
+            fieldObj.foreignKey &&
+            fieldObj.foreignKey.isPrimaryKey === true &&
+            (fieldObj.foreignKey.generation === 'ALWAYS' || fieldObj.foreignKey.generation === 'BY DEFAULT')
+          ) {
+            str += space[3] + 'autoIncrementIdentity: true,\n';
           }
           wroteAutoIncrement = true;
         }
         return true;
-      } else if (attr === "allowNull") {
-        str += space[3] + attr + ": " + fieldObj[attr];
-      } else if (attr === "defaultValue") {
-        let defaultVal = fieldObj.defaultValue;
-        if (this.dialect.name === "mssql" && defaultVal && defaultVal.toLowerCase() === '(newid())') {
-          defaultVal = null as any; // disable adding "default value" attribute for UUID fields if generating for MS SQL
-        }
-        if (this.dialect.name === "mssql" && (["(NULL)", "NULL"].includes(defaultVal) || typeof defaultVal === "undefined")) {
-          defaultVal = null as any; // Override default NULL in MS SQL to javascript null
-        }
-
-        if (defaultVal === null || defaultVal === undefined) {
+      } else if (attr === 'allowNull') {
+        // str += space[3] + attr + ": " + fieldObj[attr];
+        return true;
+      } else if (attr === 'defaultValue') {
+        return true;
+      } else if (attr === 'comment') {
+        let val = fieldObj[attr];
+        if (!val) {
           return true;
         }
-        if (isSerialKey) {
-          return true; // value generated in the database
+        if (val.startsWith('~')) {
+          isDeprecatedField = true;
+          return true;
         }
-
-        let val_text = defaultVal;
-        if (_.isString(defaultVal)) {
-          const field_type = fieldObj.type.toLowerCase();
-          defaultVal = this.escapeSpecial(defaultVal);
-
-          while (defaultVal.startsWith('(') && defaultVal.endsWith(')')) {
-            // remove extra parens around mssql defaults
-            defaultVal = defaultVal.replace(/^[(]/, '').replace(/[)]$/, '');
-          }
-
-          if (field_type === 'bit(1)' || field_type === 'bit' || field_type === 'boolean') {
-            // convert string to boolean
-            val_text = /1|true/i.test(defaultVal) ? "true" : "false";
-
-          } else if (this.isArray(field_type)) {
-            // remove outer {}
-            val_text = defaultVal.replace(/^{/, '').replace(/}$/, '');
-            if (val_text && this.isString(fieldObj.elementType)) {
-              // quote the array elements
-              val_text = val_text.split(',').map(s => `"${s}"`).join(',');
-            }
-            val_text = `[${val_text}]`;
-
-          } else if (field_type.match(/^(json)/)) {
-            // don't quote json
-            val_text = defaultVal;
-
-          } else if (field_type === 'uuid' && (defaultVal === 'gen_random_uuid()' || defaultVal === 'uuid_generate_v4()')) {
-            val_text = "DataTypes.UUIDV4";
-
-          } else if (defaultVal.match(/\w+\(\)$/)) {
-            // replace db function with sequelize function
-            val_text = "Sequelize.Sequelize.fn('" + defaultVal.replace(/\(\)$/g, "") + "')";
-
-          } else if (this.isNumber(field_type)) {
-            if (defaultVal.match(/\(\)/g)) {
-              // assume it's a server function if it contains parens
-              val_text = "Sequelize.Sequelize.literal('" + defaultVal + "')";
-            } else {
-              // don't quote numbers
-              val_text = defaultVal;
-            }
-
-          } else if (defaultVal.match(/\(\)/g)) {
-            // embedded function, pass as literal
-            val_text = "Sequelize.Sequelize.literal('" + defaultVal + "')";
-
-          } else if (field_type.indexOf('date') === 0 || field_type.indexOf('timestamp') === 0) {
-            if (_.includes(['current_timestamp', 'current_date', 'current_time', 'localtime', 'localtimestamp'], defaultVal.toLowerCase())) {
-              val_text = "Sequelize.Sequelize.literal('" + defaultVal + "')";
-            } else {
-              val_text = quoteWrapper + defaultVal + quoteWrapper;
-            }
-
-          } else {
-            val_text = quoteWrapper + defaultVal + quoteWrapper;
-          }
-        }
-
-        // val_text = _.isString(val_text) && !val_text.match(/^sequelize\.[^(]+\(.*\)$/)
-        // ? self.sequelize.escape(_.trim(val_text, '"'), null, self.options.dialect)
-        // : val_text;
-        // don't prepend N for MSSQL when building models...
-        // defaultVal = _.trimStart(defaultVal, 'N');
-
-        str += space[3] + attr + ": " + val_text;
-
-      } else if (attr === "comment" && (!fieldObj[attr] || this.dialect.name === "mssql")) {
-        return true;
+        val = val.split('#')[0];
+        val = _.isString(val) ? quoteWrapper + this.escapeSpecial(val) + quoteWrapper : val;
+        str += space[3] + attr + ': ' + val;
       } else {
-        let val = (attr !== "type") ? null : this.getSqType(fieldObj, attr);
+        let val = attr !== 'type' ? null : this.getSqType(fieldObj, attr);
         if (val == null) {
           val = (fieldObj as any)[attr];
           val = _.isString(val) ? quoteWrapper + this.escapeSpecial(val) + quoteWrapper : val;
         }
-        str += space[3] + attr + ": " + val;
+        str += space[3] + attr + ': ' + val;
       }
 
-      str += ",\n";
+      str += ',\n';
     });
+
+    if (isDeprecatedField) {
+      return '';
+    }
 
     if (unique) {
       const uniq = _.isString(unique) ? quoteWrapper + unique.replace(/\"/g, '\\"') + quoteWrapper : unique;
-      str += space[3] + "unique: " + uniq + ",\n";
+      str += space[3] + 'unique: ' + uniq + ',\n';
     }
 
     if (field !== fieldName) {
@@ -436,24 +380,24 @@ export class ModelGenerator {
 
     // removes the last `,` within the attribute options
     // str = str.trim().replace(/,+$/, '') + "\n";
-    str = space[2] + str + space[2] + "})\n";
-    str += space[2] + this.quoteName(fieldName) + ": " + this.getTypeScriptType(table, field) + ";\n\n";
+    str = space[2] + str + space[2] + '})\n';
+    str += space[2] + this.quoteName(fieldName) + ': ' + this.getTypeScriptType(table, field) + ';\n\n';
     return str;
   }
 
   private addIndexes(table: string) {
     const indexes = this.indexes[table];
     const space = this.space;
-    let str = "";
+    let str = '';
     if (indexes && indexes.length) {
-      str += space[2] + "indexes: [\n";
-      indexes.forEach(idx => {
-        str += space[3] + "{\n";
+      str += space[2] + 'indexes: [\n';
+      indexes.forEach((idx) => {
+        str += space[3] + '{\n';
         if (idx.name) {
           str += space[4] + `name: "${idx.name}",\n`;
         }
         if (idx.unique) {
-          str += space[4] + "unique: true,\n";
+          str += space[4] + 'unique: true,\n';
         }
         if (idx.type) {
           if (['UNIQUE', 'FULLTEXT', 'SPATIAL'].includes(idx.type)) {
@@ -463,7 +407,7 @@ export class ModelGenerator {
           }
         }
         str += space[4] + `fields: [\n`;
-        idx.fields.forEach(ff => {
+        idx.fields.forEach((ff) => {
           str += space[5] + `{ name: "${ff.attribute}"`;
           if (ff.collate) {
             str += `, collate: "${ff.collate}"`;
@@ -471,15 +415,15 @@ export class ModelGenerator {
           if (ff.length) {
             str += `, length: ${ff.length}`;
           }
-          if (ff.order && ff.order !== "ASC") {
+          if (ff.order && ff.order !== 'ASC') {
             str += `, order: "${ff.order}"`;
           }
-          str += " },\n";
+          str += ' },\n';
         });
-        str += space[4] + "]\n";
-        str += space[3] + "},\n";
+        str += space[4] + ']\n';
+        str += space[3] + '},\n';
       });
-      str += space[2] + "],\n";
+      str += space[2] + '],\n';
     }
     return str;
   }
@@ -488,7 +432,7 @@ export class ModelGenerator {
   private getSqType(fieldObj: Field, attr: string): string {
     const attrValue = (fieldObj as any)[attr];
     if (!attrValue.toLowerCase) {
-      console.log("attrValue", attr, attrValue);
+      // console.log('attrValue', attr, attrValue);
       return attrValue;
     }
     const type: string = attrValue.toLowerCase();
@@ -497,22 +441,28 @@ export class ModelGenerator {
     let val = null;
     let typematch = null;
 
-    if (type === "boolean" || type === "bit(1)" || type === "bit" || type === "tinyint(1)") {
+    if (type === 'tinyint(1)') {
+      val = 'DataTypes.TINYINT({ length: 1 })';
+    } else if (
+      type === 'boolean' ||
+      type === 'bit(1)' ||
+      type === 'bit' ||
+      type === 'tinyint(1) unsigned'
+    ) {
       val = 'DataTypes.BOOLEAN';
 
-    // postgres range types
-    } else if (type === "numrange") {
+      // postgres range types
+    } else if (type === 'numrange') {
       val = 'DataTypes.RANGE(DataTypes.DECIMAL)';
-    } else if (type === "int4range") {
+    } else if (type === 'int4range') {
       val = 'DataTypes.RANGE(DataTypes.INTEGER)';
-    } else if (type === "int8range") {
+    } else if (type === 'int8range') {
       val = 'DataTypes.RANGE(DataTypes.BIGINT)';
-    } else if (type === "daterange") {
+    } else if (type === 'daterange') {
       val = 'DataTypes.RANGE(DataTypes.DATEONLY)';
-    } else if (type === "tsrange" || type === "tstzrange") {
+    } else if (type === 'tsrange' || type === 'tstzrange') {
       val = 'DataTypes.RANGE(DataTypes.DATE)';
-
-    } else if (typematch = type.match(/^(bigint|smallint|mediumint|tinyint|int)/)) {
+    } else if ((typematch = type.match(/^(bigint|smallint|mediumint|tinyint|int)/))) {
       // integer subtypes
       val = 'DataTypes.' + (typematch[0] === 'int' ? 'INTEGER' : typematch[0].toUpperCase());
       if (/unsigned/i.test(type)) {
@@ -522,7 +472,7 @@ export class ModelGenerator {
         val += '.ZEROFILL';
       }
     } else if (type === 'nvarchar(max)' || type === 'varchar(max)') {
-        val = 'DataTypes.TEXT';
+      val = 'DataTypes.TEXT';
     } else if (type.match(/n?varchar|string|varying/)) {
       val = 'DataTypes.STRING' + (!_.isNull(length) ? length : '');
     } else if (type.match(/^n?char/)) {
@@ -531,7 +481,7 @@ export class ModelGenerator {
       val = 'DataTypes.REAL';
     } else if (type.match(/text$/)) {
       val = 'DataTypes.TEXT' + (!_.isNull(length) ? length : '');
-    } else if (type === "date") {
+    } else if (type === 'date') {
       val = 'DataTypes.DATEONLY';
     } else if (type.match(/^(date|timestamp|year)/)) {
       val = 'DataTypes.DATE' + (!_.isNull(length) ? length : '');
@@ -560,7 +510,7 @@ export class ModelGenerator {
       const gtype = fieldObj.elementType ? `(${fieldObj.elementType})` : '';
       val = `DataTypes.GEOGRAPHY${gtype}`;
     } else if (type.match(/^array/)) {
-      const eltype = this.getSqType(fieldObj, "elementType");
+      const eltype = this.getSqType(fieldObj, 'elementType');
       val = `DataTypes.ARRAY(${eltype})`;
     } else if (type.match(/(binary|image|blob|bytea)/)) {
       val = 'DataTypes.BLOB';
@@ -594,16 +544,21 @@ export class ModelGenerator {
     const fields = _.keys(this.tables[table]);
     return fields.filter((field): boolean => {
       const fieldObj = this.tables[table][field];
-      return fieldObj.allowNull || (!!fieldObj.defaultValue || fieldObj.defaultValue === "") || fieldObj.autoIncrement
-        || this.isTimestampField(field);
+      return (
+        fieldObj.allowNull ||
+        !!fieldObj.defaultValue ||
+        fieldObj.defaultValue === '' ||
+        fieldObj.autoIncrement ||
+        this.isTimestampField(field)
+      );
     });
   }
 
   /** Add schema to table so it will match the relation data.  Fixes mysql problem. */
   private addSchemaForRelations(table: string) {
-    if (!table.includes('.') && !this.relations.some(rel => rel.childTable === table)) {
+    if (!table.includes('.') && !this.relations.some((rel) => rel.childTable === table)) {
       // if no tables match the given table, then assume we need to fix the schema
-      const first = this.relations.find(rel => !!rel.childTable);
+      const first = this.relations.find((rel) => !!rel.childTable);
       if (first) {
         const [schemaName, tableName] = qNameSplit(first.childTable);
         if (schemaName) {
@@ -621,7 +576,7 @@ export class ModelGenerator {
 
     table = this.addSchemaForRelations(table);
 
-    this.relations.forEach(rel => {
+    this.relations.forEach((rel) => {
       if (!rel.isM2M) {
         if (rel.childTable === table) {
           // current table is a child that belongsTo parent
@@ -672,7 +627,7 @@ export class ModelGenerator {
         // rel.isM2M
         if (rel.parentTable === table) {
           // many-to-many
-          const isParent = (rel.parentTable === table);
+          const isParent = rel.parentTable === table;
           const thisModel = isParent ? rel.parentModel : rel.childModel;
           const otherModel = isParent ? rel.childModel : rel.parentModel;
           const otherModelSingular = _.upperFirst(singularize(isParent ? rel.childProp : rel.parentProp));
@@ -708,8 +663,8 @@ export class ModelGenerator {
     const fields = _.keys(this.tables[table]);
     const notNull = isInterface ? '' : '!';
     let str = '';
-    fields.forEach(field => {
-      if (!this.options.skipFields || !this.options.skipFields.includes(field)){
+    fields.forEach((field) => {
+      if (!this.options.skipFields || !this.options.skipFields.includes(field)) {
         const name = this.quoteName(recase(this.options.caseProp, field));
         const isOptional = this.getTypeScriptFieldOptional(table, field);
         str += `${sp}${name}${isOptional ? '?' : notNull}: ${this.getTypeScriptType(table, field)};\n`;
@@ -725,22 +680,23 @@ export class ModelGenerator {
 
   private getTypeScriptType(table: string, field: string) {
     const fieldObj = this.tables[table][field] as TSField;
-    return this.getTypeScriptFieldType(fieldObj, "type");
+    return this.getTypeScriptFieldType(fieldObj, 'type');
   }
 
   private getTypeScriptFieldType(fieldObj: TSField, attr: keyof TSField) {
     const rawFieldType = fieldObj[attr] || '';
     const fieldType = String(rawFieldType).toLowerCase();
+    // console.log(fieldType);
 
     let jsType: string;
 
     if (this.isArray(fieldType)) {
-      const eltype = this.getTypeScriptFieldType(fieldObj, "elementType");
+      const eltype = this.getTypeScriptFieldType(fieldObj, 'elementType');
       jsType = eltype + '[]';
-    } else if (this.isNumber(fieldType)) {
-      jsType = 'number';
     } else if (this.isBoolean(fieldType)) {
       jsType = 'boolean';
+    } else if (this.isNumber(fieldType)) {
+      jsType = 'number';
     } else if (this.isDate(fieldType)) {
       jsType = 'Date';
     } else if (this.isString(fieldType)) {
@@ -772,8 +728,12 @@ export class ModelGenerator {
     if (additional.timestamps === false) {
       return false;
     }
-    return ((!additional.createdAt && recase('c', field) === 'createdAt') || additional.createdAt === field)
-      || ((!additional.updatedAt && recase('c', field) === 'updatedAt') || additional.updatedAt === field);
+    return (
+      (!additional.createdAt && recase('c', field) === 'createdAt') ||
+      additional.createdAt === field ||
+      (!additional.updatedAt && recase('c', field) === 'updatedAt') ||
+      additional.updatedAt === field
+    );
   }
 
   private isParanoidField(field: string) {
@@ -781,39 +741,43 @@ export class ModelGenerator {
     if (additional.timestamps === false || additional.paranoid === false) {
       return false;
     }
-    return ((!additional.deletedAt && recase('c', field) === 'deletedAt') || additional.deletedAt === field);
+    return (!additional.deletedAt && recase('c', field) === 'deletedAt') || additional.deletedAt === field;
   }
 
   private isIgnoredField(field: string) {
-    return (this.options.skipFields && this.options.skipFields.includes(field));
+    return this.options.skipFields && this.options.skipFields.includes(field);
   }
 
   private escapeSpecial(val: string) {
-    if (typeof (val) !== "string") {
+    if (typeof val !== 'string') {
       return val;
     }
-    return val
-      .replace(/[\\]/g, '\\\\')
-      .replace(/[\"]/g, '\\"')
-      .replace(/[\/]/g, '\\/')
-      .replace(/[\b]/g, '\\b')
-      .replace(/[\f]/g, '\\f')
-      .replace(/[\n]/g, '\\n')
-      .replace(/[\r]/g, '\\r')
-      .replace(/[\t]/g, '\\t');
+    return (
+      val
+        .replace(/[\\]/g, '\\\\')
+        .replace(/[\"]/g, '\\"')
+        // .replace(/[\/]/g, '\\/')
+        .replace(/[\b]/g, '\\b')
+        .replace(/[\f]/g, '\\f')
+        .replace(/[\n]/g, '\\n')
+        .replace(/[\r]/g, '\\r')
+        .replace(/[\t]/g, '\\t')
+    );
   }
 
   /** Quote the name if it is not a valid identifier */
   private quoteName(name: string) {
-    return (/^[$A-Z_][0-9A-Z_$]*$/i.test(name) ? name : "'" + name + "'");
+    return /^[$A-Z_][0-9A-Z_$]*$/i.test(name) ? name : "'" + name + "'";
   }
 
   private isNumber(fieldType: string): boolean {
-    return /^(smallint|mediumint|tinyint|int|bigint|float|money|smallmoney|double|decimal|numeric|real|oid)/.test(fieldType);
+    return /^(smallint|mediumint|tinyint|int|bigint|float|money|smallmoney|double|decimal|numeric|real|oid)/.test(
+      fieldType
+    );
   }
 
   private isBoolean(fieldType: string): boolean {
-    return /^(boolean|bit)/.test(fieldType);
+    return /^(boolean|bit)/.test(fieldType) || fieldType === 'tinyint(1) unsigned';
   }
 
   private isDate(fieldType: string): boolean {
@@ -821,7 +785,9 @@ export class ModelGenerator {
   }
 
   private isString(fieldType: string): boolean {
-    return /^(char|nchar|string|varying|varchar|nvarchar|text|longtext|mediumtext|tinytext|ntext|uuid|uniqueidentifier|date|time|inet|cidr|macaddr)/.test(fieldType);
+    return /^(char|nchar|string|varying|varchar|nvarchar|text|longtext|mediumtext|tinytext|ntext|uuid|uniqueidentifier|date|time|inet|cidr|macaddr)/.test(
+      fieldType
+    );
   }
 
   private isArray(fieldType: string): boolean {

@@ -92,12 +92,18 @@ export class TypeGenerator {
     let str = '';
     fields.forEach((field) => {
       if (!this.options.skipFields || !this.options.skipFields.includes(field)) {
-        const name = this.quoteName(recase(this.options.caseProp, field));
-        const isOptional = this.getTypeScriptFieldOptional(table, field);
-        str += `${sp}${name}${isOptional ? '?' : notNull}: ${this.getTypeScriptType(table, field)};\n`;
+        if (!this.isDeprecated(table, field)) {
+          const name = this.quoteName(recase(this.options.caseProp, field));
+          const isOptional = this.getTypeScriptFieldOptional(table, field);
+          str += `${sp}${name}${isOptional ? '?' : notNull}: ${this.getTypeScriptType(table, field)};\n`;
+        }
       }
     });
     return str;
+  }
+
+  private isDeprecated(table: string, field: string) {
+    return this.tables[table][field].comment && this.tables[table][field].comment?.startsWith('~');
   }
 
   private getTypeScriptFieldOptional(table: string, field: string) {

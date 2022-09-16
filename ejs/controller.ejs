@@ -10,8 +10,8 @@ import {
   Put,
 } from '@midwayjs/decorator';
 import { Validate } from '@midwayjs/validate';
-import { BaseController } from '../../../base/base.controller';
-import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto, Delete<%= PascalCase %>Dto } from '../dto/<%= lowerCase%>.dto';
+import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
+import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../dto/<%= lowerCase%>.dto';
 import { <%= PascalCase %>Service } from '../service/<%= lowerCase%>.service';
 
 @Controller('/<%= lowerCase%>', { description: '<%= label %>管理' })
@@ -21,9 +21,9 @@ export class <%= PascalCase %>Controller extends BaseController {
 
   @Inject()
   <%= camelCase %>Service: <%= PascalCase %>Service;
+
   @Post('/create', {
     description: '创建<%= label %>',
-    summary: 'allowTenantAdmin:true;allowTenantMember:false;allowVisitor:false',
   })
   @Validate()
   async create<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Create<%= PascalCase %>Dto) {
@@ -35,41 +35,36 @@ export class <%= PascalCase %>Controller extends BaseController {
 
   @Put('/update', {
     description: '更新<%= label %>',
-    summary: 'allowTenantAdmin:true;allowTenantMember:true;allowVisitor:false',
   })
   @Validate()
   async update<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Update<%= PascalCase %>Dto) {
     const { userId: lastUpdatedBy } = this.ctx.state.user as API.TokenPayload;
     <%= camelCase %>.lastUpdatedBy = lastUpdatedBy;
-    const result = await this.<%= camelCase %>Service.update(<%= camelCase %>);
+    const result = await this.<%= camelCase %>Service.updateByUid(<%= camelCase %>);
     this.success(result);
   }
 
   @Del('/delete', {
     description: '删除<%= label %>',
-    summary: 'allowTenantAdmin:true;allowTenantMember:false;allowVisitor:false',
   })
   @Validate()
-  async delete<%= PascalCase %>(@Body() <%= camelCase %>: Delete<%= PascalCase %>Dto) {
-    const result = await this.<%= camelCase %>Service.delete(<%= camelCase %>);
+  async delete<%= PascalCase %>(@Body() body: IdentifiersDto) {
+    const result = await this.<%= camelCase %>Service.deleteByUid(body.identifiers);
     this.success(result);
   }
 
-  // **** 各类数据查询接口 **** //
   @Post('/list', {
     description: '<%= label %>列表',
-    summary: 'allowTenantAdmin:true;allowTenantMember:true;allowVisitor:false',
   })
   async query<%= PascalCase %>List(@Body(ALL) options: API.ListOptions) {
     const result = await this.<%= camelCase %>Service.omniQuery(options);
     this.success(result);
   }
-  @Get('/:id', {
+  @Get('/:uid', {
     description: '获取<%= label %>',
-    summary: 'allowTenantAdmin:true;allowTenantMember:true;allowVisitor:false',
   })
-  async get<%= PascalCase %>(@Param('id') id: number) {
-    const result = await this.<%= camelCase %>Service.getById(id);
+  async get<%= PascalCase %>(@Param('uid') uid: string) {
+    const result = await this.<%= camelCase %>Service.getByUid(uid);
     this.success(result);
   }
 }
