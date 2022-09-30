@@ -11,8 +11,8 @@ import {
 } from '@midwayjs/decorator';
 import { Validate } from '@midwayjs/validate';
 import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
-import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../dto/<%= lowerCase%>.dto';
-import { <%= PascalCase %>Service } from '../service/<%= lowerCase%>.service';
+import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
+import { <%= PascalCase %>Service } from '../service';
 
 @Controller('/<%= lowerCase%>', { description: '<%= label %>管理' })
 export class <%= PascalCase %>Controller extends BaseController {
@@ -27,8 +27,6 @@ export class <%= PascalCase %>Controller extends BaseController {
   })
   @Validate()
   async create<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Create<%= PascalCase %>Dto) {
-    const { userId: createdBy } = this.ctx.state.user as API.TokenPayload;
-    <%= camelCase %>.createdBy = createdBy;
     const result = await this.<%= camelCase %>Service.create(<%= camelCase %>);
     this.success(result);
   }
@@ -38,8 +36,6 @@ export class <%= PascalCase %>Controller extends BaseController {
   })
   @Validate()
   async update<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Update<%= PascalCase %>Dto) {
-    const { userId: lastUpdatedBy } = this.ctx.state.user as API.TokenPayload;
-    <%= camelCase %>.lastUpdatedBy = lastUpdatedBy;
     const result = await this.<%= camelCase %>Service.updateByUid(<%= camelCase %>);
     this.success(result);
   }
@@ -49,7 +45,7 @@ export class <%= PascalCase %>Controller extends BaseController {
   })
   @Validate()
   async delete<%= PascalCase %>(@Body() body: IdentifiersDto) {
-    const result = await this.<%= camelCase %>Service.deleteByUid(body.identifiers);
+    const result = await this.<%= camelCase %>Service.deleteByUid(body.identifiers as string[]);
     this.success(result);
   }
 

@@ -1,0 +1,66 @@
+import {
+  ALL,
+  Body,
+  Controller,
+  Del,
+  Get,
+  Inject,
+  Param,
+  Post,
+  Put,
+} from '@midwayjs/decorator';
+import { Validate } from '@midwayjs/validate';
+import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
+import { TenancyMiddleware } from '@c2pkg/multi-tenancy';
+import { <%= PascalCase %>Service, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '.';
+
+@Controller('/<%= lowerCase%>', { middleware: [TenancyMiddleware], description: '<%= label %>管理' })
+export class <%= PascalCase %>Controller extends BaseController {
+  @Inject()
+  ctx: any;
+
+  @Inject()
+  <%= camelCase %>Service: <%= PascalCase %>Service;
+
+  @Post('/create', {
+    description: '创建<%= label %>',
+  })
+  @Validate()
+  async create<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Create<%= PascalCase %>Dto) {
+    const result = await this.<%= camelCase %>Service.create(<%= camelCase %>);
+    this.success(result);
+  }
+
+  @Put('/update', {
+    description: '更新<%= label %>',
+  })
+  @Validate()
+  async update<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Update<%= PascalCase %>Dto) {
+    const result = await this.<%= camelCase %>Service.updateByUid(<%= camelCase %>);
+    this.success(result);
+  }
+
+  @Del('/delete', {
+    description: '删除<%= label %>',
+  })
+  @Validate()
+  async delete<%= PascalCase %>(@Body() body: IdentifiersDto) {
+    const result = await this.<%= camelCase %>Service.deleteByUid(body.identifiers as string[]);
+    this.success(result);
+  }
+
+  @Post('/list', {
+    description: '<%= label %>列表',
+  })
+  async query<%= PascalCase %>List(@Body(ALL) options: API.ListOptions) {
+    const result = await this.<%= camelCase %>Service.omniQuery(options);
+    this.success(result);
+  }
+  @Get('/:uid', {
+    description: '获取<%= label %>',
+  })
+  async get<%= PascalCase %>(@Param('uid') uid: string) {
+    const result = await this.<%= camelCase %>Service.getByUid(uid);
+    this.success(result);
+  }
+}

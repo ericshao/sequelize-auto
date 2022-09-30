@@ -16,20 +16,30 @@ const argv = require('yargs')
     type: 'string',
     alias: 'n'
   })
-  .option('abbrev', {
-    description: 'Entity abbreviation.',
+  .option('label', {
+    description: 'Entity label.',
     type: 'string',
     alias: 'a'
   })
-  .option('zhLabel', {
-    description: 'Entity 中文名.',
+  .option('ejsExt', {
+    description: 'EJS 扩展名',
     type: 'string',
-    alias: 'z'
+    alias: 't'
   })
   .option('output', {
     description: 'What directory to place the models.',
     type: 'string',
     alias: 'o'
+  })
+  .option('aggrKey', {
+    description: '聚合UID键名',
+    type: 'string',
+    alias: 'ak'
+  })
+  .option('index', {
+    description: 'Write index.ts file.',
+    type: 'string',
+    alias: 'i'
   })
   //.check(argv => Boolean(argv.name && argv.abbrev))
   .argv;
@@ -43,7 +53,7 @@ const argv = require('yargs')
   /** @type {import('../types').SequelizeAuto}  */
   const auto = new MidwayAuto({ lang: 'ts', directory: dir});
 
-  await auto.run(argv.name, argv.abbrev, argv.zhLabel);
+  await auto.run(argv.name, argv.label, argv.ejsExt, argv.aggrKey, argv.index);
   console.log("Done!");
 
 }()).catch(err => {

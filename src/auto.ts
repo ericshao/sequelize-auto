@@ -57,7 +57,7 @@ export class SequelizeAuto {
     await this.write(td, 'model');
     const dto = this.generateDto(td);
     td.text = dto;
-    await this.write(td, 'dto');
+    await this.write(td);
     const tp = this.generateType(td);
     td.text = tp;
     await this.write(td, 'd');
@@ -98,8 +98,8 @@ export class SequelizeAuto {
     return generator.generateText();
   }
 
-  write(tableData: TableData, surfix: string) {
-    const writer = new AutoWriter(tableData, surfix, this.options);
+  write(tableData: TableData, surfix?: string) {
+    const writer = new AutoWriter(tableData, this.options, surfix);
     return writer.write();
   }
 

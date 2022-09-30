@@ -135,7 +135,17 @@ const argv = require('yargs')
     type: 'boolean',
     alias: 'sg'
   })
-  .check(argv => Boolean((argv.database && (argv.host || argv.dialect === 'sqlite')) || argv.config))
+  .option('extendMode', {
+    description: 'Compact tenancy model names',
+    type: 'string',
+    alias: 'em'
+  })
+  .option('omitPrefix', {
+    description: 'Omit prefix of table name ',
+    type: 'number',
+    alias: 'op'
+  })
+  // .check(argv => Boolean((argv.database && (argv.host || argv.dialect === 'sqlite')) || argv.config))
   .argv;
 
 function getDefaultPort(dialect) {
@@ -197,8 +207,8 @@ async function readPassword() {
 
   configFile.additional = additional;
   configFile.dialect = argv.dialect || configFile.dialect || 'mysql';
-  configFile.port = argv.port || configFile.port || getDefaultPort(configFile.dialect);
-  configFile.host = argv.host || configFile.host || 'localhost';
+  configFile.port = argv.port || configFile.port || getDefaultPort(configFile.dialect) || 3306;
+  configFile.host = argv.host || configFile.host || '192.168.3.66';
   configFile.database = argv.database || configFile.database;
   configFile.storage = configFile.storage || configFile.database;
   configFile.tables = argv.tables || configFile.tables || null;
@@ -206,20 +216,22 @@ async function readPassword() {
   configFile.skipFields = argv.skipFields || configFile.skipFields || null;
   configFile.pkSuffixes = argv.pkSuffixes || configFile.pkSuffixes || null;
   configFile.schema = argv.schema || configFile.schema;
-  configFile.lang = argv.lang || configFile.lang || 'es5';
-  configFile.caseModel = argv.caseModel || configFile.caseModel || 'o';
+  configFile.lang = argv.lang || configFile.lang || 'ts';
+  configFile.caseModel = argv.caseModel || configFile.caseModel || 'p';
   configFile.caseFile = argv.caseFile || configFile.caseFile || 'o';
-  configFile.caseProp = argv.caseProp || configFile.caseProp || 'o';
+  configFile.caseProp = argv.caseProp || configFile.caseProp || 'c';
   configFile.noAlias = argv.noAlias || configFile.noAlias || false;
   configFile.noInitModels = argv.noInitModels || configFile.noInitModels || false;
   configFile.noWrite = argv.noWrite || configFile.noWrite || false;
   configFile.views = argv.views || configFile.views || false;
   configFile.singularize = argv.singularize || configFile.singularize || false;
   configFile.password = password || configFile.password || null;
-  configFile.username = argv.user || configFile.username;
+  configFile.username = argv.user || configFile.username || 'welo';
   configFile.useDefine = argv.useDefine || configFile.useDefine || false;
   configFile.indentation = argv.indentation || configFile.indentation || 2;
   configFile.noIndexes = argv.noIndexes || configFile.noIndexes || false;
+  configFile.extendMode = argv.extendMode || configFile.extendMode || 'entity';
+  configFile.omitPrefix = argv.omitPrefix || configFile.omitPrefix || 0;
 
   console.log(_.omit(configFile, 'password'));
 

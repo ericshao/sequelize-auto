@@ -42,6 +42,8 @@ export class ModelGenerator {
     singularize: boolean;
     useDefine: boolean;
     noIndexes?: boolean;
+    extendMode?: 'base' | 'entity' | 'vo';
+    omitPrefix?: number;
   };
 
   constructor(tableData: TableData, dialect: DialectOptions, options: AutoOptions) {
@@ -62,10 +64,15 @@ export class ModelGenerator {
 
     if (this.options.lang === 'ts') {
       header += '/* eslint-disable node/no-extraneous-import */\n';
-      header += "import { Column, Table } from 'sequelize-typescript';\n";
+      header +=
+        this.options.extendMode === 'entity'
+          ? "import { Column, BeforeCreate, BeforeBulkCreate, Table } from 'sequelize-typescript';\n"
+          : "import { Column, Table } from 'sequelize-typescript';\n";
       header += "import { DataTypes } from 'sequelize';\n";
-      header += "import { BaseModel } from '@midwayjs-plus/common';\n";
-      // header += "import * as Sequelize from 'sequelize';\n";
+      header += "import { #MODEL# } from '@midwayjs-plus/common';\n";
+      if (this.options.extendMode === 'entity') {
+        header += "import { nanoid } from 'nanoid';\n";
+      }
     } else {
       header += "const Sequelize = require('sequelize');\n";
       header += 'module.exports = function(sequelize, DataTypes) {\n';
@@ -138,28 +145,37 @@ export class ModelGenerator {
 
       str += this.addTable(table);
 
-      // const lang = this.options.lang;
-      // if (lang === 'ts' && this.options.useDefine) {
-      //   str += ") as typeof #TABLE#;\n";
-      // } else {
-      //   str += ");\n";
-      // }
+      if (this.options.extendMode === 'entity') {
+        str += 'static PREFIX = _PREFIX_;\n\n';
 
-      // if (lang === 'es6' || lang === 'esm' || lang === 'ts') {
-      //   if (this.options.useDefine) {
-      //     str += this.space[1] + "}\n}\n";
-      //   } else {
-      //     // str += this.space[1] + "return #TABLE#;\n";
-      //     str += this.space[1] + "}\n}\n";
-      //   }
-      // } else {
-      //   str += "};\n";
-      // }
+        str += '@BeforeCreate\n';
+        str += 'static addUid(instance: #TABLE#Model) {\n';
+        str += 'if (!instance.uid) {\n';
+        str += 'instance.uid = `${#TABLE#Model.PREFIX}${nanoid()}`;\n';
+        str += '}\n}\n\n';
+
+        str += '@BeforeBulkCreate\n';
+        str += 'static addUids(instances: #TABLE#Model[]) {\n';
+        str += 'instances.forEach(instance => {\n';
+        str += 'if (!instance.uid) {\n';
+        str += 'instance.uid = `${#TABLE#Model.PREFIX}${nanoid()}`;\n';
+        str += '}\n});\n';
+        str += '}\n\n';
+      }
 
       str += '}\n';
 
       const re = new RegExp('#TABLE#', 'g');
-      str = str.replace(re, tableName);
+      str = str.replace(re, tableName.slice(this.options.omitPrefix));
+
+      const mre = new RegExp('#MODEL#', 'g');
+      let modelName = 'BaseModel';
+      if (this.options.extendMode === 'entity') {
+        modelName = 'BaseEntityModel';
+      } else if (this.options.extendMode === 'vo') {
+        modelName = 'BaseValueObjectModel';
+      }
+      str = str.replace(mre, modelName);
 
       text[table] = str;
     });
@@ -220,14 +236,14 @@ export class ModelGenerator {
 
     // add indexes
     // if (!this.options.noIndexes) {
-    //   str += this.addIndexes(table);
+    str += this.addIndexes(table);
     // }
 
     str = space[2] + str.trim();
     str = str.substring(0, str.length - 1);
     str += '\n' + space[1] + '})\n';
 
-    str += 'export class #TABLE#Model extends BaseModel {\n';
+    str += 'export class #TABLE#Model extends #MODEL# {\n';
 
     // add all the fields
     const fields = _.keys(this.tables[table]);
@@ -392,36 +408,38 @@ export class ModelGenerator {
     if (indexes && indexes.length) {
       str += space[2] + 'indexes: [\n';
       indexes.forEach((idx) => {
-        str += space[3] + '{\n';
-        if (idx.name) {
-          str += space[4] + `name: "${idx.name}",\n`;
+        if (!idx.primary) {
+          str += space[3] + '{\n';
+          if (idx.name) {
+            str += space[4] + `name: "${idx.name}",\n`;
+          }
+          if (idx.unique) {
+            str += space[4] + 'unique: true,\n';
+          }
+          if (idx.type) {
+            if (['UNIQUE', 'FULLTEXT', 'SPATIAL'].includes(idx.type)) {
+              str += space[4] + `type: "${idx.type}",\n`;
+            } else {
+              str += space[4] + `using: "${idx.type}",\n`;
+            }
+          }
+          str += space[4] + `fields: [\n`;
+          idx.fields.forEach((ff) => {
+            str += space[5] + `{ name: "${ff.attribute}"`;
+            if (ff.collate) {
+              str += `, collate: "${ff.collate}"`;
+            }
+            if (ff.length) {
+              str += `, length: ${ff.length}`;
+            }
+            if (ff.order && ff.order !== 'ASC') {
+              str += `, order: "${ff.order}"`;
+            }
+            str += ' },\n';
+          });
+          str += space[4] + ']\n';
+          str += space[3] + '},\n';
         }
-        if (idx.unique) {
-          str += space[4] + 'unique: true,\n';
-        }
-        if (idx.type) {
-          if (['UNIQUE', 'FULLTEXT', 'SPATIAL'].includes(idx.type)) {
-            str += space[4] + `type: "${idx.type}",\n`;
-          } else {
-            str += space[4] + `using: "${idx.type}",\n`;
-          }
-        }
-        str += space[4] + `fields: [\n`;
-        idx.fields.forEach((ff) => {
-          str += space[5] + `{ name: "${ff.attribute}"`;
-          if (ff.collate) {
-            str += `, collate: "${ff.collate}"`;
-          }
-          if (ff.length) {
-            str += `, length: ${ff.length}`;
-          }
-          if (ff.order && ff.order !== 'ASC') {
-            str += `, order: "${ff.order}"`;
-          }
-          str += ' },\n';
-        });
-        str += space[4] + ']\n';
-        str += space[3] + '},\n';
       });
       str += space[2] + '],\n';
     }
@@ -443,12 +461,7 @@ export class ModelGenerator {
 
     if (type === 'tinyint(1)') {
       val = 'DataTypes.TINYINT({ length: 1 })';
-    } else if (
-      type === 'boolean' ||
-      type === 'bit(1)' ||
-      type === 'bit' ||
-      type === 'tinyint(1) unsigned'
-    ) {
+    } else if (type === 'boolean' || type === 'bit(1)' || type === 'bit' || type === 'tinyint(1) unsigned') {
       val = 'DataTypes.BOOLEAN';
 
       // postgres range types
@@ -729,9 +742,9 @@ export class ModelGenerator {
       return false;
     }
     return (
-      (!additional.createdAt && recase('c', field) === 'createdAt') ||
+      (!additional.createdAt && (recase('c', field) === 'createdAt' || recase('c', field) === 'createdDate')) ||
       additional.createdAt === field ||
-      (!additional.updatedAt && recase('c', field) === 'updatedAt') ||
+      (!additional.updatedAt && (recase('c', field) === 'updatedAt' || recase('c', field) === 'lastUpdatedDate')) ||
       additional.updatedAt === field
     );
   }
@@ -745,6 +758,11 @@ export class ModelGenerator {
   }
 
   private isIgnoredField(field: string) {
+    if (this.options.extendMode === 'entity' || this.options.extendMode === 'vo') {
+      return ['id', 'uid', 'tenantId', 'createdBy', 'createdDate', 'lastUpdatedBy', 'lastUpdatedDate'].includes(
+        recase('c', field)
+      );
+    }
     return this.options.skipFields && this.options.skipFields.includes(field);
   }
 

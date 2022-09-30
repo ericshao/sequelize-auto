@@ -5,18 +5,19 @@ import { join } from 'path';
 type Entity = {
   PascalCase: string;
   camelCase: string;
-  uidField: string;
+  aggrKey?: string;
 };
 
 export class ServiceGenerator {
   entity: Entity;
-  ejsPath: string;
-  constructor(entity: Entity, ejsPath?: string) {
+  ejsExt: string;
+  constructor(entity: Entity, ejsExt?: string) {
     this.entity = entity;
-    this.ejsPath = ejsPath || '../../ejs/service.ejs';
+    this.ejsExt = `../../ejs/service_${ejsExt}.ejs` || '../../ejs/service.ejs';
+
   }
   generateText() {
-    const path = join(__dirname, this.ejsPath);
+    const path = join(__dirname, this.ejsExt);
     console.log(this.entity);
     return ejs.compile(readFileSync(path, 'utf8'), { filename: path })(this.entity);
   }

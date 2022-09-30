@@ -5,16 +5,16 @@ export class Entity  {
   PascalCase: string;
   camelCase: string;
   lowerCase: string;
-  uidField: string;
-  label: string;
+  aggrKey?: string;
+  label?: string;
   text?: string;
-  constructor(name: string, uidAbbrev: string, label: string) {
+  constructor(name: string, label?: string, aggrKey?: string) {
     this.name = name;
     this.PascalCase = recase('p', this.name, true);
     this.camelCase = recase('c', this.name, true);
     this.lowerCase = recase('l', this.name, true);
     this.label = label;
-    this.uidField = `${uidAbbrev}Uid`;
+    this.aggrKey = aggrKey;
   }
 };
 

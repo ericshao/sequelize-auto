@@ -34,6 +34,8 @@ export class DtoGenerator {
     singularize: boolean;
     useDefine: boolean;
     noIndexes?: boolean;
+    extendMode?: 'base' | 'entity' | 'vo';
+    omitPrefix?: number;
   };
 
   constructor(tableData: TableData, dialect: DialectOptions, options: AutoOptions) {
@@ -52,7 +54,7 @@ export class DtoGenerator {
       // header += "/* eslint-disable node/no-extraneous-import */\n";
       header += "import { Rule, RuleType, OmitDto } from '@midwayjs/validate';\n";
       header += "import { ApiProperty } from '@midwayjs/swagger';\n";
-      header += "import { BaseDto, uidString } from '@midwayjs-plus/common';\n\n";
+      header += "import { #ENTITY#, uidString } from '@midwayjs-plus/common';\n\n";
     }
     return header;
   }
@@ -74,17 +76,17 @@ export class DtoGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += 'export class #TABLE#Dto extends BaseDto {\n';
+        str += 'export class #TABLE# extends #ENTITY# {\n';
         str += this.addTypeScriptFields(table, true);
         str += '}\n\n';
       }
 
-      str += "export class Create#TABLE#Dto extends OmitDto(#TABLE#Dto, ['uid']) {}\n\n";
-      str += "export class Update#TABLE#Dto extends OmitDto(#TABLE#Dto, ['createdBy']) {\n";
+      str += "export class Create#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate', 'lastUpdatedDate']) {}\n\n";
+      str += "export class Update#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate']) {\n";
       str += "@ApiProperty({ description: '批量更新UID' })\n";
-      str += "@Rule(RuleType.array())\n";
-      str += "identifiers: number[] | string[];\n";
-      str += "}\n\n";
+      str += '@Rule(RuleType.array())\n';
+      str += 'identifiers: number[] | string[];\n';
+      str += '}\n\n';
 
       const additional = this.options.additional;
       // str += "export class Delete#TABLE#Dto extends PickDto(#TABLE#Dto, ['uid', 'tenantId']) {\n";
@@ -95,7 +97,16 @@ export class DtoGenerator {
       // }
       // str += '}\n';
       const re = new RegExp('#TABLE#', 'g');
-      str = str.replace(re, tableName);
+      str = str.replace(re, tableName.slice(this.options.omitPrefix));
+
+      const ere = new RegExp('#ENTITY#', 'g');
+      let entityName = 'DomainObject';
+      if (this.options.extendMode === 'entity') {
+        entityName = 'BaseEntity';
+      } else if (this.options.extendMode === 'vo') {
+        entityName = 'BaseValueObject';
+      }
+      str = str.replace(ere, entityName);
 
       text[table] = str;
     });
@@ -109,7 +120,7 @@ export class DtoGenerator {
     const notNull = isInterface ? '' : '!';
     let str = '';
     fields.forEach((field) => {
-      if (!this.options.skipFields || !this.options.skipFields.includes(field)) {
+      if (!this.isIgnoredField(field)) {
         if (!this.isDeprecated(table, field)) {
           const name = this.quoteName(recase(this.options.caseProp, field));
           const isOptional = this.getTypeScriptFieldOptional(table, field);
@@ -170,10 +181,10 @@ export class DtoGenerator {
     if (this.isArray(fieldType)) {
       const eltype = this.getTypeScriptFieldType(fieldObj, 'elementType');
       jsType = eltype + '[]';
-    } else if (this.isNumber(fieldType)) {
-      jsType = 'number';
     } else if (this.isBoolean(fieldType)) {
       jsType = 'boolean';
+    } else if (this.isNumber(fieldType)) {
+      jsType = 'number';
     } else if (this.isDate(fieldType)) {
       jsType = 'Date';
     } else if (this.isString(fieldType)) {
@@ -248,9 +259,9 @@ export class DtoGenerator {
       return false;
     }
     return (
-      (!additional.createdAt && recase('c', field) === 'createdAt') ||
+      (!additional.createdAt && (recase('c', field) === 'createdAt' || recase('c', field) === 'createdDate')) ||
       additional.createdAt === field ||
-      (!additional.updatedAt && recase('c', field) === 'updatedAt') ||
+      (!additional.updatedAt && (recase('c', field) === 'updatedAt' || recase('c', field) === 'lastUpdatedDate')) ||
       additional.updatedAt === field
     );
   }
@@ -264,6 +275,11 @@ export class DtoGenerator {
   }
 
   private isIgnoredField(field: string) {
+    if (this.options.extendMode === 'entity' || this.options.extendMode === 'vo') {
+      return ['id', 'uid', 'tenantId', 'createdBy', 'createdDate', 'lastUpdatedBy', 'lastUpdatedDate'].includes(
+        recase('c', field)
+      );
+    }
     return this.options.skipFields && this.options.skipFields.includes(field);
   }
 
@@ -288,12 +304,18 @@ export class DtoGenerator {
   }
 
   private isNumber(fieldType: string): boolean {
+    if (fieldType === 'tinyint(1) unsigned') {
+      return false;
+    }
     return /^(smallint|mediumint|tinyint|int|bigint|float|money|smallmoney|double|decimal|numeric|real|oid)/.test(
       fieldType
     );
   }
 
   private isBoolean(fieldType: string): boolean {
+    if (fieldType === 'tinyint(1) unsigned') {
+      return true;
+    }
     return /^(boolean|bit)/.test(fieldType);
   }
 

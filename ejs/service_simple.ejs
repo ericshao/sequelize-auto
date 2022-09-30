@@ -1,0 +1,110 @@
+import { Provide, Scope, ScopeEnum } from '@midwayjs/decorator';
+import {
+  baseError,
+  CtxTransactional,
+  CtxTXParticipant,
+} from '@midwayjs-plus/common';
+import { TenancyService } from '@c2pkg/multi-tenancy';
+import { nanoid } from 'nanoid';
+import * as _ from 'lodash';
+import { <%= PascalCase %>Model, <%= PascalCase %>, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '.';
+
+
+@Provide()
+@Scope(ScopeEnum.Request, { allowDowngrade: true })
+@CtxTXParticipant()
+export class <%= PascalCase %>Service extends TenancyService {
+
+  @CtxTransactional()
+  public async create(createDto: Create<%= PascalCase %>Dto): Promise<<%= PascalCase %>> {
+    const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).create(
+      {
+        ...createDto,
+        createdBy: this.getUserId(),
+        tenantId: this.getTenantId(),
+      },
+      {
+        transaction: this.getTransaction(),
+      }
+    );
+    return _.omit(<%= camelCase %>.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>;
+  }
+
+  @CtxTransactional()
+  public async bulkCreate(
+    createDtos: Create<%= PascalCase %>Dto[]
+  ): Promise<<%= PascalCase %>[]> {
+    const <%= camelCase %>s = createDtos.map(createDto => ({
+      ...createDto,
+      createdBy: this.getUserId(),
+      tenantId: this.getTenantId(),
+      uid: this.generateUid(),
+    }));
+
+    await <%= PascalCase %>Model.schema(this.getTenantSchema()).bulkCreate(
+      <%= camelCase %>s,
+      {
+        transaction: this.getTransaction(),
+      }
+    );
+    return <%= camelCase %>s.map(
+      entity => _.omit(entity, 'tenantId') as <%= PascalCase %>
+    );
+  }
+
+  @CtxTransactional()
+  public async updateByUid(
+    updateDto: Update<%= PascalCase %>Dto
+  ): Promise<Record<string, number>> {
+    const updated = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
+      { ...updateDto, lastUpdatedBy: this.getUserId() }, {
+      where: {
+        uid: updateDto.identifiers,
+      },
+      transaction: this.getTransaction(),
+    });
+    return { updated: updated[0] };
+  }
+
+  @CtxTransactional()
+  public async deleteByUid(
+    identifiers: string[]
+  ): Promise<Record<string, number>> {
+    const deleted = await <%= PascalCase %>Model.schema(this.getTenantSchema()).destroy({
+      where: {
+        uid: identifiers,
+        tenantId: this.getTenantId(),
+      },
+      transaction: this.getTransaction(),
+    });
+    return { deleted };
+  }
+
+  public async omniQuery(
+    options?: API.ListOptions
+  ): Promise<API.ListResult<<%= PascalCase %>>> {
+    const listResult = await <%= PascalCase %>Model.omniQuery<typeof <%= PascalCase %>Model, <%= PascalCase %>>(options, this.getTenantSchema());
+      return {
+        ...listResult,
+        data: listResult.data.map(
+          item => _.omit(item, ['id', 'tenantId']) as <%= PascalCase %>
+        ),
+      };
+  }
+
+  public async getByUid(
+    uid: string,
+    options?: API.QueryOptions
+  ): Promise<<%= PascalCase %>> {
+    const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
+      attributes: this.generateAttributes(options?.columns, options?.exclusive),
+      where: { uid },
+    });
+    if (!<%= camelCase %>) throw baseError.EntityNotExistsError;
+    return _.omit(<%= camelCase %>.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>;
+  }
+
+  generateUid(): string {
+    return `${<%= PascalCase %>Model.PREFIX}${nanoid()}`;
+  }
+}

@@ -32,6 +32,8 @@ export class TypeGenerator {
     singularize: boolean;
     useDefine: boolean;
     noIndexes?: boolean;
+    extendMode?: 'base' | 'entity' | 'vo';
+    omitPrefix?: number;
   };
 
   constructor(tableData: TableData, dialect: DialectOptions, options: AutoOptions) {
@@ -77,7 +79,7 @@ export class TypeGenerator {
         str += '}\n\n';
       }
       const re = new RegExp('#TABLE#', 'g');
-      str = str.replace(re, tableName);
+      str = str.replace(re, tableName.slice(this.options.omitPrefix));
 
       text[table] = str;
     });
@@ -91,7 +93,7 @@ export class TypeGenerator {
     const notNull = isInterface ? '' : '!';
     let str = '';
     fields.forEach((field) => {
-      if (!this.options.skipFields || !this.options.skipFields.includes(field)) {
+      if (!this.isIgnoredField(field)) {
         if (!this.isDeprecated(table, field)) {
           const name = this.quoteName(recase(this.options.caseProp, field));
           const isOptional = this.getTypeScriptFieldOptional(table, field);
@@ -190,9 +192,9 @@ export class TypeGenerator {
       return false;
     }
     return (
-      (!additional.createdAt && recase('c', field) === 'createdAt') ||
+      (!additional.createdAt && (recase('c', field) === 'createdAt' || recase('c', field) === 'createdDate')) ||
       additional.createdAt === field ||
-      (!additional.updatedAt && recase('c', field) === 'updatedAt') ||
+      (!additional.updatedAt && (recase('c', field) === 'updatedAt' || recase('c', field) === 'lastUpdatedDate')) ||
       additional.updatedAt === field
     );
   }
@@ -206,7 +208,14 @@ export class TypeGenerator {
   }
 
   private isIgnoredField(field: string) {
-    return this.options.skipFields && this.options.skipFields.includes(field);
+    const ignoredFields = ['id', 'tenantId'];
+    if (this.options.extendMode === 'vo') {
+      ignoredFields.push('createdBy', 'lastUpdatedBy');
+    }
+    return ignoredFields.includes(
+      recase('c', field)
+    );
+    // return this.options.skipFields && this.options.skipFields.includes(field);
   }
 
   private escapeSpecial(val: string) {
@@ -230,13 +239,19 @@ export class TypeGenerator {
   }
 
   private isNumber(fieldType: string): boolean {
+    if (fieldType === 'tinyint(1) unsigned') {
+      return false;
+    }
     return /^(smallint|mediumint|tinyint|int|bigint|float|money|smallmoney|double|decimal|numeric|real|oid)/.test(
       fieldType
     );
   }
 
   private isBoolean(fieldType: string): boolean {
-    return /^(boolean|bit)/.test(fieldType);
+    if (fieldType === 'tinyint(1) unsigned') {
+      return true;
+    }
+    return /^(boolean|bit|tinyint(1) unsigned)/.test(fieldType);
   }
 
   private isDate(fieldType: string): boolean {

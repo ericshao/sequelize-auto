@@ -12,7 +12,7 @@ export class AutoWriter {
   foreignKeys: { [tableName: string]: { [fieldName: string]: FKSpec } };
   relations: Relation[];
   space: string[];
-  surfix: string;
+  surfix?: string;
   options: {
     caseFile?: CaseFileOption;
     caseModel?: CaseOption;
@@ -26,8 +26,9 @@ export class AutoWriter {
     useDefine?: boolean;
     spaces?: boolean;
     indentation?: number;
+    omitPrefix?: number;
   };
-  constructor(tableData: TableData, surfix: string, options: AutoOptions) {
+  constructor(tableData: TableData, options: AutoOptions, surfix?: string) {
     this.tableText = tableData.text as { [name: string]: string };
     this.foreignKeys = tableData.foreignKeys;
     this.relations = tableData.relations;
@@ -90,7 +91,9 @@ export class AutoWriter {
     // folders for each different schema.
     const [schemaName, tableName] = qNameSplit(table);
     const fileName = recase(this.options.caseFile, tableName, this.options.singularize);
-    const filePath = path.join(this.options.directory, fileName + `.${this.surfix}` + (this.options.lang === 'ts' ? '.ts' : '.js'));
+    const sliceIndex = this.options.omitPrefix ? this.options.omitPrefix + 1 : 0;
+    const surfix =  this.surfix ? `.${this.surfix}` : '';
+    const filePath = path.join(this.options.directory, fileName.slice(sliceIndex) + `${surfix}` + (this.options.lang === 'ts' ? '.ts' : '.js'));
 
     const writeFile = util.promisify(fs.writeFile);
     return writeFile(path.resolve(filePath), this.tableText[table]);

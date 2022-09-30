@@ -13,25 +13,37 @@ export class MidwayAuto {
     this.options = options;
   }
 
-  async run(name: string, uidAbbrev: string, label: string) {
-    const entity = new Entity(name, uidAbbrev, label);
-    console.log(entity)
-    const es = this.generateService(entity);
+  async run(name: string, label: string, ejsExt?: string, aggrKey?: string, index?: boolean) {
+    const entity = new Entity(name, label, aggrKey);
+    console.log(entity);
+    const es = this.generateService(entity, ejsExt);
     entity.text = es;
     await this.write(entity, 'service');
-    const ec = this.generateController(entity);
+    const ec = this.generateController(entity, ejsExt);
     entity.text = ec;
     await this.write(entity, 'controller');
+    if (index) {
+      await this.writeIndex(entity);
+    }
   }
 
-  generateService(entity: Entity) {
-    const generator = new ServiceGenerator(entity);
+  generateService(entity: Entity, ejsExt?: string) {
+    const generator = new ServiceGenerator(entity, ejsExt);
     return generator.generateText();
   }
 
-  generateController(entity: Entity) {
-    const generator = new ControllerGenerator(entity);
+  generateController(entity: Entity, ejsExt?: string) {
+    const generator = new ControllerGenerator(entity, ejsExt);
     return generator.generateText();
+  }
+
+  writeIndex(entity: Entity) {
+    const filePath = path.join(this.options.directory, 'index.ts');
+
+    const text = `export * from './${entity.lowerCase}.service';\nexport * from './${entity.lowerCase}.entity';\nexport * from './${entity.lowerCase}.model';\n`;
+
+    const writeFile = util.promisify(fs.writeFile);
+    return writeFile(path.resolve(filePath), text);
   }
 
   write(entity: Entity, surfix: string) {
