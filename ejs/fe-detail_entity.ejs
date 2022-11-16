@@ -1,0 +1,154 @@
+// React
+import React, { useRef, useState } from 'react';
+// Antd
+import { SaveOutlined } from '@ant-design/icons';
+import ProCard from '@ant-design/pro-card';
+import ProForm, { BetaSchemaForm, ProFormInstance } from '@ant-design/pro-form';
+import { FooterToolbar, PageContainer } from '@ant-design/pro-layout';
+import { message, Typography } from 'antd';
+// Umi
+import { useAccess, useModel, useParams } from '@umijs/max';
+// Components
+import AuditLog from '@/components/AuditLog';
+// Services
+import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/cmp/<%= camelCase %>';
+// Utils
+import { getUpdateData } from '@/utils';
+import { <%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
+
+const { Text } = Typography;
+
+type <%= PascalCase %>DetailProps = {
+  uid: string;
+  onUpdated: () => void;
+  insideDrawer?: boolean;
+};
+
+const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) => {
+  // useModel
+  const { initialState } = useModel('@@initialState');
+  const { responsive } = useModel('responsive', (model: any) => ({
+    responsive: model.responsive,
+  }));
+
+  //  useParams
+  const params = useParams<{ uid: string }>();
+  const uid = props.uid || params.uid;
+
+  // useEffect
+
+  // useAccess
+  const access = useAccess();
+  const canEdit = true;
+
+  // useState
+  const [<%= camelCase %>, set<%= PascalCase %>] = useState<<%= PascalCase %>>();
+  const [tabActiveKey, setTabActiveKey] = useState('main');
+
+  // useRef
+  const formRef = useRef<ProFormInstance<<%= PascalCase %>>>();
+
+  return (
+      <PageContainer
+        ghost
+        header={{
+          title: <%= camelCase %>?.uid,
+          onBack: props.insideDrawer ? undefined : () => history.back(),
+          breadcrumb: {
+            routes: [
+              {
+                path: '/',
+                breadcrumbName: '<%= label %>',
+              },
+            ],
+          },
+          style: { zIndex: 10 },
+        }}
+        tabList={[
+          {
+            tab: '主信息',
+            key: 'main',
+          },
+          {
+            tab: '明细项',
+            key: 'items',
+          },
+          {
+            tab: '操作记录',
+            key: 'auditLog',
+          },
+        ]}
+        tabActiveKey={tabActiveKey}
+        onTabChange={(key: string) => setTabActiveKey(key)}
+        style={{ marginBottom: 45 }}
+      >
+        {tabActiveKey === 'main' && (
+          <ProCard bordered>
+            <BetaSchemaForm<<%= PascalCase %>>
+              layoutType="Form"
+              rowProps={{
+                gutter: [16, 16],
+              }}
+              colProps={{
+                span: 6,
+              }}
+              grid
+              columns={<%= PascalCase %>FormColumns}
+              formRef={formRef}
+              request={async () => {
+                const res = await get<%= PascalCase %>(uid!);
+                set<%= PascalCase %>(res.result!);
+                return res.result!;
+              }}
+              //** 允许字段更新为null */
+              omitNil={false}
+              onFinish={async (values: any) => {
+                const update = getUpdateData(<%= camelCase %>, values);
+                if (update) {
+                  const res = await update<%= PascalCase %>(update);
+                  if (res.success) {
+                    message.success({ key: 'update', content: '保存成功' });
+                    set<%= PascalCase %>({ ...<%= camelCase %>, ...values });
+                    props?.onUpdated();
+                  }
+                } else {
+                  message.info({ key: 'update', content: '无更新内容' });
+                }
+              }}
+              onValuesChange={async (changedValues: any) => {
+
+              }}
+              submitter={
+                canEdit && tabActiveKey === 'main'
+                  ? {
+                      searchConfig: {
+                        submitText: '保存',
+                      },
+                      submitButtonProps: {
+                        icon: <SaveOutlined />,
+                      },
+                      resetButtonProps: {
+                        style: {
+                          display: 'none',
+                        },
+                      },
+                      render: (_, dom) => (
+                        <FooterToolbar>
+                          {dom}
+                        </FooterToolbar>
+                      ),
+                    }
+                  : false
+              }
+            />
+          </ProCard>
+        )}
+        {tabActiveKey === 'auditLog' && (
+          <ProCard bordered>
+            <AuditLog sourceUid={uid!} />
+          </ProCard>
+        )}
+      </PageContainer>
+  );
+};
+export default <%= PascalCase %>Detail;

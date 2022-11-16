@@ -91,7 +91,7 @@ export class <%= PascalCase %>Service extends TenancyService {
   public async omniQuery(
     options?: API.ListOptions
   ): Promise<API.ListResult<<%= PascalCase %>>> {
-    const listResult = await <%= PascalCase %>Model.omniQuery<typeof <%= PascalCase %>Model, <%= PascalCase %>>(options, this.getTenantSchema());
+    const listResult = await <%= PascalCase %>Model.omniQuery<typeof <%= PascalCase %>Model, <%= PascalCase %>>(this.filterByTenantId(options), this.getTenantSchema());
       return {
         ...listResult,
         data: listResult.data.map(

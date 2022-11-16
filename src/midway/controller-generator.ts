@@ -13,7 +13,7 @@ export class ControllerGenerator {
   ejsExt: string;
   constructor(entity: Entity, ejsExt?: string) {
     this.entity = entity;
-    this.ejsExt = `../../ejs/controller_${ejsExt}.ejs` || '../../ejs/controller.ejs';
+    this.ejsExt = `../../ejs/controller_${ejsExt}.ejs`;
   }
   generateText() {
     const path = join(__dirname, this.ejsExt);

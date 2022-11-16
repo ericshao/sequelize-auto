@@ -76,7 +76,7 @@ export class TypeGenerator {
       if (this.options.lang === 'ts') {
         str += 'type #TABLE# = {\n';
         str += this.addTypeScriptFields(table, true);
-        str += '}\n\n';
+        str += '}  & BaseEntity\n';
       }
       const re = new RegExp('#TABLE#', 'g');
       str = str.replace(re, tableName.slice(this.options.omitPrefix));

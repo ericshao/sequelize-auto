@@ -14,9 +14,11 @@
 生成基础对象
 ./bin/sequelize-auto -x 123456 -o ./output --op 3 --em base  -d qm_saas -t mdm_reg_party
 
-./bin/midway-auto -o ./output -n classifyTask -a clsTask -z 归类任务
+生成实体服务与控制器
+./bin/midway-auto -o ./output -n delivery -a 交货 -t entity --ak shpUid
 
-
+#生成聚合根
+./bin/midway-auto -o ./output -n shipment -a 货运 -t aggr --ak shpUid
 
 # Sequelize-Auto
 

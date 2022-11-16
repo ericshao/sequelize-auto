@@ -8,12 +8,12 @@ type Entity = {
   aggrKey?: string;
 };
 
-export class ServiceGenerator {
+export class FeDetailGenerator {
   entity: Entity;
   ejsExt: string;
   constructor(entity: Entity, ejsExt?: string) {
     this.entity = entity;
-    this.ejsExt = `../../ejs/service_${ejsExt}.ejs`;
+    this.ejsExt = `../../ejs/fe-detail_${ejsExt}.ejs`;
 
   }
   generateText() {

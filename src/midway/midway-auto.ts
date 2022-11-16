@@ -5,6 +5,9 @@ import { AutoOptions, Entity } from './types';
 import fs from 'fs';
 import path from 'path';
 import util from 'util';
+import { FeServiceGenerator } from './fe-service-generator';
+import { FeListGenerator } from './fe-list-generator';
+import { FeDetailGenerator } from './fe-detail-generator';
 
 export class MidwayAuto {
   options: AutoOptions;
@@ -22,6 +25,15 @@ export class MidwayAuto {
     const ec = this.generateController(entity, ejsExt);
     entity.text = ec;
     await this.write(entity, 'controller');
+    const feService = this.generateFeService(entity, ejsExt);
+    entity.text = feService;
+    await this.write(entity, 'stub');
+    const feList = this.generateFeList(entity, ejsExt);
+    entity.text = feList;
+    await this.write(entity, 'list');
+    const feDetail = this.generateFeDetail(entity, ejsExt);
+    entity.text = feDetail;
+    await this.write(entity, 'detail');
     if (index) {
       await this.writeIndex(entity);
     }
@@ -37,6 +49,21 @@ export class MidwayAuto {
     return generator.generateText();
   }
 
+  generateFeService(entity: Entity, ejsExt?: string) {
+    const generator = new FeServiceGenerator(entity, ejsExt);
+    return generator.generateText();
+  }
+
+  generateFeList(entity: Entity, ejsExt?: string) {
+    const generator = new FeListGenerator(entity, ejsExt);
+    return generator.generateText();
+  }
+
+  generateFeDetail(entity: Entity, ejsExt?: string) {
+    const generator = new FeDetailGenerator(entity, ejsExt);
+    return generator.generateText();
+  }
+
   writeIndex(entity: Entity) {
     const filePath = path.join(this.options.directory, 'index.ts');
 
@@ -49,7 +76,7 @@ export class MidwayAuto {
   write(entity: Entity, surfix: string) {
     const filePath = path.join(
       this.options.directory,
-      entity.lowerCase + `.${surfix}` + (this.options.lang === 'ts' ? '.ts' : '.js')
+      entity.camelCase + `.${surfix}` + (this.options.lang === 'ts' ? '.ts' : '.js')
     );
 
     const writeFile = util.promisify(fs.writeFile);

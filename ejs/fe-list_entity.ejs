@@ -1,0 +1,223 @@
+// React
+import React, { useMemo, useRef, useState } from 'react';
+// Antd
+import { PageContainer } from '@ant-design/pro-components';
+import { ActionType, TableDropdown } from '@ant-design/pro-table';
+import { Button, Drawer, Layout, message, Modal, Segmented, Space, Typography } from 'antd';
+import { DeleteOutlined, EditOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+// Umi
+import { history, useModel } from 'umi';
+// Components
+import { UltraColumns } from '@/components/UltraColumns';
+import UltraTable from '@/components/UltraTable';
+import UserAvatar from '@/components/UserAvatar';
+import { CreateModal } from '@/components/CreateModal';
+import { <%= PascalCase %>Columns } from './<%= camelCase %>.column';
+import { <%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
+// Services
+import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/cmp/<%= camelCase %>';
+
+
+const { Content } = Layout;
+const { confirm } = Modal;
+
+// Types
+type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
+
+const <%= PascalCase %>List: React.FC = () => {
+  // useModel
+  const { initialState } = useModel('@@initialState');
+
+  // useMemo
+  const tenantMembers = initialState?.tenantMembers;
+  const memberEnum = useMemo(() => {
+    return tenantMembers
+      ?.filter((x) => x.login_id)
+      .reduce((acc: any, cur) => {
+        acc[cur.login_id] = { text: cur.name || '' };
+        return acc;
+      }, {});
+  }, [tenantMembers]);
+
+  // const access = useAccess();
+
+  // useState
+  const [currentRow, setCurrentRow] = useState<<%= PascalCase %>>();
+  const [selectedRows, setSelectedRows] = useState<<%= PascalCase %>[]>();
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const [detailPageDrawerVisible, setDetailPageDrawerVisible] = useState<boolean>(false);
+  const DetailPageDrawer: React.FC<Page.DrawerProps<<%= PascalCase %>>> = (props) => {
+    return (
+      <Drawer
+        width="100%"
+        open={props.drawerVisible}
+        onClose={() => props.onCancel && props.onCancel()}
+        style={{ animationDuration: '0.3s', transitionDelay: '0.5s' }}
+      >
+        {/* <<%= PascalCase %> uid={props.values?.uid!} onUpdated={() => {}} insideDrawer /> */}
+      </Drawer>
+    );
+  };
+
+
+
+  const [aspect, setAspect] = useState('todo');
+  const stateMachineFilter: Record<string, T<%= PascalCase %>Filter> = {
+    all: {},
+
+  };
+  const [filter, setFilter] = useState<T<%= PascalCase %>Filter>(stateMachineFilter[aspect]);
+
+  // useRef
+  const actionRef = useRef<ActionType>();
+
+  // Actions
+  const gotoDetailPage = (uid: string) => {
+    history.push(`/filing/<%= camelCase %>/${uid}`);
+  };
+
+
+  const confirmDelete = (records: <%= PascalCase %>[], onSuccess: Function) => {
+    const content = records.length === 1 ? records[0].uid : `${records.length} 项`;
+    confirm({
+      title: `确定要删除${content}吗?`,
+      icon: <ExclamationCircleOutlined />,
+      onOk: () => {
+        delete<%= PascalCase %>(records.map((record) => record.uid)).then(() => {
+          onSuccess();
+        });
+      },
+      // onCancel: () => {},
+    });
+  };
+
+  // Table Columns
+  const actionRender = (dom: React.ReactNode, record: <%= PascalCase %>) => [
+    <Button key="edit" type="link" size="small" onClick={() => gotoDetailPage(record.uid)}>
+      <EditOutlined />
+    </Button>,
+    <TableDropdown
+      key="actionGroup"
+      menus={[{ key: 'delete', name: <Typography.Text type="danger">删除</Typography.Text> }]}
+      onSelect={(key: string) => {
+        if (key === 'delete') {
+          confirmDelete([record], () => {
+            actionRef.current?.reload();
+          });
+        }
+      }}
+    />,
+  ];
+  //const ultraColumns = new UltraColumns<<%= PascalCase %>>(initialState?.<%= camelCase %>Columns, actionRender, {
+  const ultraColumns = new UltraColumns<<%= PascalCase %>>(<%= PascalCase %>Columns, actionRender, {
+    enums: { memberEnum },
+    omit: ['lastUpdatedBy'],
+    renderBindings: {
+      createdBy: (val, record) => <UserAvatar size="small" showName userId={record.createdBy} />
+    }
+  });
+
+  return (
+    <PageContainer
+      ghost
+      header={{
+        title: '<%= label %>',
+        style: { boxShadow: '0 0 2px 0 rgba(0, 0, 0, 0.2)', zIndex: 10 },
+      }}
+    >
+      <Layout className="ant-layout-has-sider">
+        <Content style={{ background: '#fff' }}>
+          <UltraTable
+            rowKey="uid"
+            headerTitle={
+              <Space>
+                <Segmented
+                  options={[{ value: 'all', label: '全部' }]}
+                  value={aspect}
+                  onChange={(value) => {
+                    setAspect(value as string);
+                    actionRef.current?.reloadAndRest && actionRef.current?.reloadAndRest();
+                  }}
+                  style={{ marginLeft: 4 }}
+                />
+              </Space>
+            }
+            actionRef={actionRef}
+            columns={ultraColumns.getColumns()}
+            request={async (params, sorter) => {
+              const { current, pageSize, ...search } = params;
+              const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...stateMachineFilter[aspect]};
+              setFilter(filter);
+              const res = await query<%= PascalCase %>List({
+                current,
+                pageSize,
+                columns: ultraColumns.getColumnKeys(),
+                filter,
+                sorter: Object.keys(sorter).length > 0 ? sorter : { createdDate: 'descend' },
+                // tenantId,
+              });
+              // setIdentifiers(res.result.data.map((item) => item.uid!));
+              return {
+                data: res.result.data,
+                success: res.success,
+                total: res.result.total,
+              };
+            }}
+            toolBarRender={() => [
+              <CreateModal
+                key="create"
+                title="新建<%= label %>"
+                formColumns={<%= PascalCase %>FormColumns}
+                onCreate={async (values: any) => {
+                  const res = await create<%= PascalCase %>(values);
+                  if (res.success) {
+                    message.success('新建成功');
+                    actionRef.current?.reload();
+                  }
+                  return res.success;
+                }}
+              />,
+            ]}
+            rowSelection={{}}
+            tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
+              <Space size={24}>
+                <span>已选 {selectedRowKeys.length} 项</span>
+                <Button
+                  key="delete"
+                  type="link"
+                  icon={<DeleteOutlined />}
+                  onClick={() => {
+                    confirmDelete(selectedRows, () => {
+                      onCleanSelected();
+                      actionRef.current?.reload();
+                    });
+                  }}
+                >
+                  删除
+                </Button>
+              </Space>
+            )}
+            locale={
+              {
+                // emptyText: () => renderEmptyText(actionRef, declarationStatistic?.unclassified, setAspect),
+              }
+            }
+            scroll={{ x: ultraColumns.totalWidth }}
+            // scrollYOffset={344}
+          />
+          <DetailPageDrawer
+            values={currentRow}
+            drawerVisible={detailPageDrawerVisible}
+            onCancel={() => {
+              actionRef.current?.reload();
+              setDetailPageDrawerVisible(false);
+              setCurrentRow(undefined);
+            }}
+          />
+        </Content>
+      </Layout>
+    </PageContainer>
+  );
+};
+export default <%= PascalCase %>List;

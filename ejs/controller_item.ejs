@@ -7,7 +7,7 @@ import {
   Inject,
   Param,
   Post,
-  Put,
+  Patch,
 } from '@midwayjs/decorator';
 import { Validate } from '@midwayjs/validate';
 import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
@@ -22,7 +22,7 @@ export class <%= PascalCase %>Controller extends BaseController {
   @Inject()
   <%= camelCase %>Service: <%= PascalCase %>Service;
 
-  @Post('/create', {
+  @Post('/', {
     description: '创建<%= label %>',
   })
   @Validate()
@@ -31,7 +31,7 @@ export class <%= PascalCase %>Controller extends BaseController {
     this.success(result);
   }
 
-  @Put('/update', {
+  @Patch('/', {
     description: '更新<%= label %>',
   })
   @Validate()
@@ -40,7 +40,7 @@ export class <%= PascalCase %>Controller extends BaseController {
     this.success(result);
   }
 
-  @Del('/delete', {
+  @Del('/', {
     description: '删除<%= label %>',
   })
   @Validate()
@@ -56,6 +56,7 @@ export class <%= PascalCase %>Controller extends BaseController {
     const result = await this.<%= camelCase %>Service.omniQuery(options);
     this.success(result);
   }
+
   @Get('/:id', {
     description: '获取<%= label %>',
   })

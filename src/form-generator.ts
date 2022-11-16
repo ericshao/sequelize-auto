@@ -17,7 +17,7 @@ import {
 } from './types';
 
 /** Generates text from each table in TableData */
-export class DtoGenerator {
+export class FormGenerator {
   dialect: DialectOptions;
   tables: { [tableName: string]: { [fieldName: string]: ColumnDescription } };
   space: string[];
@@ -52,9 +52,13 @@ export class DtoGenerator {
 
     if (this.options.lang === 'ts') {
       // header += "/* eslint-disable node/no-extraneous-import */\n";
-      header += "import { Rule, RuleType, OmitDto } from '@midwayjs/validate';\n";
-      header += "import { ApiProperty } from '@midwayjs/swagger';\n";
-      header += "import { #ENTITY#, BizMetaProvider } from '@c2pkg/bizmeta';\n\n";
+      header += "import { ProFormColumnsType } from '@ant-design/pro-components';\n\n";
+      header += `const colProps = {
+        xs: 24,
+        md: 12,
+        lg: 6,
+      };`;
+
     }
     return header;
   }
@@ -76,21 +80,12 @@ export class DtoGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `@BizMetaProvider('#TABLE#')`;
-        str += 'export class #TABLE# extends #ENTITY# {\n';
-        str += this.addTypeScriptFields(table, true);
-        str += '}\n\n';
+        str += `export const #TABLE#FormColumns: ProFormColumnsType<#TABLE#>[] = [\n`;
+        // str += 'export class #TABLE# extends #ENTITY# {\n';
+        str += this.addFormColumns(table, true);
+        str += ']\n';
       }
 
-      str += "export class Create#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate', 'lastUpdatedDate']) {}\n\n";
-      str += "export class Update#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate']) {\n";
-      str += "@ApiProperty({ description: '批量更新UID' })\n";
-      str += '@Rule(RuleType.array())\n';
-      str += 'identifiers: number[] | string[];\n\n';
-      str += "@ApiProperty({ description: '更新前值' })\n";
-      str += '@Rule(RuleType.object())\n';
-      str += 'oldValues: Partial<#TABLE#>;\n';
-      str += '}\n\n';
 
       const additional = this.options.additional;
       // str += "export class Delete#TABLE#Dto extends PickDto(#TABLE#Dto, ['uid', 'tenantId']) {\n";
@@ -118,7 +113,7 @@ export class DtoGenerator {
     return text;
   }
 
-  private addTypeScriptFields(table: string, isInterface: boolean) {
+  private addFormColumns(table: string, isInterface: boolean) {
     const sp = this.space[1];
     const fields = _.keys(this.tables[table]);
     const notNull = isInterface ? '' : '!';
@@ -128,8 +123,13 @@ export class DtoGenerator {
         if (!this.isDeprecated(table, field)) {
           const name = this.quoteName(recase(this.options.caseProp, field));
           const isOptional = this.getTypeScriptFieldOptional(table, field);
-          str += this.getFieldAnnotation(table, field);
-          str += `${sp}${name}${isOptional ? '?' : notNull}: ${this.getTypeScriptType(table, field)};\n\n`;
+          // str += this.getFieldAnnotation(table, field);
+          str += '  {\n';
+          str += `    dataIndex: '${name}',\n`;
+          str += `    title: '${this.getFieldComment(table, field)}',\n`;
+          str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
+          str += '    colProps,\n';
+          str += '  },\n';
         }
       }
     });
@@ -145,33 +145,13 @@ export class DtoGenerator {
     return this.tables[table][field].comment && this.tables[table][field].comment?.startsWith('~');
   }
 
-  private getFieldAnnotation(table: string, field: string) {
+  private getFieldComment(table: string, field: string) {
     const fieldObj = this.tables[table][field] as TSField;
-    let str = '';
 
-    const ruleType = this.getFieldRuleType(field, fieldObj, 'type');
-
-    if (fieldObj.comment) {
-      const [comment, extra] = fieldObj.comment.split('#');
-      if (extra) {
-        const valueEnum: any[] = [];
-        extra.split(';').forEach((e) => {
-          const [key, value] = e.split(':');
-          valueEnum.push({ key, value });
-        });
-        str += `@ApiProperty({ description: '${comment}', enum:${JSON.stringify(valueEnum)} })\n`;
-      } else {
-        str += `@ApiProperty({ description: '${comment}' })\n`;
-      }
-    }
-
-    if (ruleType) {
-      str += `@Rule(${ruleType})\n`;
-    }
-    return str;
+    return fieldObj.comment;
   }
 
-  private getTypeScriptType(table: string, field: string) {
+  private getFormValueType(table: string, field: string) {
     const fieldObj = this.tables[table][field] as TSField;
     return this.getTypeScriptFieldType(fieldObj, 'type');
   }
@@ -186,18 +166,18 @@ export class DtoGenerator {
       const eltype = this.getTypeScriptFieldType(fieldObj, 'elementType');
       jsType = eltype + '[]';
     } else if (this.isBoolean(fieldType)) {
-      jsType = 'boolean';
+      jsType = 'switch';
     } else if (this.isNumber(fieldType)) {
-      jsType = 'number';
+      jsType = 'digit';
     } else if (this.isDate(fieldType)) {
-      jsType = 'Date';
+      jsType = 'date';
     } else if (this.isString(fieldType)) {
-      jsType = 'string';
+      jsType = 'text';
     } else if (this.isEnum(fieldType)) {
       const values = this.getEnumValues(fieldObj);
       jsType = values.join(' | ');
     } else if (this.isJSON(fieldType)) {
-      jsType = 'object';
+      jsType = 'jsonCode';
     } else {
       console.log(`Missing TypeScript type: ${fieldType || fieldObj['type']}`);
       jsType = 'any';
@@ -324,7 +304,7 @@ export class DtoGenerator {
   }
 
   private isDate(fieldType: string): boolean {
-    return /^(datetime|timestamp)/.test(fieldType);
+    return /^(date|datetime|timestamp)/.test(fieldType);
   }
 
   private isString(fieldType: string): boolean {

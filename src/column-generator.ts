@@ -17,7 +17,7 @@ import {
 } from './types';
 
 /** Generates text from each table in TableData */
-export class DtoGenerator {
+export class ColumnGenerator {
   dialect: DialectOptions;
   tables: { [tableName: string]: { [fieldName: string]: ColumnDescription } };
   space: string[];
@@ -38,7 +38,11 @@ export class DtoGenerator {
     omitPrefix?: number;
   };
 
-  constructor(tableData: TableData, dialect: DialectOptions, options: AutoOptions) {
+  constructor(
+    tableData: TableData,
+    dialect: DialectOptions,
+    options: AutoOptions
+  ) {
     this.tables = tableData.tables;
     this.dialect = dialect;
     this.options = options;
@@ -52,9 +56,7 @@ export class DtoGenerator {
 
     if (this.options.lang === 'ts') {
       // header += "/* eslint-disable node/no-extraneous-import */\n";
-      header += "import { Rule, RuleType, OmitDto } from '@midwayjs/validate';\n";
-      header += "import { ApiProperty } from '@midwayjs/swagger';\n";
-      header += "import { #ENTITY#, BizMetaProvider } from '@c2pkg/bizmeta';\n\n";
+      header += "import { ProColumns } from '@ant-design/pro-components';\n\n";
     }
     return header;
   }
@@ -65,7 +67,7 @@ export class DtoGenerator {
     const header = this.makeHeaderTemplate();
 
     const text: { [name: string]: string } = {};
-    tableNames.forEach((table) => {
+    tableNames.forEach(table => {
       let str = header;
       const [schemaName, tableNameOrig] = qNameSplit(table);
       const tableName = makeTableName(
@@ -76,21 +78,11 @@ export class DtoGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `@BizMetaProvider('#TABLE#')`;
-        str += 'export class #TABLE# extends #ENTITY# {\n';
-        str += this.addTypeScriptFields(table, true);
-        str += '}\n\n';
+        str += `export const #TABLE#Columns: ProColumns<#TABLE#>[] = [\n`;
+        // str += 'export class #TABLE# extends #ENTITY# {\n';
+        str += this.addFormColumns(table, true);
+        str += ']\n';
       }
-
-      str += "export class Create#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate', 'lastUpdatedDate']) {}\n\n";
-      str += "export class Update#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate']) {\n";
-      str += "@ApiProperty({ description: '批量更新UID' })\n";
-      str += '@Rule(RuleType.array())\n';
-      str += 'identifiers: number[] | string[];\n\n';
-      str += "@ApiProperty({ description: '更新前值' })\n";
-      str += '@Rule(RuleType.object())\n';
-      str += 'oldValues: Partial<#TABLE#>;\n';
-      str += '}\n\n';
 
       const additional = this.options.additional;
       // str += "export class Delete#TABLE#Dto extends PickDto(#TABLE#Dto, ['uid', 'tenantId']) {\n";
@@ -103,14 +95,14 @@ export class DtoGenerator {
       const re = new RegExp('#TABLE#', 'g');
       str = str.replace(re, tableName.slice(this.options.omitPrefix));
 
-      const ere = new RegExp('#ENTITY#', 'g');
-      let entityName = 'DomainObject';
-      if (this.options.extendMode === 'entity') {
-        entityName = 'BaseEntity';
-      } else if (this.options.extendMode === 'vo') {
-        entityName = 'BaseValueObject';
-      }
-      str = str.replace(ere, entityName);
+      // const ere = new RegExp('#ENTITY#', 'g');
+      // let entityName = 'DomainObject';
+      // if (this.options.extendMode === 'entity') {
+      //   entityName = 'BaseEntity';
+      // } else if (this.options.extendMode === 'vo') {
+      //   entityName = 'BaseValueObject';
+      // }
+      // str = str.replace(ere, entityName);
 
       text[table] = str;
     });
@@ -118,22 +110,77 @@ export class DtoGenerator {
     return text;
   }
 
-  private addTypeScriptFields(table: string, isInterface: boolean) {
+  private addFormColumns(table: string, isInterface: boolean) {
     const sp = this.space[1];
     const fields = _.keys(this.tables[table]);
     const notNull = isInterface ? '' : '!';
     let str = '';
-    fields.forEach((field) => {
+    fields.forEach(field => {
       if (!this.isIgnoredField(field)) {
-        if (!this.isDeprecated(table, field)) {
+        if (
+          (!this.isDeprecated(table, field) &&
+            !this.isJSONField(table, field)) ||
+          this.isUid(field)
+        ) {
           const name = this.quoteName(recase(this.options.caseProp, field));
           const isOptional = this.getTypeScriptFieldOptional(table, field);
-          str += this.getFieldAnnotation(table, field);
-          str += `${sp}${name}${isOptional ? '?' : notNull}: ${this.getTypeScriptType(table, field)};\n\n`;
+          // str += this.getFieldAnnotation(table, field);
+          str += '  {\n';
+          str += `    dataIndex: '${name}',\n`;
+          str += this.getTitle(table, field);
+          str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
+          str += this.getHideInTable(field);
+          str += this.getHideInSearch(field);
+          str += this.getHideInForm(field);
+          str += '    ellipsis: true\n';
+          str += '  },\n';
         }
       }
     });
     return str;
+  }
+
+  private getTitle(table: string, field: string) {
+    if (field === 'created_date') {
+      return "    title: '创建时间',\n";
+    }
+    if (field === 'last_updated_date') {
+      return "    title: '最后更新时间',\n";
+    }
+    const fieldObj = this.tables[table][field] as TSField;
+    if (fieldObj.comment) {
+      return `    title: '${fieldObj.comment}',\n`;
+    }
+    return '';
+  }
+
+  private getHideInTable(field: string) {
+    if (/(uid)$/.test(field)) {
+      return '    hideInTable: true,\n';
+    }
+    return '';
+  }
+
+  private getHideInSearch(field: string) {
+    if (/(name|_no|_code)$/.test(field)) {
+      return '    hideInSearch: false,\n';
+    }
+    return '    hideInSearch: true,\n';
+  }
+
+  private getHideInForm(field: string) {
+    if (
+      [
+        'uid',
+        'createdBy',
+        'createdDate',
+        'lastUpdatedBy',
+        'lastUpdatedDate',
+      ].includes(recase('c', field))
+    ) {
+      return '    hideInForm: true,\n';
+    }
+    return '';
   }
 
   private getTypeScriptFieldOptional(table: string, field: string) {
@@ -142,36 +189,20 @@ export class DtoGenerator {
   }
 
   private isDeprecated(table: string, field: string) {
-    return this.tables[table][field].comment && this.tables[table][field].comment?.startsWith('~');
+    return (
+      this.tables[table][field].comment &&
+      this.tables[table][field].comment?.startsWith('~')
+    );
   }
 
-  private getFieldAnnotation(table: string, field: string) {
+  private isJSONField(table: string, field: string) {
     const fieldObj = this.tables[table][field] as TSField;
-    let str = '';
-
-    const ruleType = this.getFieldRuleType(field, fieldObj, 'type');
-
-    if (fieldObj.comment) {
-      const [comment, extra] = fieldObj.comment.split('#');
-      if (extra) {
-        const valueEnum: any[] = [];
-        extra.split(';').forEach((e) => {
-          const [key, value] = e.split(':');
-          valueEnum.push({ key, value });
-        });
-        str += `@ApiProperty({ description: '${comment}', enum:${JSON.stringify(valueEnum)} })\n`;
-      } else {
-        str += `@ApiProperty({ description: '${comment}' })\n`;
-      }
-    }
-
-    if (ruleType) {
-      str += `@Rule(${ruleType})\n`;
-    }
-    return str;
+    const rawFieldType = fieldObj['type'] || '';
+    const fieldType = String(rawFieldType).toLowerCase();
+    return this.isJSON(fieldType);
   }
 
-  private getTypeScriptType(table: string, field: string) {
+  private getFormValueType(table: string, field: string) {
     const fieldObj = this.tables[table][field] as TSField;
     return this.getTypeScriptFieldType(fieldObj, 'type');
   }
@@ -186,18 +217,20 @@ export class DtoGenerator {
       const eltype = this.getTypeScriptFieldType(fieldObj, 'elementType');
       jsType = eltype + '[]';
     } else if (this.isBoolean(fieldType)) {
-      jsType = 'boolean';
+      jsType = 'switch';
     } else if (this.isNumber(fieldType)) {
-      jsType = 'number';
+      jsType = 'digit';
     } else if (this.isDate(fieldType)) {
-      jsType = 'Date';
+      jsType = 'date';
+    } else if (this.isDateTime(fieldType)) {
+      jsType = 'dateTime';
     } else if (this.isString(fieldType)) {
-      jsType = 'string';
+      jsType = 'text';
     } else if (this.isEnum(fieldType)) {
       const values = this.getEnumValues(fieldObj);
       jsType = values.join(' | ');
     } else if (this.isJSON(fieldType)) {
-      jsType = 'object';
+      jsType = 'jsonCode';
     } else {
       console.log(`Missing TypeScript type: ${fieldType || fieldObj['type']}`);
       jsType = 'any';
@@ -205,7 +238,11 @@ export class DtoGenerator {
     return jsType;
   }
 
-  private getFieldRuleType(field: string, fieldObj: TSField, attr: keyof TSField) {
+  private getFieldRuleType(
+    field: string,
+    fieldObj: TSField,
+    attr: keyof TSField
+  ) {
     const rawFieldType = fieldObj[attr] || '';
     const fieldType = String(rawFieldType).toLowerCase();
     const length = fieldType.match(/\(\d+\)/);
@@ -214,7 +251,11 @@ export class DtoGenerator {
 
     if (this.isArray(fieldType)) {
       // const eltype = this.getTypeScriptFieldType(fieldObj, "elementType");
-      ruleType += `RuleType.array().items(${this.getFieldRuleType(field, fieldObj, 'elementType')})`;
+      ruleType += `RuleType.array().items(${this.getFieldRuleType(
+        field,
+        fieldObj,
+        'elementType'
+      )})`;
     } else if (this.isNumber(fieldType)) {
       ruleType += 'RuleType.number()';
     } else if (this.isBoolean(fieldType)) {
@@ -250,7 +291,7 @@ export class DtoGenerator {
   private getEnumValues(fieldObj: TSField): string[] {
     if (fieldObj.special) {
       // postgres
-      return fieldObj.special.map((v) => `"${v}"`);
+      return fieldObj.special.map(v => `"${v}"`);
     } else {
       // mysql
       return fieldObj.type.substring(5, fieldObj.type.length - 1).split(',');
@@ -263,9 +304,13 @@ export class DtoGenerator {
       return false;
     }
     return (
-      (!additional.createdAt && (recase('c', field) === 'createdAt' || recase('c', field) === 'createdDate')) ||
+      (!additional.createdAt &&
+        (recase('c', field) === 'createdAt' ||
+          recase('c', field) === 'createdDate')) ||
       additional.createdAt === field ||
-      (!additional.updatedAt && (recase('c', field) === 'updatedAt' || recase('c', field) === 'lastUpdatedDate')) ||
+      (!additional.updatedAt &&
+        (recase('c', field) === 'updatedAt' ||
+          recase('c', field) === 'lastUpdatedDate')) ||
       additional.updatedAt === field
     );
   }
@@ -275,14 +320,18 @@ export class DtoGenerator {
     if (additional.timestamps === false || additional.paranoid === false) {
       return false;
     }
-    return (!additional.deletedAt && recase('c', field) === 'deletedAt') || additional.deletedAt === field;
+    return (
+      (!additional.deletedAt && recase('c', field) === 'deletedAt') ||
+      additional.deletedAt === field
+    );
   }
 
   private isIgnoredField(field: string) {
-    if (this.options.extendMode === 'entity' || this.options.extendMode === 'vo') {
-      return ['id', 'uid', 'tenantId', 'createdBy', 'createdDate', 'lastUpdatedBy', 'lastUpdatedDate'].includes(
-        recase('c', field)
-      );
+    if (
+      this.options.extendMode === 'entity' ||
+      this.options.extendMode === 'vo'
+    ) {
+      return ['id', 'tenantId'].includes(recase('c', field));
     }
     return this.options.skipFields && this.options.skipFields.includes(field);
   }
@@ -324,6 +373,11 @@ export class DtoGenerator {
   }
 
   private isDate(fieldType: string): boolean {
+    // return /^(date)/.test(fieldType);
+    return fieldType === 'date';
+  }
+
+  private isDateTime(fieldType: string): boolean {
     return /^(datetime|timestamp)/.test(fieldType);
   }
 

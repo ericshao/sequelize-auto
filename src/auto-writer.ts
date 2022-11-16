@@ -90,10 +90,15 @@ export class AutoWriter {
     // is up to the developer to pick the right schema, and potentially chose different output
     // folders for each different schema.
     const [schemaName, tableName] = qNameSplit(table);
-    const fileName = recase(this.options.caseFile, tableName, this.options.singularize);
+    // const fileName = recase(this.options.caseFile, tableName, this.options.singularize);
+    let fileName = recase(this.options.caseFile, tableName, this.options.singularize);
     const sliceIndex = this.options.omitPrefix ? this.options.omitPrefix + 1 : 0;
+    if (sliceIndex > 0) {
+      fileName = fileName.slice(sliceIndex);
+    }
+    fileName = recase('c', fileName, this.options.singularize);
     const surfix =  this.surfix ? `.${this.surfix}` : '';
-    const filePath = path.join(this.options.directory, fileName.slice(sliceIndex) + `${surfix}` + (this.options.lang === 'ts' ? '.ts' : '.js'));
+    const filePath = path.join(this.options.directory, fileName + `${surfix}` + (this.options.lang === 'ts' ? '.ts' : '.js'));
 
     const writeFile = util.promisify(fs.writeFile);
     return writeFile(path.resolve(filePath), this.tableText[table]);
