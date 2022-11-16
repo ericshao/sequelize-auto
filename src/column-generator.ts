@@ -115,6 +115,7 @@ export class ColumnGenerator {
     const fields = _.keys(this.tables[table]);
     const notNull = isInterface ? '' : '!';
     let str = '';
+    let counter = 0;
     fields.forEach(field => {
       if (!this.isIgnoredField(field)) {
         if (
@@ -130,12 +131,13 @@ export class ColumnGenerator {
           str += this.getTitle(table, field);
           str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
           str += this.getHideInTable(field);
-          str += this.getHideInSearch(field);
+          str += this.getHideInSearch(field, counter);
           str += this.getHideInForm(field);
           str += '    ellipsis: true\n';
           str += '  },\n';
         }
       }
+      counter++;
     });
     return str;
   }
@@ -161,8 +163,8 @@ export class ColumnGenerator {
     return '';
   }
 
-  private getHideInSearch(field: string) {
-    if (/(name|_no|_code)$/.test(field)) {
+  private getHideInSearch(field: string, counter: number) {
+    if (/(name|_no|_code)$/.test(field) && counter < 11) {
       return '    hideInSearch: false,\n';
     }
     return '    hideInSearch: true,\n';

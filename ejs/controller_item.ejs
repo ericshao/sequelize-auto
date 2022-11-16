@@ -11,10 +11,10 @@ import {
 } from '@midwayjs/decorator';
 import { Validate } from '@midwayjs/validate';
 import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
-import { TenancyMiddleware } from '@c2pkg/multi-tenancy';
-import { <%= PascalCase %>Service, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '.';
+import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
+import { <%= PascalCase %>Service } from '../service';
 
-@Controller('/<%= lowerCase%>', { middleware: [TenancyMiddleware], description: '<%= label %>管理' })
+@Controller('/<%= lowerCase%>', { description: '<%= label %>管理' })
 export class <%= PascalCase %>Controller extends BaseController {
   @Inject()
   ctx: any;
@@ -36,7 +36,7 @@ export class <%= PascalCase %>Controller extends BaseController {
   })
   @Validate()
   async update<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Update<%= PascalCase %>Dto) {
-    const result = await this.<%= camelCase %>Service.updateById(<%= camelCase %>);
+    const result = await this.<%= camelCase %>Service.updateByUid(<%= camelCase %>);
     this.success(result);
   }
 
@@ -45,7 +45,7 @@ export class <%= PascalCase %>Controller extends BaseController {
   })
   @Validate()
   async delete<%= PascalCase %>(@Body() body: IdentifiersDto) {
-    const result = await this.<%= camelCase %>Service.deleteById(body.identifiers as number[]);
+    const result = await this.<%= camelCase %>Service.deleteByUid(body.identifiers as string[]);
     this.success(result);
   }
 
@@ -57,11 +57,11 @@ export class <%= PascalCase %>Controller extends BaseController {
     this.success(result);
   }
 
-  @Get('/:id', {
+  @Get('/:uid', {
     description: '获取<%= label %>',
   })
-  async get<%= PascalCase %>(@Param('id') id: number) {
-    const result = await this.<%= camelCase %>Service.getById(id);
+  async get<%= PascalCase %>(@Param('uid') uid: string) {
+    const result = await this.<%= camelCase %>Service.getByUid(uid);
     this.success(result);
   }
 }

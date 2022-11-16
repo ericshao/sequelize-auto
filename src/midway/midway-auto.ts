@@ -30,10 +30,10 @@ export class MidwayAuto {
     await this.write(entity, 'stub');
     const feList = this.generateFeList(entity, ejsExt);
     entity.text = feList;
-    await this.write(entity, 'list');
+    await this.write(entity, 'list', 'tsx');
     const feDetail = this.generateFeDetail(entity, ejsExt);
     entity.text = feDetail;
-    await this.write(entity, 'detail');
+    await this.write(entity, 'detail', 'tsx');
     if (index) {
       await this.writeIndex(entity);
     }
@@ -73,10 +73,10 @@ export class MidwayAuto {
     return writeFile(path.resolve(filePath), text);
   }
 
-  write(entity: Entity, surfix: string) {
+  write(entity: Entity, surfix: string, ext: string = 'ts') {
     const filePath = path.join(
       this.options.directory,
-      entity.camelCase + `.${surfix}` + (this.options.lang === 'ts' ? '.ts' : '.js')
+      entity.camelCase + `.${surfix}.${ext}`
     );
 
     const writeFile = util.promisify(fs.writeFile);

@@ -24,7 +24,7 @@ const { confirm } = Modal;
 // Types
 type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
 
-const <%= PascalCase %>List: React.FC = () => {
+const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string}> = (props) => {
   // useModel
   const { initialState } = useModel('@@initialState');
 
@@ -60,21 +60,12 @@ const <%= PascalCase %>List: React.FC = () => {
     );
   };
 
-
-
-  const [aspect, setAspect] = useState('todo');
-  const stateMachineFilter: Record<string, T<%= PascalCase %>Filter> = {
-    all: {},
-
-  };
-  const [filter, setFilter] = useState<T<%= PascalCase %>Filter>(stateMachineFilter[aspect]);
-
   // useRef
   const actionRef = useRef<ActionType>();
 
   // Actions
   const gotoDetailPage = (uid: string) => {
-    history.push(`/filing/<%= camelCase %>/${uid}`);
+    history.push(`/filing/<%= camelCase %>/item/${uid}`);
   };
 
 
@@ -123,25 +114,11 @@ const <%= PascalCase %>List: React.FC = () => {
       <Content style={{ background: '#fff' }}>
           <UltraTable
             rowKey="uid"
-            headerTitle={
-              <Space>
-                <Segmented
-                  options={[{ value: 'all', label: '全部' }]}
-                  value={aspect}
-                  onChange={(value) => {
-                    setAspect(value as string);
-                    actionRef.current?.reloadAndRest && actionRef.current?.reloadAndRest();
-                  }}
-                  style={{ marginLeft: 4 }}
-                />
-              </Space>
-            }
             actionRef={actionRef}
             columns={ultraColumns.getColumns()}
             request={async (params, sorter) => {
               const { current, pageSize, ...search } = params;
-              const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...stateMachineFilter[aspect]};
-              setFilter(filter);
+              const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), <%= aggrKey %>: props.<%= aggrKey %>};
               const res = await query<%= PascalCase %>List({
                 current,
                 pageSize,
@@ -163,7 +140,7 @@ const <%= PascalCase %>List: React.FC = () => {
                 title="新建<%= label %>"
                 formColumns={<%= PascalCase %>FormColumns}
                 onCreate={async (values: any) => {
-                  const res = await create<%= PascalCase %>(values);
+                  const res = await create<%= PascalCase %>({...values, <%= aggrKey %>: props.<%= aggrKey %>});
                   if (res.success) {
                     message.success('新建成功');
                     actionRef.current?.reload();
@@ -172,6 +149,10 @@ const <%= PascalCase %>List: React.FC = () => {
                 }}
               />,
             ]}
+            search={{
+              filterType: 'light',
+            }}
+            cardProps={{ bodyStyle: { padding: 0 } }}
             rowSelection={{}}
             tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
               <Space size={24}>
