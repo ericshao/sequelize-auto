@@ -76,7 +76,7 @@ export class DtoGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `@BizMetaProvider('#TABLE#')`;
+        str += `@BizMetaProvider('#TABLE#')\n`;
         str += 'export class #TABLE# extends #ENTITY# {\n';
         str += this.addTypeScriptFields(table, true);
         str += '}\n\n';

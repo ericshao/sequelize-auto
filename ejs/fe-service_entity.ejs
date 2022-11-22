@@ -11,7 +11,7 @@ export async function get<%= PascalCase %>(uid: string) {
 }
 
 export async function create<%= PascalCase %>(data: <%= PascalCase %>) {
-  return request.post<API.BaseResponse<<%= PascalCase %>>>('/<%= camelCase %>', {
+  return request.put<API.BaseResponse<<%= PascalCase %>>>('/<%= camelCase %>', {
     data,
   });
 }

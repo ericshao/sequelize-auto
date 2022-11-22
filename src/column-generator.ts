@@ -151,7 +151,8 @@ export class ColumnGenerator {
     }
     const fieldObj = this.tables[table][field] as TSField;
     if (fieldObj.comment) {
-      return `    title: '${fieldObj.comment}',\n`;
+      const [title] = fieldObj.comment.split('#');
+      return `    title: '${title}',\n`;
     }
     return '';
   }

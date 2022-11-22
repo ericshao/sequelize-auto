@@ -1,8 +1,7 @@
 // React
 import React, { useMemo, useRef, useState } from 'react';
 // Antd
-import { PageContainer } from '@ant-design/pro-components';
-import { ActionType, TableDropdown } from '@ant-design/pro-table';
+import { ActionType, PageContainer, TableDropdown } from '@ant-design/pro-components';
 import { Button, Drawer, Layout, message, Modal, Segmented, Space, Typography } from 'antd';
 import { DeleteOutlined, EditOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 // Umi
@@ -123,7 +122,7 @@ const <%= PascalCase %>List: React.FC = () => {
       ghost
       header={{
         title: '<%= label %>',
-        style: { boxShadow: '0 0 2px 0 rgba(0, 0, 0, 0.2)', zIndex: 10 },
+        
       }}
     >
       <Layout className="ant-layout-has-sider">

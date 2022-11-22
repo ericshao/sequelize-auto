@@ -106,7 +106,7 @@ export class <%= PascalCase %>Service extends TenancyService {
 
   public async getByUid(
     uid: string,
-    options?: API.QueryOptions
+    options: API.QueryOptions = { omitNil: true }
   ): Promise<<%= PascalCase %>> {
     const entity = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
       attributes: this.generateAttributes(options?.columns, options?.exclusive),

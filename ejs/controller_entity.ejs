@@ -22,7 +22,7 @@ export class <%= PascalCase %>Controller extends BaseController {
   @Inject()
   <%= camelCase %>Service: <%= PascalCase %>Service;
 
-  @Post('/', {
+  @Put('/', {
     description: '创建<%= label %>',
   })
   @Validate()

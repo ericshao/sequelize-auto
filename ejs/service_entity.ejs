@@ -125,7 +125,7 @@ export class <%= PascalCase %>Service extends TenancyService {
 
   public async getByUid(
     uid: string,
-    options?: API.QueryOptions
+    options: API.QueryOptions = { omitNil: true }
   ): Promise<<%= PascalCase %>> {
     const entity = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
       attributes: this.generateAttributes(options?.columns, options?.exclusive),
@@ -140,7 +140,7 @@ export class <%= PascalCase %>Service extends TenancyService {
 
   public async findAllByAggrUid(
     <%= aggrKey %>: string,
-    options?: API.QueryOptions
+    options: API.QueryOptions = { omitNil: true }
   ): Promise<<%= PascalCase %>[]> {
     const <%= camelCase %>s = await <%= PascalCase %>Model.schema(
       this.getTenantSchema()
