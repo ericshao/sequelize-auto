@@ -54,7 +54,7 @@ export class DtoGenerator {
       // header += "/* eslint-disable node/no-extraneous-import */\n";
       header += "import { Rule, RuleType, OmitDto } from '@midwayjs/validate';\n";
       header += "import { ApiProperty } from '@midwayjs/swagger';\n";
-      header += "import { #ENTITY#, BizMetaProvider } from '@c2pkg/bizmeta';\n\n";
+      header += "import { #ENTITY#, BizmetaProvider } from '@c2pkg/bizmeta';\n\n";
     }
     return header;
   }
@@ -76,7 +76,7 @@ export class DtoGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `@BizMetaProvider('#TABLE#')\n`;
+        str += `@BizmetaProvider('#TABLE#')\n`;
         str += 'export class #TABLE# extends #ENTITY# {\n';
         str += this.addTypeScriptFields(table, true);
         str += '}\n\n';

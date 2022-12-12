@@ -55,8 +55,17 @@ export class ColumnGenerator {
     const sp = this.space[1];
 
     if (this.options.lang === 'ts') {
-      // header += "/* eslint-disable node/no-extraneous-import */\n";
+      header += "import { dateRangeSearch, dateTimeRangeSearch, ValueTypeMapKey } from '@/components/schema-components';\n";
+      header += "import { convertValueEnum } from '@/components/schema-components/util';\n";
       header += "import { ProColumns } from '@ant-design/pro-components';\n\n";
+
+      header += `type ColumnsParams = {
+        presetColumns?: { dataIndex: string; title: string; hideInTable: boolean; hideInSearch: boolean }[];
+        valueEnums?: ValueEnums;
+        cusParams?: CusParams;
+        tableColumnKeys?: string[];
+        searchColumnKeys?: string[];
+      };\n\n`;
     }
     return header;
   }
@@ -78,10 +87,24 @@ export class ColumnGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `export const #TABLE#Columns: ProColumns<#TABLE#>[] = [\n`;
-        // str += 'export class #TABLE# extends #ENTITY# {\n';
+        str += `export function gen#TABLE#Columns(params?: ColumnsParams): ProColumns<#TABLE#, ValueTypeMapKey>[] {\n`;
+        str += 'const columns: ProColumns<#TABLE#, ValueTypeMapKey>[] = [\n';
         str += this.addFormColumns(table, true);
-        str += ']\n';
+        str += ']\n'
+        str += `  return columns.map((column) => {
+          if (!column.dataIndex) {
+            return column;
+          }
+          if (params?.presetColumns) {
+            const presetColumn = params.presetColumns.find((preset) => preset.dataIndex === column.dataIndex);
+            if (presetColumn) {
+              return { ...column, ...presetColumn };
+            }
+            return { ...column, hideInTable: true, hideInSearch: true };
+          }
+          return column;
+        });\n`;
+        str += '}\n\n';
       }
 
       const additional = this.options.additional;
@@ -130,8 +153,8 @@ export class ColumnGenerator {
           str += `    dataIndex: '${name}',\n`;
           str += this.getTitle(table, field);
           str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
-          str += this.getHideInTable(field);
-          str += this.getHideInSearch(field, counter);
+          // str += this.getHideInTable(field);
+          // str += this.getHideInSearch(field, counter);
           str += this.getHideInForm(field);
           str += '    ellipsis: true\n';
           str += '  },\n';

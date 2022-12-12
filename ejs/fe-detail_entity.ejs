@@ -1,18 +1,23 @@
 // React
-import React, { useRef, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 // Antd
 import { SaveOutlined } from '@ant-design/icons';
-import { BetaSchemaForm, FooterToolbar, PageContainer, ProCard, ProFormInstance } from '@ant-design/pro-components';
-import { message, Typography } from 'antd';
+import { FooterToolbar, PageContainer, ProCard, ProFormInstance, ProProvider } from '@ant-design/pro-components';
+import { Badge, message, Segmented, Typography } from 'antd';
+import { FormLayout } from 'antd/es/form/Form';
 // Umi
 import { useAccess, useModel, useParams } from '@umijs/max';
 // Components
 import AuditLog from '@/components/AuditLog';
+import { valueTypeMap, ValueTypeMapKey } from '@/components/schema-components';
+import BetaSchemaForm from '@/components/SchemaForm';
 // Services
 import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/cmp/<%= camelCase %>';
 // Utils
-import { getUpdateData } from '@/utils';
-import { <%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
+import { getUpdateData, waitTime } from '@/utils';
+// Definitions
+import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
+// Subpages
 
 const { Text } = Typography;
 
@@ -39,13 +44,27 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
   const access = useAccess();
   const canEdit = true;
 
-  // useState
-  const [<%= camelCase %>, set<%= PascalCase %>] = useState<<%= PascalCase %>>();
-  const [tabActiveKey, setTabActiveKey] = useState('main');
-
   // useRef
   const formRef = useRef<ProFormInstance<<%= PascalCase %>>>();
 
+  // useState
+  const [<%= camelCase %>, set<%= PascalCase %>] = useState<<%= PascalCase %>>();
+  const [tabActiveKey, setTabActiveKey] = useState('main');
+  const [formLayout, setFormLayout] = useState<FormLayout>('horizontal');
+    const [formReady, setFormReady] = useState(false);
+
+  // useEffect
+  // 激活Form的当前实例
+  useEffect(() => {
+    waitTime(500).then(() => {
+      if (formRef.current?.getFieldsValue) {
+        setFormReady(true);
+      }
+    });
+  }, [formRef.current]);
+  
+  // useContext
+  const values = useContext(ProProvider);
   return (
       <PageContainer
         ghost
@@ -78,20 +97,31 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         ]}
         tabActiveKey={tabActiveKey}
         onTabChange={(key: string) => setTabActiveKey(key)}
+        extra={[
+          <Segmented
+            key="formLayout"
+            options={['horizontal', 'vertical']}
+            onChange={(value) => setFormLayout(value as FormLayout)}
+          />,
+        ]}
         style={{ marginBottom: 45 }}
       >
         {tabActiveKey === 'main' && (
+          <ProProvider.Provider
+          value={{
+            ...values,
+            valueTypeMap,
+          }}
+        >
           <ProCard bordered>
-            <BetaSchemaForm<<%= PascalCase %>>
+            <BetaSchemaForm<<%= PascalCase %>, ValueTypeMapKey>
+              layout={formLayout}
               layoutType="Form"
               rowProps={{
                 gutter: [16, 16],
               }}
-              colProps={{
-                span: 6,
-              }}
               grid
-              columns={<%= PascalCase %>FormColumns}
+              columns={gen<%= PascalCase %>FormColumns()}
               formRef={formRef}
               request={async () => {
                 const res = await get<%= PascalCase %>(uid!);
@@ -131,7 +161,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
                         },
                       },
                       render: (_, dom) => (
-                        <FooterToolbar>
+                        <FooterToolbar style={{ zIndex: 1001 }}>
                           {dom}
                         </FooterToolbar>
                       ),
@@ -140,6 +170,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
               }
             />
           </ProCard>
+        </ProProvider.Provider>
         )}
         {tabActiveKey === 'auditLog' && (
           <ProCard bordered>

@@ -51,13 +51,20 @@ export class FormGenerator {
     const sp = this.space[1];
 
     if (this.options.lang === 'ts') {
-      // header += "/* eslint-disable node/no-extraneous-import */\n";
-      header += "import { ProFormColumnsType } from '@ant-design/pro-components';\n\n";
+      header += "import { ValueTypeMapKey } from '@/components/schema-components';\n";
+      header += "import { ProFormColumnsType } from '@/components/SchemaForm';\n";
+      header += "import { convertToNumber, convertToString } from '@/utils';\n\n";
       header += `const colProps = {
         xs: 24,
         md: 12,
         lg: 6,
-      };`;
+      };\n\n`;
+
+      header += `type FormColumnsParams = {
+        isCreate?: boolean;
+        uid?: string;
+        updateFn?: (key: string, value: any) => void;
+      };\n\n`;
 
     }
     return header;
@@ -80,10 +87,12 @@ export class FormGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `export const #TABLE#FormColumns: ProFormColumnsType<#TABLE#>[] = [\n`;
-        // str += 'export class #TABLE# extends #ENTITY# {\n';
+        str += `export function gen#TABLE#FormColumns(params?: FormColumnsParams): ProFormColumnsType<#TABLE#, ValueTypeMapKey>[]  {\n`;
+        str += 'const columns: ProFormColumnsType<#TABLE#, ValueTypeMapKey>[] = [\n';
         str += this.addFormColumns(table, true);
         str += ']\n';
+        str += 'return params?.isCreate ? columns.filter((column) => !column.hideInCreate) : columns;\n';
+        str += '}\n';
       }
 
 

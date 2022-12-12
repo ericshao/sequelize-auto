@@ -1,20 +1,24 @@
 // React
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
 // Antd
-import { ActionType, PageContainer, TableDropdown } from '@ant-design/pro-components';
-import { Button, Drawer, Layout, message, Modal, Segmented, Space, Typography } from 'antd';
 import { DeleteOutlined, EditOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { ActionType, PageContainer, ProProvider, TableDropdown } from '@ant-design/pro-components';
+import { Button, Drawer, Layout, message, Modal, Segmented, Space, Typography } from 'antd';
 // Umi
+import { useRouteData } from '@umijs/max';
 import { history, useModel } from 'umi';
 // Components
+import { CreateModal } from '@/components/CreateModal';
+import { valueTypeMap } from '@/components/schema-components';
 import { UltraColumns } from '@/components/UltraColumns';
 import UltraTable from '@/components/UltraTable';
 import UserAvatar from '@/components/UserAvatar';
-import { CreateModal } from '@/components/CreateModal';
-import { <%= PascalCase %>Columns } from './<%= camelCase %>.column';
-import { <%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
 // Services
 import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/cmp/<%= camelCase %>';
+import { getTenantPageConfig } from '@/services/meta/saas';
+// Definitions
+import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
+import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
 
 
 const { Content } = Layout;
@@ -26,6 +30,17 @@ type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
 const <%= PascalCase %>List: React.FC = () => {
   // useModel
   const { initialState } = useModel('@@initialState');
+
+  const { valueEnums } = useModel('valueEnums', (model) => ({
+    valueEnums: model.valueEnums,
+  }));
+
+  const { cusParams } = useModel('cusParams', (model) => ({
+    cusParams: model.cusParams,
+  }));
+
+  // @ts-ignore
+  const routeKey = useRouteData().route.key;
 
   // useMemo
   const tenantMembers = initialState?.tenantMembers;
@@ -52,7 +67,7 @@ const <%= PascalCase %>List: React.FC = () => {
         width="100%"
         open={props.drawerVisible}
         onClose={() => props.onCancel && props.onCancel()}
-        style={{ animationDuration: '0.3s', transitionDelay: '0.5s' }}
+        rootStyle={{ animationDuration: '0.3s', transitionDelay: '0.5s' }}
       >
         {/* <<%= PascalCase %> uid={props.values?.uid!} onUpdated={() => {}} insideDrawer /> */}
       </Drawer>
@@ -61,12 +76,25 @@ const <%= PascalCase %>List: React.FC = () => {
 
 
 
-  const [aspect, setAspect] = useState('todo');
-  const stateMachineFilter: Record<string, T<%= PascalCase %>Filter> = {
-    all: {},
+  const [view, setView] = useState('all');
+  const [presetColumns, setPresetColumns] = useState<any[]>([]);
+  const [presetFilters, setPresetFilters] = useState<any[]>([]);
+  const viewFilterEnum = useMemo(() => {
+    return presetFilters.reduce((acc: any, cur) => {
+      acc[cur.value] = cur.filter;
+      return acc;
+    }, {});
+  }, [presetFilters]);
 
-  };
-  const [filter, setFilter] = useState<T<%= PascalCase %>Filter>(stateMachineFilter[aspect]);
+  // useEffect
+  useEffect(() => {
+    getTenantPageConfig(routeKey).then((res) => {
+      setPresetColumns(res.result?.presetColumns || []);
+      setPresetFilters([{ value: 'all', label: '全部' }].concat(res.result?.presetFilters || []));
+    });
+  }, [routeKey]);
+
+  const [currentFilter, setCurrentFilter] = useState<T<%= PascalCase %>Filter>(viewFilterEnum[view]);
 
   // useRef
   const actionRef = useRef<ActionType>();
@@ -108,14 +136,17 @@ const <%= PascalCase %>List: React.FC = () => {
       }}
     />,
   ];
-  //const ultraColumns = new UltraColumns<<%= PascalCase %>>(initialState?.<%= camelCase %>Columns, actionRender, {
-  const ultraColumns = new UltraColumns<<%= PascalCase %>>(<%= PascalCase %>Columns, actionRender, {
-    enums: { memberEnum },
-    omit: ['lastUpdatedBy'],
-    renderBindings: {
-      createdBy: (val, record) => <UserAvatar size="small" showName userId={record.createdBy} />
-    }
-  });
+
+  const ultraColumns = new UltraColumns<<%= PascalCase %>>(
+    gen<%= PascalCase %>Columns({
+      presetColumns,
+      valueEnums,
+      cusParams,
+    }),
+    actionRender,
+  );
+
+  const values = useContext(ProProvider);
 
   return (
     <PageContainer
@@ -127,27 +158,36 @@ const <%= PascalCase %>List: React.FC = () => {
     >
       <Layout className="ant-layout-has-sider">
         <Content style={{ background: '#fff' }}>
+          <ProProvider.Provider
+          value={{
+            ...values,
+            valueTypeMap,
+          }}
+        >
           <UltraTable
             rowKey="uid"
             headerTitle={
               <Space>
                 <Segmented
-                  options={[{ value: 'all', label: '全部' }]}
-                  value={aspect}
-                  onChange={(value) => {
-                    setAspect(value as string);
-                    actionRef.current?.reloadAndRest && actionRef.current?.reloadAndRest();
-                  }}
-                  style={{ marginLeft: 4 }}
-                />
+                options={presetFilters}
+                value={view}
+                onChange={(value) => {
+                  setView(value as string);
+                  actionRef.current?.reloadAndRest && actionRef.current?.reloadAndRest();
+                }}
+                style={{ marginLeft: 4 }}
+              />
               </Space>
             }
             actionRef={actionRef}
             columns={ultraColumns.getColumns()}
+            search={{
+              labelWidth: 'auto',
+            }}
             request={async (params, sorter) => {
               const { current, pageSize, ...search } = params;
-              const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...stateMachineFilter[aspect]};
-              setFilter(filter);
+              const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view]};
+              setCurrentFilter(filter);
               const res = await query<%= PascalCase %>List({
                 current,
                 pageSize,
@@ -167,7 +207,9 @@ const <%= PascalCase %>List: React.FC = () => {
               <CreateModal
                 key="create"
                 title="新建<%= label %>"
-                formColumns={<%= PascalCase %>FormColumns}
+                formColumns={gen<%= PascalCase %>FormColumns({
+                  isCreate: true,
+                })}
                 onCreate={async (values: any) => {
                   const res = await create<%= PascalCase %>(values);
                   if (res.success) {
@@ -202,9 +244,14 @@ const <%= PascalCase %>List: React.FC = () => {
                 // emptyText: () => renderEmptyText(actionRef, declarationStatistic?.unclassified, setAspect),
               }
             }
+            columnsState={{
+              persistenceKey: routeKey,
+              persistenceType: 'localStorage',
+            }}
             scroll={{ x: ultraColumns.totalWidth }}
             // scrollYOffset={344}
           />
+        </ProProvider.Provider>
           <DetailPageDrawer
             values={currentRow}
             drawerVisible={detailPageDrawerVisible}
