@@ -1,75 +1,84 @@
 // React
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useContext, useMemo, useRef, useState } from 'react';
 // Antd
 import { SaveOutlined } from '@ant-design/icons';
-import { FooterToolbar, PageContainer, ProCard, ProFormInstance, ProProvider } from '@ant-design/pro-components';
-import { Badge, message, Segmented, Typography } from 'antd';
-import { FormLayout } from 'antd/es/form/Form';
+import { PageContainer, ProCard, ProFormInstance, ProProvider, TableDropdown } from '@ant-design/pro-components';
+import { message } from 'antd';
 // Umi
-import { useAccess, useModel, useParams } from '@umijs/max';
 // Components
-import AuditLog from '@/components/AuditLog';
 import { valueTypeMap, ValueTypeMapKey } from '@/components/schema-components';
 import BetaSchemaForm from '@/components/SchemaForm';
+import AuditLog from '@/pages/components/AuditLog';
 // Services
 import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/cmp/<%= camelCase %>';
 // Utils
-import { getUpdateData, waitTime } from '@/utils';
+import { ActionMap, getUpdateData, renderActions } from '@/utils';
+// Hooks
+import { useFormState } from '@/hooks/formState';
+import { usePageConfig } from '@/hooks/pageConfig';
+import { usePageParam } from '@/hooks/pageParam';
+import { useStateMachine } from '@/hooks/stateMachine';
 // Definitions
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
 // Subpages
 
-const { Text } = Typography;
 
 type <%= PascalCase %>DetailProps = {
   uid: string;
-  onUpdated: () => void;
+  onUpdated?: () => void;
+  onClose?: () => void;
   insideDrawer?: boolean;
 };
 
+export const ParentContext = React.createContext<{
+  contextRouteKey?: string;
+  contextValues?: <%= PascalCase %>;
+}>({});
+
 const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) => {
-  // useModel
-  const { initialState } = useModel('@@initialState');
-  const { responsive } = useModel('responsive', (model: any) => ({
-    responsive: model.responsive,
-  }));
-
-  //  useParams
-  const params = useParams<{ uid: string }>();
-  const uid = props.uid || params.uid;
-
-  // useEffect
-
-  // useAccess
-  const access = useAccess();
-  const canEdit = true;
+  // 引用上下文
+  const contextFormValues = useContext(ProProvider);
+  // 页面参数
+  const { uid } = usePageParam(props);
+  // 页面配置
+  const { routeKey, access, privileges } = usePageConfig();
 
   // useRef
   const formRef = useRef<ProFormInstance<<%= PascalCase %>>>();
+  // 表单状态
+  const {
+    loading,
+    setLoading,
+    formLayout,
+    FormLayoutSegmented,
+    currentValues,
+    setCurrentValues,
+    valuesChanged,
+    setValuesChanged,
+  } = useFormState<<%= PascalCase %>>(formRef);
+  // 状态机
+  const { currentState } = useStateMachine('<%= PascalCase %>', currentValues?.stateCode!);
 
-  // useState
-  const [<%= camelCase %>, set<%= PascalCase %>] = useState<<%= PascalCase %>>();
   const [tabActiveKey, setTabActiveKey] = useState('main');
-  const [formLayout, setFormLayout] = useState<FormLayout>('horizontal');
-    const [formReady, setFormReady] = useState(false);
 
-  // useEffect
-  // 激活Form的当前实例
-  useEffect(() => {
-    waitTime(500).then(() => {
-      if (formRef.current?.getFieldsValue) {
-        setFormReady(true);
-      }
-    });
-  }, [formRef.current]);
-  
-  // useContext
-  const values = useContext(ProProvider);
+    const actions: ActionMap = useMemo(() => {
+    return {
+      save: {
+        text: '保存',
+        icon: <SaveOutlined />,
+        type: 'primary',
+        disabled: !valuesChanged,
+        onClick: () => formRef.current?.submit(),
+        accessible: access.canWrite(privileges),
+      },
+    };
+  }, [valuesChanged, access, privileges, formRef.current]);
+
   return (
       <PageContainer
         ghost
         header={{
-          title: <%= camelCase %>?.uid,
+          title: currentValues?.uid,
           onBack: props.insideDrawer ? undefined : () => history.back(),
           breadcrumb: {
             routes: [
@@ -98,76 +107,63 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         tabActiveKey={tabActiveKey}
         onTabChange={(key: string) => setTabActiveKey(key)}
         extra={[
-          <Segmented
-            key="formLayout"
-            options={['horizontal', 'vertical']}
-            onChange={(value) => setFormLayout(value as FormLayout)}
-          />,
+          ...renderActions(actions, currentState!),
+          <TableDropdown key="dropdown" menus={[FormLayoutSegmented]} onSelect={(key: string) => {}} />,
         ]}
         style={{ marginBottom: 45 }}
       >
+      <ParentContext.Provider value={{ contextRouteKey: routeKey, contextValues: currentValues }}>
         {tabActiveKey === 'main' && (
           <ProProvider.Provider
           value={{
-            ...values,
+            ...contextFormValues,
             valueTypeMap,
           }}
         >
           <ProCard bordered>
             <BetaSchemaForm<<%= PascalCase %>, ValueTypeMapKey>
+              loading={loading}
               layout={formLayout}
               layoutType="Form"
               rowProps={{
                 gutter: [16, 16],
               }}
               grid
-              columns={gen<%= PascalCase %>FormColumns()}
+              columns={gen<%= PascalCase %>FormColumns(
+                {
+                  uid: currentValues?.uid!,
+                  updateFn: () => formRef.current?.submit(),
+                },
+                access,
+              )}
               formRef={formRef}
               request={async () => {
                 const res = await get<%= PascalCase %>(uid!);
-                set<%= PascalCase %>(res.result!);
+                setCurrentValues(res.result!);
+                setLoading(false);
                 return res.result!;
               }}
               //** 允许字段更新为null */
               omitNil={false}
               onFinish={async (values: any) => {
-                const update = getUpdateData(<%= camelCase %>, values);
+                const update = getUpdateData(currentValues, values);
                 if (update) {
                   const res = await update<%= PascalCase %>(update);
                   if (res.success) {
                     message.success({ key: 'update', content: '保存成功' });
-                    set<%= PascalCase %>({ ...<%= camelCase %>, ...values });
-                    props?.onUpdated();
+                    setCurrentValues({ ...currentValues, ...values });
+                    setValuesChanged(false);
+
+                    props?.onUpdated?.();
                   }
                 } else {
                   message.info({ key: 'update', content: '无更新内容' });
                 }
               }}
-              onValuesChange={async (changedValues: any) => {
-
-              }}
-              submitter={
-                canEdit && tabActiveKey === 'main'
-                  ? {
-                      searchConfig: {
-                        submitText: '保存',
-                      },
-                      submitButtonProps: {
-                        icon: <SaveOutlined />,
-                      },
-                      resetButtonProps: {
-                        style: {
-                          display: 'none',
-                        },
-                      },
-                      render: (_, dom) => (
-                        <FooterToolbar style={{ zIndex: 1001 }}>
-                          {dom}
-                        </FooterToolbar>
-                      ),
-                    }
-                  : false
-              }
+                onValuesChange={async (changedValues: any) => {
+                  setValuesChanged(true);
+                }}
+              submitter={false}
             />
           </ProCard>
         </ProProvider.Provider>
@@ -177,6 +173,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
             <AuditLog sourceUid={uid!} />
           </ProCard>
         )}
+      </ParentContext.Provider>
       </PageContainer>
   );
 };

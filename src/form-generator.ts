@@ -34,11 +34,15 @@ export class FormGenerator {
     singularize: boolean;
     useDefine: boolean;
     noIndexes?: boolean;
-    extendMode?: 'base' | 'entity' | 'vo';
+    extendMode?: 'base' | 'entity' | 'item' | 'vo';
     omitPrefix?: number;
   };
 
-  constructor(tableData: TableData, dialect: DialectOptions, options: AutoOptions) {
+  constructor(
+    tableData: TableData,
+    dialect: DialectOptions,
+    options: AutoOptions
+  ) {
     this.tables = tableData.tables;
     this.dialect = dialect;
     this.options = options;
@@ -51,9 +55,13 @@ export class FormGenerator {
     const sp = this.space[1];
 
     if (this.options.lang === 'ts') {
-      header += "import { ValueTypeMapKey } from '@/components/schema-components';\n";
-      header += "import { ProFormColumnsType } from '@/components/SchemaForm';\n";
-      header += "import { convertToNumber, convertToString } from '@/utils';\n\n";
+      header += "import { AccessType } from '@/access';\n";
+      header +=
+        "import { ValueTypeMapKey } from '@/components/schema-components';\n";
+      header +=
+        "import { ProFormColumnsType } from '@/components/SchemaForm';\n";
+      header +=
+        "import { convertToNumber, convertToString } from '@/utils';\n\n";
       header += `const colProps = {
         xs: 24,
         md: 12,
@@ -65,7 +73,6 @@ export class FormGenerator {
         uid?: string;
         updateFn?: (key: string, value: any) => void;
       };\n\n`;
-
     }
     return header;
   }
@@ -76,7 +83,7 @@ export class FormGenerator {
     const header = this.makeHeaderTemplate();
 
     const text: { [name: string]: string } = {};
-    tableNames.forEach((table) => {
+    tableNames.forEach(table => {
       let str = header;
       const [schemaName, tableNameOrig] = qNameSplit(table);
       const tableName = makeTableName(
@@ -87,14 +94,15 @@ export class FormGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `export function gen#TABLE#FormColumns(params?: FormColumnsParams): ProFormColumnsType<#TABLE#, ValueTypeMapKey>[]  {\n`;
-        str += 'const columns: ProFormColumnsType<#TABLE#, ValueTypeMapKey>[] = [\n';
+        str += `export function gen#TABLE#FormColumns(params?: FormColumnsParams, access?: AccessType): ProFormColumnsType<#TABLE#, ValueTypeMapKey>[]  {\n`;
+        str +=
+          'const columns: ProFormColumnsType<#TABLE#, ValueTypeMapKey>[] = [\n';
         str += this.addFormColumns(table, true);
         str += ']\n';
-        str += 'return params?.isCreate ? columns.filter((column) => !column.hideInCreate) : columns;\n';
+        str +=
+          'return params?.isCreate ? columns.filter((column) => !column.hideInCreate) : columns;\n';
         str += '}\n';
       }
-
 
       const additional = this.options.additional;
       // str += "export class Delete#TABLE#Dto extends PickDto(#TABLE#Dto, ['uid', 'tenantId']) {\n";
@@ -127,8 +135,8 @@ export class FormGenerator {
     const fields = _.keys(this.tables[table]);
     const notNull = isInterface ? '' : '!';
     let str = '';
-    fields.forEach((field) => {
-      if (!this.isIgnoredField(field)) {
+    fields.forEach(field => {
+      if (!this.isIgnoredField(field) && !this.isTimestampField(field)) {
         if (!this.isDeprecated(table, field)) {
           const name = this.quoteName(recase(this.options.caseProp, field));
           const isOptional = this.getTypeScriptFieldOptional(table, field);
@@ -151,7 +159,10 @@ export class FormGenerator {
   }
 
   private isDeprecated(table: string, field: string) {
-    return this.tables[table][field].comment && this.tables[table][field].comment?.startsWith('~');
+    return (
+      this.tables[table][field].comment &&
+      this.tables[table][field].comment?.startsWith('~')
+    );
   }
 
   private getFieldComment(table: string, field: string) {
@@ -194,7 +205,11 @@ export class FormGenerator {
     return jsType;
   }
 
-  private getFieldRuleType(field: string, fieldObj: TSField, attr: keyof TSField) {
+  private getFieldRuleType(
+    field: string,
+    fieldObj: TSField,
+    attr: keyof TSField
+  ) {
     const rawFieldType = fieldObj[attr] || '';
     const fieldType = String(rawFieldType).toLowerCase();
     const length = fieldType.match(/\(\d+\)/);
@@ -203,7 +218,11 @@ export class FormGenerator {
 
     if (this.isArray(fieldType)) {
       // const eltype = this.getTypeScriptFieldType(fieldObj, "elementType");
-      ruleType += `RuleType.array().items(${this.getFieldRuleType(field, fieldObj, 'elementType')})`;
+      ruleType += `RuleType.array().items(${this.getFieldRuleType(
+        field,
+        fieldObj,
+        'elementType'
+      )})`;
     } else if (this.isNumber(fieldType)) {
       ruleType += 'RuleType.number()';
     } else if (this.isBoolean(fieldType)) {
@@ -239,7 +258,7 @@ export class FormGenerator {
   private getEnumValues(fieldObj: TSField): string[] {
     if (fieldObj.special) {
       // postgres
-      return fieldObj.special.map((v) => `"${v}"`);
+      return fieldObj.special.map(v => `"${v}"`);
     } else {
       // mysql
       return fieldObj.type.substring(5, fieldObj.type.length - 1).split(',');
@@ -252,9 +271,13 @@ export class FormGenerator {
       return false;
     }
     return (
-      (!additional.createdAt && (recase('c', field) === 'createdAt' || recase('c', field) === 'createdDate')) ||
+      (!additional.createdAt &&
+        (recase('c', field) === 'createdAt' ||
+          recase('c', field) === 'createdDate')) ||
       additional.createdAt === field ||
-      (!additional.updatedAt && (recase('c', field) === 'updatedAt' || recase('c', field) === 'lastUpdatedDate')) ||
+      (!additional.updatedAt &&
+        (recase('c', field) === 'updatedAt' ||
+          recase('c', field) === 'lastUpdatedDate')) ||
       additional.updatedAt === field
     );
   }
@@ -264,14 +287,26 @@ export class FormGenerator {
     if (additional.timestamps === false || additional.paranoid === false) {
       return false;
     }
-    return (!additional.deletedAt && recase('c', field) === 'deletedAt') || additional.deletedAt === field;
+    return (
+      (!additional.deletedAt && recase('c', field) === 'deletedAt') ||
+      additional.deletedAt === field
+    );
   }
 
   private isIgnoredField(field: string) {
-    if (this.options.extendMode === 'entity' || this.options.extendMode === 'vo') {
-      return ['id', 'uid', 'tenantId', 'createdBy', 'createdDate', 'lastUpdatedBy', 'lastUpdatedDate'].includes(
-        recase('c', field)
-      );
+    if (
+      this.options.extendMode === 'entity' ||
+      this.options.extendMode === 'item'
+    ) {
+      return [
+        'id',
+        'uid',
+        'tenantId',
+        'createdBy',
+        'createdDate',
+        'lastUpdatedBy',
+        'lastUpdatedDate',
+      ].includes(recase('c', field)) || /(uid)$/.test(field);
     }
     return this.options.skipFields && this.options.skipFields.includes(field);
   }

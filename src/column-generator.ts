@@ -153,8 +153,8 @@ export class ColumnGenerator {
           str += `    dataIndex: '${name}',\n`;
           str += this.getTitle(table, field);
           str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
-          // str += this.getHideInTable(field);
-          // str += this.getHideInSearch(field, counter);
+          str += this.getHideInTable(field);
+          str += this.getHideInSearch(field, counter);
           str += this.getHideInForm(field);
           str += '    ellipsis: true\n';
           str += '  },\n';
@@ -188,10 +188,14 @@ export class ColumnGenerator {
   }
 
   private getHideInSearch(field: string, counter: number) {
-    if (/(name|_no|_code)$/.test(field) && counter < 11) {
-      return '    hideInSearch: false,\n';
+    // if (/(name|_no|_code)$/.test(field) && counter < 11) {
+    //   return '    hideInSearch: false,\n';
+    // }
+    // return '    hideInSearch: true,\n';
+    if (/(uid)$/.test(field)) {
+      return '    hideInSearch: true,\n';
     }
-    return '    hideInSearch: true,\n';
+    return '';
   }
 
   private getHideInForm(field: string) {
@@ -202,7 +206,7 @@ export class ColumnGenerator {
         'createdDate',
         'lastUpdatedBy',
         'lastUpdatedDate',
-      ].includes(recase('c', field))
+      ].includes(recase('c', field)) || /(uid)$/.test(field)
     ) {
       return '    hideInForm: true,\n';
     }

@@ -8,6 +8,7 @@ import {
   Param,
   Post,
   Patch,
+  Put,
 } from '@midwayjs/decorator';
 import { Validate } from '@midwayjs/validate';
 import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
@@ -16,8 +17,6 @@ import { <%= PascalCase %>Service } from '../service';
 
 @Controller('/<%= lowerCase%>', { description: '<%= label %>管理' })
 export class <%= PascalCase %>Controller extends BaseController {
-  @Inject()
-  ctx: any;
 
   @Inject()
   <%= camelCase %>Service: <%= PascalCase %>Service;

@@ -1,57 +1,78 @@
 // React
-import React, { useRef, useState } from 'react';
+import React, { useContext, useMemo, useRef, useState } from 'react';
 // Antd
 import { SaveOutlined } from '@ant-design/icons';
-import { BetaSchemaForm, FooterToolbar, PageContainer, ProCard, ProFormInstance } from '@ant-design/pro-components';
-import { message, Typography } from 'antd';
+import { PageContainer, ProCard, ProFormInstance, ProProvider, TableDropdown } from '@ant-design/pro-components';
+import { message } from 'antd';
 // Umi
-import { useAccess, useModel, useParams } from '@umijs/max';
 // Components
-import AuditLog from '@/components/AuditLog';
+import { valueTypeMap, ValueTypeMapKey } from '@/components/schema-components';
+import BetaSchemaForm from '@/components/SchemaForm';
+import AuditLog from '@/pages/components/AuditLog';
 // Services
 import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/cmp/<%= camelCase %>';
 // Utils
-import { getUpdateData } from '@/utils';
-import { <%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
+import { ActionMap, getUpdateData, renderActions } from '@/utils';
+// Hooks
+import { useFormState } from '@/hooks/formState';
+import { usePageConfig } from '@/hooks/pageConfig';
+import { usePageParam } from '@/hooks/pageParam';
+// Definitions
+//import { ParentContext } from '../<%= camelCase %>.detail';
+import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
 
-const { Text } = Typography;
 
 type <%= PascalCase %>DetailProps = {
   uid: string;
-  onUpdated: () => void;
+  onUpdated?: () => void;
+  onClose?: () => void;
   insideDrawer?: boolean;
 };
 
 const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) => {
-  // useModel
-  const { initialState } = useModel('@@initialState');
-  const { responsive } = useModel('responsive', (model: any) => ({
-    responsive: model.responsive,
-  }));
-
-  //  useParams
-  const params = useParams<{ uid: string }>();
-  const uid = props.uid || params.uid;
-
-  // useEffect
-
-  // useAccess
-  const access = useAccess();
-  const canEdit = true;
-
-  // useState
-  const [<%= camelCase %>, set<%= PascalCase %>] = useState<<%= PascalCase %>>();
-  const [tabActiveKey, setTabActiveKey] = useState('main');
+  // 引用上下文
+  const contextFormValues = useContext(ProProvider);
+  const { contextValues, contextRouteKey } = useContext(ParentContext);
+  // 页面参数
+  const { uid } = usePageParam(props);
+  // 页面配置
+  const { access, privileges } = usePageConfig(contextRouteKey);
 
   // useRef
   const formRef = useRef<ProFormInstance<<%= PascalCase %>>>();
+  // 表单状态
+  const {
+    loading,
+    setLoading,
+    formLayout,
+    FormLayoutSegmented,
+    currentValues,
+    setCurrentValues,
+    valuesChanged,
+    setValuesChanged,
+  } = useFormState<<%= PascalCase %>>(formRef);
+
+  const [tabActiveKey, setTabActiveKey] = useState('main');
+
+  const actions: ActionMap = useMemo(() => {
+    return {
+      save: {
+        text: '保存',
+        icon: <SaveOutlined />,
+        type: 'primary',
+        disabled: !valuesChanged,
+        onClick: () => formRef.current?.submit(),
+        accessible: access.canWrite(privileges),
+      },
+    };
+  }, [valuesChanged, access, privileges, formRef]);
 
   return (
       <PageContainer
         ghost
         header={{
-          title: <%= camelCase %>?.uid,
-          onBack: props.insideDrawer ? undefined : () => history.back(),
+          title: currentValues?.uid,
+          onBack: props.insideDrawer ? () => props.onClose?.() : () => history.back(),
           breadcrumb: {
             routes: [
               {
@@ -74,68 +95,61 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         ]}
         tabActiveKey={tabActiveKey}
         onTabChange={(key: string) => setTabActiveKey(key)}
+        extra={[
+          ...renderActions(actions),
+          <TableDropdown key="dropdown" menus={[FormLayoutSegmented]} onSelect={(key: string) => {}} />,
+        ]}
         style={{ marginBottom: 45 }}
       >
         {tabActiveKey === 'main' && (
+          <ProProvider.Provider
+          value={{
+            ...contextFormValues,
+            valueTypeMap,
+          }}
+        >
           <ProCard bordered>
-            <BetaSchemaForm<<%= PascalCase %>>
+            <BetaSchemaForm<<%= PascalCase %>, ValueTypeMapKey>
+              loading={loading}
+              layout={formLayout}
               layoutType="Form"
               rowProps={{
                 gutter: [16, 16],
               }}
-              colProps={{
-                span: 6,
-              }}
               grid
-              columns={<%= PascalCase %>FormColumns}
+              columns={gen<%= PascalCase %>FormColumns({
+                uid,
+              })}
               formRef={formRef}
               request={async () => {
                 const res = await get<%= PascalCase %>(uid!);
-                set<%= PascalCase %>(res.result!);
+                setCurrentValues(res.result!);
+                setLoading(false);
                 return res.result!;
               }}
               //** 允许字段更新为null */
               omitNil={false}
               onFinish={async (values: any) => {
-                const update = getUpdateData(<%= camelCase %>, values);
+                const update = getUpdateData(currentValues, values);
                 if (update) {
                   const res = await update<%= PascalCase %>(update);
                   if (res.success) {
                     message.success({ key: 'update', content: '保存成功' });
-                    set<%= PascalCase %>({ ...<%= camelCase %>, ...values });
-                    props?.onUpdated();
+                    setCurrentValues({ ...currentValues, ...values });
+                    setValuesChanged(false);
+                    props?.onUpdated?.();
                   }
                 } else {
                   message.info({ key: 'update', content: '无更新内容' });
                 }
               }}
               onValuesChange={async (changedValues: any) => {
-
+                setValuesChanged(true);
               }}
-              submitter={
-                canEdit && tabActiveKey === 'main'
-                  ? {
-                      searchConfig: {
-                        submitText: '保存',
-                      },
-                      submitButtonProps: {
-                        icon: <SaveOutlined />,
-                      },
-                      resetButtonProps: {
-                        style: {
-                          display: 'none',
-                        },
-                      },
-                      render: (_, dom) => (
-                        <FooterToolbar style={{ zIndex: 1001 }}>
-                          {dom}
-                        </FooterToolbar>
-                      ),
-                    }
-                  : false
-              }
+              submitter={false}
             />
           </ProCard>
+        </ProProvider.Provider>
         )}
         {tabActiveKey === 'auditLog' && (
           <ProCard bordered>
