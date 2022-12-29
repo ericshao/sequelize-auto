@@ -33,6 +33,7 @@ type <%= PascalCase %>DetailProps = {
 export const ParentContext = React.createContext<{
   contextRouteKey?: string;
   contextValues?: <%= PascalCase %>;
+  contextState?: StateType;
 }>({});
 
 const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) => {
@@ -90,6 +91,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
           },
           style: { zIndex: 10 },
         }}
+        fixedHeader
         tabList={[
           {
             tab: '主信息',
@@ -112,7 +114,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         ]}
         style={{ marginBottom: 45 }}
       >
-      <ParentContext.Provider value={{ contextRouteKey: routeKey, contextValues: currentValues }}>
+      <ParentContext.Provider value={{ contextRouteKey: routeKey, contextValues: currentValues, contextState: currentState }}>
         {tabActiveKey === 'main' && (
           <ProProvider.Provider
           value={{

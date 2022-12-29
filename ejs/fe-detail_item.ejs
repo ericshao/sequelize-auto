@@ -32,7 +32,7 @@ type <%= PascalCase %>DetailProps = {
 const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) => {
   // 引用上下文
   const contextFormValues = useContext(ProProvider);
-  const { contextValues, contextRouteKey } = useContext(ParentContext);
+  const { contextValues, contextState, contextRouteKey } = useContext(ParentContext);
   // 页面参数
   const { uid } = usePageParam(props);
   // 页面配置
@@ -83,6 +83,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
           },
           style: { zIndex: 10 },
         }}
+        fixedHeader
         tabList={[
           {
             tab: '主信息',
@@ -96,7 +97,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         tabActiveKey={tabActiveKey}
         onTabChange={(key: string) => setTabActiveKey(key)}
         extra={[
-          ...renderActions(actions),
+          ...renderActions(actions, contextState),
           <TableDropdown key="dropdown" menus={[FormLayoutSegmented]} onSelect={(key: string) => {}} />,
         ]}
         style={{ marginBottom: 45 }}

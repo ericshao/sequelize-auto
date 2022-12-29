@@ -147,35 +147,6 @@ export class TypeGenerator {
     return jsType;
   }
 
-  private getFieldRuleType(fieldObj: TSField, attr: keyof TSField) {
-    const rawFieldType = fieldObj[attr] || '';
-    const fieldType = String(rawFieldType).toLowerCase();
-
-    let ruleType: string | undefined = '';
-
-    if (this.isArray(fieldType)) {
-      // const eltype = this.getTypeScriptFieldType(fieldObj, "elementType");
-      ruleType += `RuleType.array().items(${this.getFieldRuleType(fieldObj, 'elementType')})`;
-    } else if (this.isNumber(fieldType)) {
-      ruleType += 'RuleType.number()';
-    } else if (this.isBoolean(fieldType)) {
-      ruleType += 'RuleType.boolean()';
-    } else if (this.isDate(fieldType)) {
-      ruleType += 'RuleType.date()';
-    } else if (this.isString(fieldType)) {
-      ruleType += 'RuleType.string()';
-      // } else if (this.isEnum(fieldType)) {
-      //   const values = this.getEnumValues(fieldObj);
-      //   ruleType += values.join(' | ');
-    } else if (this.isJSON(fieldType)) {
-      ruleType += 'RuleType.object()';
-    } else {
-      console.log(`Missing TypeScript type: ${fieldType || fieldObj['type']}`);
-      ruleType = undefined;
-    }
-    return ruleType;
-  }
-
   private getEnumValues(fieldObj: TSField): string[] {
     if (fieldObj.special) {
       // postgres

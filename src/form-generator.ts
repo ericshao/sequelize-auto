@@ -57,7 +57,9 @@ export class FormGenerator {
     if (this.options.lang === 'ts') {
       header += "import { AccessType } from '@/access';\n";
       header +=
-        "import { ValueTypeMapKey } from '@/components/schema-components';\n";
+        "import { decimalFieldProps, integerFieldProps, ValueTypeMapKey } from '@/components/schema-components';\n";
+      header +=
+        "import { recurrsiveSetFieldProps } from '@/components/schema-components/util';\n";
       header +=
         "import { ProFormColumnsType } from '@/components/SchemaForm';\n";
       header +=
@@ -71,6 +73,7 @@ export class FormGenerator {
       header += `type FormColumnsParams = {
         isCreate?: boolean;
         uid?: string;
+        disabled?: boolean;
         updateFn?: (key: string, value: any) => void;
       };\n\n`;
     }
@@ -100,7 +103,13 @@ export class FormGenerator {
         str += this.addFormColumns(table, true);
         str += ']\n';
         str +=
-          'return params?.isCreate ? columns.filter((column) => !column.hideInCreate) : columns;\n';
+          `return params?.isCreate ? columns.filter((column) => !column.hideInCreate) : columns.map((column) => {
+            if (params?.disabled) {
+              recurrsiveSetFieldProps([column], { disabled: true });
+            }
+            return column;
+          });\n`
+
         str += '}\n';
       }
 
@@ -145,6 +154,12 @@ export class FormGenerator {
           str += `    dataIndex: '${name}',\n`;
           str += `    title: '${this.getFieldComment(table, field)}',\n`;
           str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
+          if (this.isDecimalField(table, field)) {
+            str +=  "    fieldProps: decimalFieldProps,\n";
+          }
+          if (this.isIntegerField(table, field)) {
+            str +=  "    fieldProps: integerFieldProps,\n";
+          }
           str += '    colProps,\n';
           str += '  },\n';
         }
@@ -176,6 +191,24 @@ export class FormGenerator {
     return this.getTypeScriptFieldType(fieldObj, 'type');
   }
 
+  private isDecimalField(table: string, field: string) {
+    const fieldObj = this.tables[table][field] as TSField;
+    const rawFieldType = fieldObj['type'] || '';
+    const fieldType = String(rawFieldType).toLowerCase();
+    return /^(float|money|smallmoney|double|decimal)/.test(
+      fieldType
+    );
+  }
+
+  private isIntegerField(table: string, field: string) {
+    const fieldObj = this.tables[table][field] as TSField;
+    const rawFieldType = fieldObj['type'] || '';
+    const fieldType = String(rawFieldType).toLowerCase();
+    return /^(smallint|mediumint|tinyint|int|bigint)/.test(
+      fieldType
+    );
+  }
+
   private getTypeScriptFieldType(fieldObj: TSField, attr: keyof TSField) {
     const rawFieldType = fieldObj[attr] || '';
     const fieldType = String(rawFieldType).toLowerCase();
@@ -203,56 +236,6 @@ export class FormGenerator {
       jsType = 'any';
     }
     return jsType;
-  }
-
-  private getFieldRuleType(
-    field: string,
-    fieldObj: TSField,
-    attr: keyof TSField
-  ) {
-    const rawFieldType = fieldObj[attr] || '';
-    const fieldType = String(rawFieldType).toLowerCase();
-    const length = fieldType.match(/\(\d+\)/);
-
-    let ruleType: string | undefined = '';
-
-    if (this.isArray(fieldType)) {
-      // const eltype = this.getTypeScriptFieldType(fieldObj, "elementType");
-      ruleType += `RuleType.array().items(${this.getFieldRuleType(
-        field,
-        fieldObj,
-        'elementType'
-      )})`;
-    } else if (this.isNumber(fieldType)) {
-      ruleType += 'RuleType.number()';
-    } else if (this.isBoolean(fieldType)) {
-      ruleType += 'RuleType.boolean()';
-    } else if (this.isDate(fieldType)) {
-      ruleType += 'RuleType.date()';
-    } else if (this.isString(fieldType)) {
-      if (this.isUid(field)) {
-        ruleType += 'RuleType.string().max(24).allow("")';
-      } else {
-        ruleType += 'RuleType.string()';
-        if (!_.isNull(length)) {
-          if (this.isChar(fieldType)) {
-            ruleType += `.length(${length})`;
-          } else {
-            ruleType += `.max(${length})`;
-          }
-        }
-        ruleType += '.allow("")';
-      }
-      // } else if (this.isEnum(fieldType)) {
-      //   const values = this.getEnumValues(fieldObj);
-      //   ruleType += values.join(' | ');
-    } else if (this.isJSON(fieldType)) {
-      ruleType += 'RuleType.object()';
-    } else {
-      console.log(`Missing TypeScript type: ${fieldType || fieldObj['type']}`);
-      ruleType = undefined;
-    }
-    return ruleType;
   }
 
   private getEnumValues(fieldObj: TSField): string[] {

@@ -60,7 +60,7 @@ const <%= PascalCase %>List: React.FC = () => {
 
   // Table Columns
   const actionRender = (dom: React.ReactNode, record: <%= PascalCase %>) => [
-  <Access key="edit" accessible={access.canRead(privileges)}>
+  <Access key="read" accessible={access.canRead(privileges)}>
     <Button
       type="link"
       size="small"
@@ -158,7 +158,7 @@ const <%= PascalCase %>List: React.FC = () => {
                 formColumns={gen<%= PascalCase %>FormColumns({
                   isCreate: true,
                 })}
-                onCreate={async (values: any) => {
+                onCreate={async (values: <%= PascalCase %>) => {
                   const res = await create<%= PascalCase %>(values);
                   if (res.success) {
                     message.success('新建成功');

@@ -57,7 +57,7 @@ export class ColumnGenerator {
     if (this.options.lang === 'ts') {
       header += "import { dateRangeSearch, dateTimeRangeSearch, ValueTypeMapKey } from '@/components/schema-components';\n";
       header += "import { convertValueEnum } from '@/components/schema-components/util';\n";
-      header += "import { ProColumns } from '@ant-design/pro-components';\n\n";
+      header += "import { UltraColumnType } from '@/components/UltraColumns';\n\n";
 
       header += `type ColumnsParams = {
         presetColumns?: { dataIndex: string; title: string; hideInTable: boolean; hideInSearch: boolean }[];
@@ -87,8 +87,8 @@ export class ColumnGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `export function gen#TABLE#Columns(params?: ColumnsParams): ProColumns<#TABLE#, ValueTypeMapKey>[] {\n`;
-        str += 'const columns: ProColumns<#TABLE#, ValueTypeMapKey>[] = [\n';
+        str += `export function gen#TABLE#Columns(params?: ColumnsParams): UltraColumnType<#TABLE#, ValueTypeMapKey>[] {\n`;
+        str += 'const columns: UltraColumnType<#TABLE#, ValueTypeMapKey>[] = [\n';
         str += this.addFormColumns(table, true);
         str += ']\n'
         str += `  return columns.map((column) => {
@@ -266,56 +266,6 @@ export class ColumnGenerator {
       jsType = 'any';
     }
     return jsType;
-  }
-
-  private getFieldRuleType(
-    field: string,
-    fieldObj: TSField,
-    attr: keyof TSField
-  ) {
-    const rawFieldType = fieldObj[attr] || '';
-    const fieldType = String(rawFieldType).toLowerCase();
-    const length = fieldType.match(/\(\d+\)/);
-
-    let ruleType: string | undefined = '';
-
-    if (this.isArray(fieldType)) {
-      // const eltype = this.getTypeScriptFieldType(fieldObj, "elementType");
-      ruleType += `RuleType.array().items(${this.getFieldRuleType(
-        field,
-        fieldObj,
-        'elementType'
-      )})`;
-    } else if (this.isNumber(fieldType)) {
-      ruleType += 'RuleType.number()';
-    } else if (this.isBoolean(fieldType)) {
-      ruleType += 'RuleType.boolean()';
-    } else if (this.isDate(fieldType)) {
-      ruleType += 'RuleType.date()';
-    } else if (this.isString(fieldType)) {
-      if (this.isUid(field)) {
-        ruleType += 'RuleType.string().max(24).allow("")';
-      } else {
-        ruleType += 'RuleType.string()';
-        if (!_.isNull(length)) {
-          if (this.isChar(fieldType)) {
-            ruleType += `.length(${length})`;
-          } else {
-            ruleType += `.max(${length})`;
-          }
-        }
-        ruleType += '.allow("")';
-      }
-      // } else if (this.isEnum(fieldType)) {
-      //   const values = this.getEnumValues(fieldObj);
-      //   ruleType += values.join(' | ');
-    } else if (this.isJSON(fieldType)) {
-      ruleType += 'RuleType.object()';
-    } else {
-      console.log(`Missing TypeScript type: ${fieldType || fieldObj['type']}`);
-      ruleType = undefined;
-    }
-    return ruleType;
   }
 
   private getEnumValues(fieldObj: TSField): string[] {

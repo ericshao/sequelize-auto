@@ -216,11 +216,11 @@ export class DtoGenerator {
       // const eltype = this.getTypeScriptFieldType(fieldObj, "elementType");
       ruleType += `RuleType.array().items(${this.getFieldRuleType(field, fieldObj, 'elementType')})`;
     } else if (this.isNumber(fieldType)) {
-      ruleType += 'RuleType.number()';
+      ruleType += 'RuleType.number().allow(null)';
     } else if (this.isBoolean(fieldType)) {
-      ruleType += 'RuleType.boolean()';
+      ruleType += 'RuleType.boolean().allow(null)';
     } else if (this.isDate(fieldType)) {
-      ruleType += 'RuleType.date()';
+      ruleType += 'RuleType.date().allow(null)';
     } else if (this.isString(fieldType)) {
       if (this.isUid(field)) {
         ruleType += 'RuleType.string().max(24).allow("")';
@@ -233,7 +233,7 @@ export class DtoGenerator {
             ruleType += `.max(${length})`;
           }
         }
-        ruleType += '.allow("")';
+        ruleType += '.allow("").allow(null)';
       }
       // } else if (this.isEnum(fieldType)) {
       //   const values = this.getEnumValues(fieldObj);
