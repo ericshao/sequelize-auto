@@ -14,6 +14,7 @@ import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/cmp/<%
 // Utils
 import { ActionMap, getUpdateData, renderActions } from '@/utils';
 // Hooks
+import { useDevInspector } from '@/hooks/devInspector';
 import { useFormState } from '@/hooks/formState';
 import { usePageConfig } from '@/hooks/pageConfig';
 import { usePageParam } from '@/hooks/pageParam';
@@ -56,7 +57,10 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
     setCurrentValues,
     valuesChanged,
     setValuesChanged,
-  } = useFormState<<%= PascalCase %>>(formRef);
+    updateCurrentValues,
+    Reload,
+    ResolveConflictModal,
+  } = useFormState<<%= PascalCase %>>(formRef, get<%= PascalCase %>, update<%= PascalCase %>);
   // 状态机
   const { currentState } = useStateMachine('<%= PascalCase %>', currentValues?.stateCode!);
 
@@ -74,6 +78,8 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
       },
     };
   }, [valuesChanged, access, privileges, formRef.current]);
+
+  const { DevInspector } = useDevInspector({ routeKey, currentValues, currentState, access, privileges });
 
   return (
       <PageContainer
@@ -110,6 +116,9 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         onTabChange={(key: string) => setTabActiveKey(key)}
         extra={[
           ...renderActions(actions, currentState!),
+          <Reload key="reload" />,
+          <DevInspector key="dev" />,
+          <ResolveConflictModal key="resolveConflict" />,
           <TableDropdown key="dropdown" menus={[FormLayoutSegmented]} onSelect={(key: string) => {}} />,
         ]}
         style={{ marginBottom: 45 }}
@@ -148,19 +157,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
               //** 允许字段更新为null */
               omitNil={false}
               onFinish={async (values: any) => {
-                const update = getUpdateData(currentValues, values);
-                if (update) {
-                  const res = await update<%= PascalCase %>(update);
-                  if (res.success) {
-                    message.success({ key: 'update', content: '保存成功' });
-                    setCurrentValues({ ...currentValues, ...values });
-                    setValuesChanged(false);
-
-                    props?.onUpdated?.();
-                  }
-                } else {
-                  message.info({ key: 'update', content: '无更新内容' });
-                }
+                updateCurrentValues(values);
               }}
                 onValuesChange={async (changedValues: any) => {
                   setValuesChanged(true);

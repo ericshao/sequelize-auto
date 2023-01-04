@@ -67,10 +67,8 @@ export class <%= PascalCase %>Service extends TenancyService {
   ): Promise<Record<string, number>> {
     const updated = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
       { ...updateDto, lastUpdatedBy: this.getUserId() }, {
-      where: {
-        uid: updateDto.identifiers,
-      },
-      transaction: this.getTransaction(),
+        where: this.generateWhereClause(updateDto),
+        transaction: this.getTransaction(),
     });
     return { updated: updated[0] };
   }
