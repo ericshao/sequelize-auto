@@ -2,8 +2,8 @@
 import React, { useContext, useRef } from 'react';
 // Antd
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import { ActionType, PageContainer, ProProvider, TableDropdown } from '@ant-design/pro-components';
-import { Button, Layout, message, Segmented, Space, Typography } from 'antd';
+import { ActionType, ProProvider, TableDropdown } from '@ant-design/pro-components';
+import { Button, Layout, message, Space, Typography } from 'antd';
 // Umi
 import { Access } from '@umijs/max';
 import { history } from 'umi';
@@ -23,7 +23,6 @@ import { usePageParam } from '@/hooks/pageParam';
 import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
 
-
 const { Content } = Layout;
 
 // Types
@@ -34,62 +33,55 @@ const <%= PascalCase %>List: React.FC = () => {
   const contextFormValues = useContext(ProProvider);
   // useRef
   const actionRef = useRef<ActionType>();
-  // 页面参数
-  const { valueEnums, cusParams } = usePageParam();
-  // 页面配置
-  const { routeKey, access, privileges, presetColumns, presetFilters, viewFilterEnum } = usePageConfig();
   // 列表状态
-  const { view, setView, currentRow, setCurrentRow, setCurrentFilter, confirmDelete } = useListState<<%= PascalCase %>>(
-    actionRef,
-    {
-      viewFilterEnum,
-      onDelete: (records: ManifestHead[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
-    },
-  );
-
- 
+  const { currentRow, setCurrentRow, confirmDelete } = useListState<<%= PascalCase %>>(actionRef, {
+    onDelete: (records: <%= PascalCase %>[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
+  });
   // 详情页 Drawer
   const { detailPageDrawerOpen, setDetailPageDrawerOpen, DetailPageDrawer } = useDetailPageDrawer(
-    <<%= PascalCase %>Detail uid={currentRow?.uid!} onUpdated={() => {}} insideDrawer />,
+    <<%= PascalCase %>Detail
+      uid={currentRow?.uid!}
+      onUpdated={() => actionRef.current?.reload()}
+      onClose={() => {
+        setDetailPageDrawerOpen(false);
+        actionRef.current?.reloadAndRest?.();
+      }}
+      insideDrawer
+    />,
   );
 
   // Actions
   const gotoDetailPage = (uid: string) => {
-    history.push(`/filing/<%= camelCase %>/${uid}`);
+    history.push(`/filing/<%= camelCase %>/item/${uid}`);
   };
 
-  // Table Columns
   const actionRender = (dom: React.ReactNode, record: <%= PascalCase %>) => [
-  <Access key="read" accessible={access.canRead(privileges)}>
-    <Button
-      key="read"
-      type="link"
-      size="small"
-      onClick={() => gotoDetailPage(record.uid)}
-      // onClick={() => {
-      //   setCurrentRow(record);
-      //   setDetailPageDrawerOpen(true);
-      // }}
-    >
-      <EditOutlined />
-    </Button>
-  </Access>,
-  <Access key="dropdown" accessible={access.canDestroy(privileges)}>
-    <TableDropdown
-      key="dropdown"
-      menus={[{ key: 'delete', name: <Typography.Text type="danger">删除</Typography.Text> }]}
-      onSelect={(key: string) => {
-        if (key === 'delete') {
-          confirmDelete([record]);
-        }
-      }}
-    />
-  </Access>,
+      <Button
+        key="read"
+        type="link"
+        size="small"
+        // onClick={() => gotoDetailPage(record.uid)}
+        onClick={() => {
+          setCurrentRow(record);
+          setDetailPageDrawerOpen(true);
+        }}
+      >
+        <EditOutlined />
+      </Button>,
+      <TableDropdown
+        key="dropdown"
+        menus={[{ key: 'delete', name: <Typography.Text type="danger">删除</Typography.Text> }]}
+        onSelect={(key: string) => {
+          if (key === 'delete') {
+            confirmDelete([record]);
+          }
+        }}
+      />,
   ];
 
+  // Table Columns
   const ultraColumns = new UltraColumns<<%= PascalCase %>>(
     gen<%= PascalCase %>Columns({
-      presetColumns,
       valueEnums,
       cusParams,
     }),
@@ -97,45 +89,21 @@ const <%= PascalCase %>List: React.FC = () => {
   );
 
   return (
-    <PageContainer
-      ghost
-      header={{
-        title: '<%= label %>',
-        
-      }}
-    >
-      <Layout className="ant-layout-has-sider">
-        <Content style={{ background: '#fff' }}>
-          <ProProvider.Provider
-          value={{
-            ...contextFormValues,
-            valueTypeMap,
-          }}
-        >
+    <Layout className="ant-layout-has-sider">
+      <Content style={{ background: '#fff' }}>
+        <ProProvider.Provider
+        value={{
+          ...contextFormValues,
+          valueTypeMap,
+        }}
+      >
           <UltraTable
             rowKey="uid"
-            headerTitle={
-              <Space>
-                <Segmented
-                options={presetFilters}
-                value={view}
-                onChange={(value) => {
-                  setView(value as string);
-                  actionRef.current?.reloadAndRest && actionRef.current?.reloadAndRest();
-                }}
-                style={{ marginLeft: 4 }}
-              />
-              </Space>
-            }
             actionRef={actionRef}
             columns={ultraColumns.getColumns()}
-            search={{
-              labelWidth: 'auto',
-            }}
             request={async (params, sorter) => {
               const { current, pageSize, ...search } = params;
-              const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view]};
-              setCurrentFilter(filter);
+              const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search)};
               const res = await query<%= PascalCase %>List({
                 current,
                 pageSize,
@@ -152,12 +120,9 @@ const <%= PascalCase %>List: React.FC = () => {
               };
             }}
             toolBarRender={() => [
-              <Access key="create" accessible={access.canCreate(privileges)}>
               <CreateModal
                 key="create"
                 title="新建<%= label %>"
-                layoutType="DrawerForm"
-                formLayout="horizontal"
                 formColumns={gen<%= PascalCase %>FormColumns({
                   isCreate: true,
                 })}
@@ -169,25 +134,26 @@ const <%= PascalCase %>List: React.FC = () => {
                   }
                   return res.success;
                 }}
-              />
-            </Access>,
+              />,
             ]}
+            search={{
+              filterType: 'light',
+            }}
+            cardProps={{ bodyStyle: { padding: 0 } }}
             rowSelection={{}}
             tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
               <Space size={24}>
                 <span>已选 {selectedRowKeys.length} 项</span>
-                <Access accessible={access.canTenantAdmin(privileges)}>
-                <Button
-                  key="delete"
-                  type="link"
-                  icon={<DeleteOutlined />}
-                  onClick={() => {
-                    confirmDelete(selectedRows);
-                  }}
-                >
-                  删除
-                </Button>
-              </Access>
+                  <Button
+                    key="delete"
+                    type="link"
+                    icon={<DeleteOutlined />}
+                    onClick={() => {
+                      confirmDelete(selectedRows);
+                    }}
+                  >
+                    删除
+                  </Button>
               </Space>
             )}
             locale={
@@ -195,10 +161,6 @@ const <%= PascalCase %>List: React.FC = () => {
                 // emptyText: () => renderEmptyText(actionRef, declarationStatistic?.unclassified, setAspect),
               }
             }
-            columnsState={{
-              persistenceKey: routeKey,
-              persistenceType: 'localStorage',
-            }}
             scroll={{ x: ultraColumns.totalWidth }}
             // scrollYOffset={344}
           />
@@ -212,9 +174,8 @@ const <%= PascalCase %>List: React.FC = () => {
               setCurrentRow(undefined);
             }}
           />
-        </Content>
-      </Layout>
-    </PageContainer>
+          </Content>
+    </Layout>
   );
 };
 export default <%= PascalCase %>List;

@@ -43,11 +43,14 @@ const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string}> = (props) => {
     onDelete: (records: DeclarationItem[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
   });
   // 详情页 Drawer
-  const { detailPageDrawerVisible, setDetailPageDrawerVisible, DetailPageDrawer } = useDetailPageDrawer(
+  const { detailPageDrawerOpen, setDetailPageDrawerOpen, DetailPageDrawer } = useDetailPageDrawer(
     <<%= PascalCase %>Detail
       uid={currentRow?.uid!}
       onUpdated={() => actionRef.current?.reload()}
-      onClose={() => setDetailPageDrawerVisible(false)}
+      onClose={() => {
+        setDetailPageDrawerOpen(false);
+        actionRef.current?.reloadAndRest?.();
+      }}
       insideDrawer
     />,
   );
@@ -65,7 +68,7 @@ const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string}> = (props) => {
         // onClick={() => gotoDetailPage(record.uid)}
         onClick={() => {
           setCurrentRow(record);
-          setDetailPageDrawerVisible(true);
+          setDetailPageDrawerOpen(true);
         }}
       >
         <EditOutlined />
@@ -113,7 +116,7 @@ const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string}> = (props) => {
                 pageSize,
                 columns: ultraColumns.getColumnKeys(),
                 filter,
-                sorter: Object.keys(sorter).length > 0 ? sorter : { createdDate: 'descend' },
+                sorter: Object.keys(sorter).length > 0 ? sorter : undefined,
                 // tenantId,
               });
               // setIdentifiers(res.result.data.map((item) => item.uid!));
@@ -175,10 +178,10 @@ const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string}> = (props) => {
         </ProProvider.Provider>
           <DetailPageDrawer
             values={currentRow}
-            drawerVisible={detailPageDrawerVisible}
+            drawerOpen={detailPageDrawerOpen}
             onCancel={() => {
               actionRef.current?.reload();
-              setDetailPageDrawerVisible(false);
+              setDetailPageDrawerOpen(false);
               setCurrentRow(undefined);
             }}
           />

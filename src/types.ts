@@ -208,9 +208,9 @@ export function singularize(s: string) {
 
 /** Change casing of val string according to opt [c|l|o|p|u]  */
 export function recase(opt: CaseOption | CaseFileOption | undefined, val: string | null, singular = false) {
-  if (singular && val) {
-    val = singularize(val);
-  }
+  // if (singular && val) {
+  //   val = singularize(val);
+  // }
   if (!opt || opt === 'o' || !val) {
     return val || ''; // original
   }

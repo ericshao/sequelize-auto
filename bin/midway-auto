@@ -41,6 +41,11 @@ const argv = require('yargs')
     type: 'string',
     alias: 'i'
   })
+  .option('singularize', {
+    description: 'Singularize model and file names from plural table names',
+    type: 'boolean',
+    alias: 'sg'
+  })
   //.check(argv => Boolean(argv.name && argv.abbrev))
   .argv;
 

@@ -1,0 +1,31 @@
+import request from '@/services/cmpApi';
+
+export async function query<%= PascalCase %>List(data: Partial<API.ListOptions<<%= PascalCase %>>>) {
+  return request.post<API.BaseResponse<API.ListResult<<%= PascalCase %>>>>('/<%= camelCase %>/list', {
+    data,
+  });
+}
+
+export async function get<%= PascalCase %>(uid: string) {
+  return request.get<API.BaseResponse<<%= PascalCase %>>>(`/<%= camelCase %>/${uid}`);
+}
+
+export async function create<%= PascalCase %>(data: <%= PascalCase %>) {
+  return request.put<API.BaseResponse<<%= PascalCase %>>>('/<%= camelCase %>', {
+    data,
+  });
+}
+
+export async function update<%= PascalCase %>(data: <%= PascalCase %>) {
+  return request.patch<API.BaseResponse<API.UpdateResult>>('/<%= camelCase %>', {
+    data,
+  });
+}
+
+export async function delete<%= PascalCase %>(uids: string[]) {
+  return request.delete<API.BaseResponse<API.DeleteResult>>('/<%= camelCase %>', {
+    data: {
+      identifiers: uids,
+    },
+  });
+}
