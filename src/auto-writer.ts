@@ -13,6 +13,7 @@ export class AutoWriter {
   relations: Relation[];
   space: string[];
   surfix?: string;
+  fileExt?: string;
   options: {
     caseFile?: CaseFileOption;
     caseModel?: CaseOption;
@@ -28,11 +29,12 @@ export class AutoWriter {
     indentation?: number;
     omitPrefix?: number;
   };
-  constructor(tableData: TableData, options: AutoOptions, surfix?: string) {
+  constructor(tableData: TableData, options: AutoOptions, surfix?: string, fileExt?: string) {
     this.tableText = tableData.text as { [name: string]: string };
     this.foreignKeys = tableData.foreignKeys;
     this.relations = tableData.relations;
     this.surfix = surfix;
+    this.fileExt = fileExt;
     this.options = options;
     this.space = makeIndent(this.options.spaces, this.options.indentation);
   }
@@ -98,7 +100,7 @@ export class AutoWriter {
     }
     fileName = recase('c', fileName, this.options.singularize);
     const surfix =  this.surfix ? `.${this.surfix}` : '';
-    const filePath = path.join(this.options.directory, fileName + `${surfix}` + (this.options.lang === 'ts' ? '.ts' : '.js'));
+    const filePath = path.join(this.options.directory, fileName + `${surfix}` + (this.fileExt ? `.${this.fileExt}` : '.ts'));
 
     const writeFile = util.promisify(fs.writeFile);
     return writeFile(path.resolve(filePath), this.tableText[table]);

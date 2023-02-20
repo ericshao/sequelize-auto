@@ -1,23 +1,33 @@
-
-import _ from "lodash";
-import { Dialect, Sequelize } from "sequelize";
-import { AutoBuilder } from "./auto-builder";
-import { ModelGenerator } from "./model-generator";
-import { DtoGenerator } from "./dto-generator";
-import { TypeGenerator } from "./type-generator";
-import { AutoRelater } from "./auto-relater";
-import { AutoWriter } from "./auto-writer";
-import { dialects } from "./dialects/dialects";
-import { AutoOptions, TableData } from "./types";
-import { FormGenerator } from "./form-generator";
-import { ColumnGenerator } from "./column-generator";
+import _ from 'lodash';
+import { Dialect, Sequelize } from 'sequelize';
+import { AutoBuilder } from './auto-builder';
+import { ModelGenerator } from './model-generator';
+import { DtoGenerator } from './dto-generator';
+import { TypeGenerator } from './type-generator';
+import { AutoRelater } from './auto-relater';
+import { AutoWriter } from './auto-writer';
+import { dialects } from './dialects/dialects';
+import { AutoOptions, TableData } from './types';
+import { FormGenerator } from './form-generator';
+import { ColumnGenerator } from './column-generator';
+import { DorisGenerator } from './doris-generator';
 
 export class SequelizeAuto {
   sequelize: Sequelize;
   options: AutoOptions;
 
-  constructor(database: string | Sequelize, username: string, password: string, options: AutoOptions) {
-    if (options && options.dialect === 'sqlite' && !options.storage && database) {
+  constructor(
+    database: string | Sequelize,
+    username: string,
+    password: string,
+    options: AutoOptions
+  ) {
+    if (
+      options &&
+      options.dialect === 'sqlite' &&
+      !options.storage &&
+      database
+    ) {
       options.storage = database as string;
     }
     if (options && options.dialect === 'mssql') {
@@ -32,23 +42,30 @@ export class SequelizeAuto {
     if (database instanceof Sequelize) {
       this.sequelize = database;
     } else {
-      this.sequelize = new Sequelize(database, username, password, options || {});
+      this.sequelize = new Sequelize(
+        database,
+        username,
+        password,
+        options || {}
+      );
     }
 
-    this.options = _.extend({
-      spaces: true,
-      indentation: 2,
-      directory: './models',
-      additional: {},
-      host: 'localhost',
-      port: this.getDefaultPort(options.dialect),
-      closeConnectionAutomatically: true
-    }, options || {});
+    this.options = _.extend(
+      {
+        spaces: true,
+        indentation: 2,
+        directory: './models',
+        additional: {},
+        host: 'localhost',
+        port: this.getDefaultPort(options.dialect),
+        closeConnectionAutomatically: true,
+      },
+      options || {}
+    );
 
     if (!this.options.directory) {
       this.options.noWrite = true;
     }
-
   }
 
   async run(): Promise<TableData> {
@@ -65,11 +82,14 @@ export class SequelizeAuto {
     await this.write(td, 'd');
     const tf = this.generateForm(td);
     td.text = tf;
-    await this.write(td, 'form');
+    await this.write(td, 'form', 'tsx');
     const tc = this.generateColumn(td);
     td.text = tc;
-    await this.write(td, 'column');
-    console.log(td.tables);
+    await this.write(td, 'column', 'tsx');
+    const tdoris = this.generateDoris(td);
+    td.text = tdoris;
+    await this.write(td, 'doris', 'sql');
+    // console.log(td.tables);
     return td;
   }
 
@@ -90,7 +110,14 @@ export class SequelizeAuto {
 
   generateModel(tableData: TableData) {
     const dialect = dialects[this.sequelize.getDialect() as Dialect];
-    const generator = new ModelGenerator(tableData, dialect, {...this.options, additional: { timestamps: true, createdAt: 'createdDate', updatedAt: 'lastUpdatedDate'}});
+    const generator = new ModelGenerator(tableData, dialect, {
+      ...this.options,
+      additional: {
+        timestamps: true,
+        createdAt: 'createdDate',
+        updatedAt: 'lastUpdatedDate',
+      },
+    });
     return generator.generateText();
   }
 
@@ -118,8 +145,14 @@ export class SequelizeAuto {
     return generator.generateText();
   }
 
-  write(tableData: TableData, surfix?: string) {
-    const writer = new AutoWriter(tableData, this.options, surfix);
+  generateDoris(tableData: TableData) {
+    const dialect = dialects[this.sequelize.getDialect() as Dialect];
+    const generator = new DorisGenerator(tableData, dialect, this.options);
+    return generator.generateText();
+  }
+
+  write(tableData: TableData, surfix?: string, fileExt?: string) {
+    const writer = new AutoWriter(tableData, this.options, surfix, fileExt);
     return writer.write();
   }
 
@@ -133,7 +166,6 @@ export class SequelizeAuto {
         return 3306;
     }
   }
-
 }
 module.exports = SequelizeAuto;
 module.exports.SequelizeAuto = SequelizeAuto;

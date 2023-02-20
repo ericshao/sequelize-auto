@@ -63,7 +63,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     updateDto: Update<%= PascalCase %>Dto
   ): Promise<Record<string, number>> {
     const updated = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
-      { ...updateDto, lastUpdatedBy: this.getUserId() }, {
+      { ..._.omit(updateDto, ['id', 'uid', 'createdDate', 'tenantId']), lastUpdatedBy: this.getUserId() }, {
         where: this.generateWhereClause(updateDto),
         transaction: this.getTransaction(),
     });
@@ -107,7 +107,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     options: API.QueryOptions = { omitNil: true }
   ): Promise<<%= PascalCase %>> {
     const entity = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
-      attributes: this.generateAttributes(options?.columns, options?.exclusive),
+      ...this.generateFindOptions(options),
       where: { uid },
     });
     if (!entity) throw baseError.EntityNotExistsError;

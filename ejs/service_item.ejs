@@ -59,7 +59,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     updateDto: Update<%= PascalCase %>Dto
   ): Promise<Record<string, number>> {
     const updated = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
-      { ...updateDto, lastUpdatedBy: this.getUserId() }, {
+      { ..._.omit(updateDto, ['id', 'uid', 'createdDate', 'tenantId']), lastUpdatedBy: this.getUserId() }, {
       where: {
         id: updateDto.identifiers,
         tenantId: this.getTenantId(),
@@ -116,7 +116,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     options: API.QueryOptions = { omitNil: true }
   ): Promise<<%= PascalCase %>> {
     const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
-      attributes: this.generateAttributes(options?.columns, options?.exclusive),
+      ...this.generateFindOptions(options),
       where: { id },
     });
     if (!<%= camelCase %>) throw baseError.EntityNotExistsError;
@@ -130,7 +130,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     const <%= camelCase %>s = await <%= PascalCase %>Model.schema(
       this.getTenantSchema()
     ).findAll({
-      attributes: this.generateAttributes(options?.columns, options?.exclusive),
+      ...this.generateFindOptions(options),
       where: { <%= aggrKey %> },
     });
     return <%= camelCase %>s.map(entity => _.omit(entity.toJSON(), 'tenantId') as <%= PascalCase %>);

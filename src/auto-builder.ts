@@ -34,7 +34,7 @@ export class AutoBuilder {
     if (this.dialect.showTablesQuery) {
       const showTablesSql = this.dialect.showTablesQuery(this.schema);
       prom = this.executeQuery<string>(showTablesSql);
-      console.log(showTablesSql)
+      // console.log(showTablesSql)
     } else {
       prom = this.queryInterface.showAllTables();
     }

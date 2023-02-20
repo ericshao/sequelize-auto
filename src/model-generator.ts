@@ -46,7 +46,11 @@ export class ModelGenerator {
     omitPrefix?: number;
   };
 
-  constructor(tableData: TableData, dialect: DialectOptions, options: AutoOptions) {
+  constructor(
+    tableData: TableData,
+    dialect: DialectOptions,
+    options: AutoOptions
+  ) {
     this.tables = tableData.tables;
     this.foreignKeys = tableData.foreignKeys;
     this.hasTriggerTables = tableData.hasTriggerTables;
@@ -87,7 +91,7 @@ export class ModelGenerator {
     const header = this.makeHeaderTemplate();
 
     const text: { [name: string]: string } = {};
-    tableNames.forEach((table) => {
+    tableNames.forEach(table => {
       let str = header;
       // console.warn('@@@@@@@@@@@@@', this.tables[table])
       const [schemaName, tableNameOrig] = qNameSplit(table);
@@ -101,10 +105,14 @@ export class ModelGenerator {
       if (this.options.lang === 'ts') {
         const associations = this.addTypeScriptAssociationMixins(table);
         const needed = _.keys(associations.needed).sort();
-        needed.forEach((fkTable) => {
+        needed.forEach(fkTable => {
           const set = associations.needed[fkTable];
           const [fkSchema, fkTableName] = qNameSplit(fkTable);
-          const filename = recase(this.options.caseFile, fkTableName, this.options.singularize);
+          const filename = recase(
+            this.options.caseFile,
+            fkTableName,
+            this.options.singularize
+          );
           str += 'import type { ';
           str += Array.from(set.values()).sort().join(', ');
           str += ` } from './${filename}';\n`;
@@ -120,7 +128,8 @@ export class ModelGenerator {
         //   str += `export type #TABLE#Id = #TABLE#[#TABLE#Pk];\n`;
         // }
 
-        const creationOptionalFields = this.getTypeScriptCreationOptionalFields(table);
+        const creationOptionalFields =
+          this.getTypeScriptCreationOptionalFields(table);
 
         // if (creationOptionalFields.length) {
         //   str += `export type #TABLE#OptionalAttributes = ${creationOptionalFields.map((k) => `"${recase(this.options.caseProp, k)}"`).join(' | ')};\n`;
@@ -187,8 +196,13 @@ export class ModelGenerator {
   private addTable(table: string) {
     const [schemaName, tableNameOrig] = qNameSplit(table);
     const space = this.space;
-    let timestamps = (this.options.additional && this.options.additional.timestamps === true) || false;
-    let paranoid = (this.options.additional && this.options.additional.paranoid === true) || false;
+    let timestamps =
+      (this.options.additional &&
+        this.options.additional.timestamps === true) ||
+      false;
+    let paranoid =
+      (this.options.additional && this.options.additional.paranoid === true) ||
+      false;
 
     let str = '';
 
@@ -216,7 +230,9 @@ export class ModelGenerator {
     }
 
     // conditionally add additional options
-    const hasadditional = _.isObject(this.options.additional) && _.keys(this.options.additional).length > 0;
+    const hasadditional =
+      _.isObject(this.options.additional) &&
+      _.keys(this.options.additional).length > 0;
     if (hasadditional) {
       _.each(this.options.additional, (value, key) => {
         if (key === 'name') {
@@ -275,7 +291,9 @@ export class ModelGenerator {
 
     // Find foreign key
     const foreignKey =
-      this.foreignKeys[table] && this.foreignKeys[table][field] ? this.foreignKeys[table][field] : null;
+      this.foreignKeys[table] && this.foreignKeys[table][field]
+        ? this.foreignKeys[table][field]
+        : null;
     const fieldObj = this.tables[table][field] as Field;
 
     if (_.isObject(foreignKey)) {
@@ -287,7 +305,8 @@ export class ModelGenerator {
 
     const quoteWrapper = '"';
 
-    const unique = fieldObj.unique || (fieldObj.foreignKey && fieldObj.foreignKey.isUnique);
+    const unique =
+      fieldObj.unique || (fieldObj.foreignKey && fieldObj.foreignKey.isUnique);
 
     const isSerialKey =
       (fieldObj.foreignKey && fieldObj.foreignKey.isSerialKey) ||
@@ -299,7 +318,7 @@ export class ModelGenerator {
     let isDeprecatedField;
     // column's attributes
     const fieldAttrs = _.keys(fieldObj);
-    fieldAttrs.forEach((attr) => {
+    fieldAttrs.forEach(attr => {
       // We don't need the special attribute from postgresql; "unique" is handled separately
       if (attr === 'special' || attr === 'elementType' || attr === 'unique') {
         return true;
@@ -312,7 +331,8 @@ export class ModelGenerator {
           this.dialect.name === 'postgres' &&
           fieldObj.foreignKey &&
           fieldObj.foreignKey.isPrimaryKey === true &&
-          (fieldObj.foreignKey.generation === 'ALWAYS' || fieldObj.foreignKey.generation === 'BY DEFAULT')
+          (fieldObj.foreignKey.generation === 'ALWAYS' ||
+            fieldObj.foreignKey.generation === 'BY DEFAULT')
         ) {
           str += space[3] + 'autoIncrementIdentity: true,\n';
         }
@@ -322,8 +342,16 @@ export class ModelGenerator {
       if (attr === 'foreignKey') {
         if (foreignKey && foreignKey.isForeignKey) {
           str += space[3] + 'references: {\n';
-          str += space[4] + "model: '" + fieldObj[attr].foreignSources.target_table + "',\n";
-          str += space[4] + "key: '" + fieldObj[attr].foreignSources.target_column + "'\n";
+          str +=
+            space[4] +
+            "model: '" +
+            fieldObj[attr].foreignSources.target_table +
+            "',\n";
+          str +=
+            space[4] +
+            "key: '" +
+            fieldObj[attr].foreignSources.target_column +
+            "'\n";
           str += space[3] + '}';
         } else {
           return true;
@@ -332,7 +360,10 @@ export class ModelGenerator {
         // covered by foreignKey
         return true;
       } else if (attr === 'primaryKey') {
-        if (fieldObj[attr] === true && (!_.has(fieldObj, 'foreignKey') || !!fieldObj.foreignKey.isPrimaryKey)) {
+        if (
+          fieldObj[attr] === true &&
+          (!_.has(fieldObj, 'foreignKey') || !!fieldObj.foreignKey.isPrimaryKey)
+        ) {
           str += space[3] + 'primaryKey: true';
         } else {
           return true;
@@ -345,7 +376,8 @@ export class ModelGenerator {
             this.dialect.name === 'postgres' &&
             fieldObj.foreignKey &&
             fieldObj.foreignKey.isPrimaryKey === true &&
-            (fieldObj.foreignKey.generation === 'ALWAYS' || fieldObj.foreignKey.generation === 'BY DEFAULT')
+            (fieldObj.foreignKey.generation === 'ALWAYS' ||
+              fieldObj.foreignKey.generation === 'BY DEFAULT')
           ) {
             str += space[3] + 'autoIncrementIdentity: true,\n';
           }
@@ -354,9 +386,19 @@ export class ModelGenerator {
         return true;
       } else if (attr === 'allowNull') {
         // str += space[3] + attr + ": " + fieldObj[attr];
-        return true;
+        if (fieldObj[attr] === true) {
+          return true;
+        }
+        str += space[3] + attr + ': ' + fieldObj[attr];
       } else if (attr === 'defaultValue') {
-        return true;
+        // console.warn('defaultValue', fieldObj[attr]);
+        if (fieldObj[attr] === null) {
+          return true;
+        } else if (fieldObj[attr] === '') {
+          str += space[3] + attr + ': ' + quoteWrapper + quoteWrapper;
+        } else {
+          str += space[3] + attr + ': ' + fieldObj[attr];
+        }
       } else if (attr === 'comment') {
         let val = fieldObj[attr];
         if (!val) {
@@ -367,13 +409,17 @@ export class ModelGenerator {
           return true;
         }
         val = val.split('#')[0];
-        val = _.isString(val) ? quoteWrapper + this.escapeSpecial(val) + quoteWrapper : val;
+        val = _.isString(val)
+          ? quoteWrapper + this.escapeSpecial(val) + quoteWrapper
+          : val;
         str += space[3] + attr + ': ' + val;
       } else {
         let val = attr !== 'type' ? null : this.getSqType(fieldObj, attr);
         if (val == null) {
           val = (fieldObj as any)[attr];
-          val = _.isString(val) ? quoteWrapper + this.escapeSpecial(val) + quoteWrapper : val;
+          val = _.isString(val)
+            ? quoteWrapper + this.escapeSpecial(val) + quoteWrapper
+            : val;
         }
         str += space[3] + attr + ': ' + val;
       }
@@ -386,18 +432,25 @@ export class ModelGenerator {
     }
 
     if (unique) {
-      const uniq = _.isString(unique) ? quoteWrapper + unique.replace(/\"/g, '\\"') + quoteWrapper : unique;
+      const uniq = _.isString(unique)
+        ? quoteWrapper + unique.replace(/\"/g, '\\"') + quoteWrapper
+        : unique;
       str += space[3] + 'unique: ' + uniq + ',\n';
     }
 
-    if (field !== fieldName) {
-      str += space[3] + "field: '" + field + "',\n";
-    }
+    // if (field !== fieldName) {
+    //   str += space[3] + "field: '" + field + "',\n";
+    // }
 
     // removes the last `,` within the attribute options
     // str = str.trim().replace(/,+$/, '') + "\n";
     str = space[2] + str + space[2] + '})\n';
-    str += space[2] + this.quoteName(fieldName) + ': ' + this.getTypeScriptType(table, field) + ';\n\n';
+    str +=
+      space[2] +
+      this.quoteName(fieldName) +
+      ': ' +
+      this.getTypeScriptType(table, field) +
+      ';\n\n';
     return str;
   }
 
@@ -407,7 +460,7 @@ export class ModelGenerator {
     let str = '';
     if (indexes && indexes.length) {
       str += space[2] + 'indexes: [\n';
-      indexes.forEach((idx) => {
+      indexes.forEach(idx => {
         if (!idx.primary) {
           str += space[3] + '{\n';
           if (idx.name) {
@@ -424,7 +477,7 @@ export class ModelGenerator {
             }
           }
           str += space[4] + `fields: [\n`;
-          idx.fields.forEach((ff) => {
+          idx.fields.forEach(ff => {
             str += space[5] + `{ name: "${ff.attribute}"`;
             if (ff.collate) {
               str += `, collate: "${ff.collate}"`;
@@ -461,7 +514,12 @@ export class ModelGenerator {
 
     if (type === 'tinyint(1)') {
       val = 'DataTypes.TINYINT({ length: 1 })';
-    } else if (type === 'boolean' || type === 'bit(1)' || type === 'bit' || type === 'tinyint(1) unsigned') {
+    } else if (
+      type === 'boolean' ||
+      type === 'bit(1)' ||
+      type === 'bit' ||
+      type === 'tinyint(1) unsigned'
+    ) {
       val = 'DataTypes.BOOLEAN';
 
       // postgres range types
@@ -475,9 +533,13 @@ export class ModelGenerator {
       val = 'DataTypes.RANGE(DataTypes.DATEONLY)';
     } else if (type === 'tsrange' || type === 'tstzrange') {
       val = 'DataTypes.RANGE(DataTypes.DATE)';
-    } else if ((typematch = type.match(/^(bigint|smallint|mediumint|tinyint|int)/))) {
+    } else if (
+      (typematch = type.match(/^(bigint|smallint|mediumint|tinyint|int)/))
+    ) {
       // integer subtypes
-      val = 'DataTypes.' + (typematch[0] === 'int' ? 'INTEGER' : typematch[0].toUpperCase());
+      val =
+        'DataTypes.' +
+        (typematch[0] === 'int' ? 'INTEGER' : typematch[0].toUpperCase());
       if (/unsigned/i.test(type)) {
         val += '.UNSIGNED';
       }
@@ -569,9 +631,12 @@ export class ModelGenerator {
 
   /** Add schema to table so it will match the relation data.  Fixes mysql problem. */
   private addSchemaForRelations(table: string) {
-    if (!table.includes('.') && !this.relations.some((rel) => rel.childTable === table)) {
+    if (
+      !table.includes('.') &&
+      !this.relations.some(rel => rel.childTable === table)
+    ) {
       // if no tables match the given table, then assume we need to fix the schema
-      const first = this.relations.find((rel) => !!rel.childTable);
+      const first = this.relations.find(rel => !!rel.childTable);
       if (first) {
         const [schemaName, tableName] = qNameSplit(first.childTable);
         if (schemaName) {
@@ -589,7 +654,7 @@ export class ModelGenerator {
 
     table = this.addSchemaForRelations(table);
 
-    this.relations.forEach((rel) => {
+    this.relations.forEach(rel => {
       if (!rel.isM2M) {
         if (rel.childTable === table) {
           // current table is a child that belongsTo parent
@@ -643,8 +708,12 @@ export class ModelGenerator {
           const isParent = rel.parentTable === table;
           const thisModel = isParent ? rel.parentModel : rel.childModel;
           const otherModel = isParent ? rel.childModel : rel.parentModel;
-          const otherModelSingular = _.upperFirst(singularize(isParent ? rel.childProp : rel.parentProp));
-          const lotherModelPlural = pluralize(isParent ? rel.childProp : rel.parentProp);
+          const otherModelSingular = _.upperFirst(
+            singularize(isParent ? rel.childProp : rel.parentProp)
+          );
+          const lotherModelPlural = pluralize(
+            isParent ? rel.childProp : rel.parentProp
+          );
           const otherModelPlural = _.upperFirst(lotherModelPlural);
           const otherTable = isParent ? rel.childTable : rel.parentTable;
           str += `${sp}// ${thisModel} belongsToMany ${otherModel} via ${rel.parentId} and ${rel.childId}\n`;
@@ -676,11 +745,16 @@ export class ModelGenerator {
     const fields = _.keys(this.tables[table]);
     const notNull = isInterface ? '' : '!';
     let str = '';
-    fields.forEach((field) => {
-      if (!this.options.skipFields || !this.options.skipFields.includes(field)) {
+    fields.forEach(field => {
+      if (
+        !this.options.skipFields ||
+        !this.options.skipFields.includes(field)
+      ) {
         const name = this.quoteName(recase(this.options.caseProp, field));
         const isOptional = this.getTypeScriptFieldOptional(table, field);
-        str += `${sp}${name}${isOptional ? '?' : notNull}: ${this.getTypeScriptType(table, field)};\n`;
+        str += `${sp}${name}${
+          isOptional ? '?' : notNull
+        }: ${this.getTypeScriptType(table, field)};\n`;
       }
     });
     return str;
@@ -729,7 +803,7 @@ export class ModelGenerator {
   private getEnumValues(fieldObj: TSField): string[] {
     if (fieldObj.special) {
       // postgres
-      return fieldObj.special.map((v) => `"${v}"`);
+      return fieldObj.special.map(v => `"${v}"`);
     } else {
       // mysql
       return fieldObj.type.substring(5, fieldObj.type.length - 1).split(',');
@@ -742,9 +816,13 @@ export class ModelGenerator {
       return false;
     }
     return (
-      (!additional.createdAt && (recase('c', field) === 'createdAt' || recase('c', field) === 'createdDate')) ||
+      (!additional.createdAt &&
+        (recase('c', field) === 'createdAt' ||
+          recase('c', field) === 'createdDate')) ||
       additional.createdAt === field ||
-      (!additional.updatedAt && (recase('c', field) === 'updatedAt' || recase('c', field) === 'lastUpdatedDate')) ||
+      (!additional.updatedAt &&
+        (recase('c', field) === 'updatedAt' ||
+          recase('c', field) === 'lastUpdatedDate')) ||
       additional.updatedAt === field
     );
   }
@@ -754,14 +832,26 @@ export class ModelGenerator {
     if (additional.timestamps === false || additional.paranoid === false) {
       return false;
     }
-    return (!additional.deletedAt && recase('c', field) === 'deletedAt') || additional.deletedAt === field;
+    return (
+      (!additional.deletedAt && recase('c', field) === 'deletedAt') ||
+      additional.deletedAt === field
+    );
   }
 
   private isIgnoredField(field: string) {
-    if (this.options.extendMode === 'entity' || this.options.extendMode === 'vo') {
-      return ['id', 'uid', 'tenantId', 'createdBy', 'createdDate', 'lastUpdatedBy', 'lastUpdatedDate'].includes(
-        recase('c', field)
-      );
+    if (
+      this.options.extendMode === 'entity' ||
+      this.options.extendMode === 'vo'
+    ) {
+      return [
+        'id',
+        'uid',
+        'tenantId',
+        'createdBy',
+        'createdDate',
+        'lastUpdatedBy',
+        'lastUpdatedDate',
+      ].includes(recase('c', field));
     }
     return this.options.skipFields && this.options.skipFields.includes(field);
   }
@@ -795,7 +885,9 @@ export class ModelGenerator {
   }
 
   private isBoolean(fieldType: string): boolean {
-    return /^(boolean|bit)/.test(fieldType) || fieldType === 'tinyint(1) unsigned';
+    return (
+      /^(boolean|bit)/.test(fieldType) || fieldType === 'tinyint(1) unsigned'
+    );
   }
 
   private isDate(fieldType: string): boolean {
