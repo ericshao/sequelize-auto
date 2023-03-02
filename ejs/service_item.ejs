@@ -111,6 +111,7 @@ export class <%= PascalCase %>Service extends TenancyService {
       };
   }
 
+  @CtxTransactional()
   public async getById(
     id: number,
     options: API.QueryOptions = { omitNil: true }
@@ -118,11 +119,13 @@ export class <%= PascalCase %>Service extends TenancyService {
     const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
       ...this.generateFindOptions(options),
       where: { id },
+      transaction: this.getTransaction(),
     });
     if (!<%= camelCase %>) throw baseError.EntityNotExistsError;
     return _.omit(<%= camelCase %>.toJSON(), 'tenantId') as <%= PascalCase %>;
   }
 
+  @CtxTransactional()
   public async findAllByAggrUid(
     <%= aggrKey %>: string,
     options: API.QueryOptions = { omitNil: true }
@@ -132,6 +135,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     ).findAll({
       ...this.generateFindOptions(options),
       where: { <%= aggrKey %> },
+      transaction: this.getTransaction(),
     });
     return <%= camelCase %>s.map(entity => _.omit(entity.toJSON(), 'tenantId') as <%= PascalCase %>);
   }

@@ -6,13 +6,13 @@
 --em 扩展模式: base  entity  vo
 
 生成实体
-./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity  -d qm_saas -t mdm_reg_party
+./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity  -d dev_c2cloud -t mdm_reg_party
 
 生成值对象
-./bin/sequelize-auto -x 123456 -o ./output --op 3 --em vo  -d qm_saas -t mdm_reg_party
+./bin/sequelize-auto -x 123456 -o ./output --op 3 --em vo  -d c2cloud -t mdm_reg_party
 
 生成基础对象
-./bin/sequelize-auto -x 123456 -o ./output --op 3 --em base  -d qm_saas -t mdm_reg_party
+./bin/sequelize-auto -x 123456 -o ./output --op 3 --em base  -d c2cloud -t mdm_reg_party
 
 生成实体服务与控制器
 ./bin/midway-auto -o ./output -n delivery -a 交货 -t entity --ak shpUid

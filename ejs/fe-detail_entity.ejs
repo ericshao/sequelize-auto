@@ -34,7 +34,7 @@ type <%= PascalCase %>DetailProps = {
 export const ParentContext = React.createContext<{
   contextRouteKey?: string;
   contextValues?: <%= PascalCase %>;
-  contextState?: StateType;
+  contextState?: SMState;
 }>({});
 
 const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) => {

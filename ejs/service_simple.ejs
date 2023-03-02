@@ -97,6 +97,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
       ...this.generateFindOptions(options),
       where: { uid },
+      transaction: this.getTransaction(),
     });
     if (!<%= camelCase %>) throw baseError.EntityNotExistsError;
     return _.omit(<%= camelCase %>.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>;

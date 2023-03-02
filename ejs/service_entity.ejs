@@ -121,6 +121,7 @@ export class <%= PascalCase %>Service extends TenancyService {
       };
   }
 
+  @CtxTransactional()
   public async getByUid(
     uid: string,
     options: API.QueryOptions = { omitNil: true }
@@ -128,6 +129,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     const entity = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
       ...this.generateFindOptions(options),
       where: { uid },
+      transaction: this.getTransaction(),
     });
     if (!entity) throw baseError.EntityNotExistsError;
     return _.omit(
@@ -136,6 +138,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     ) as <%= PascalCase %>;
   }
 
+  @CtxTransactional()
   public async findAllByAggrUid(
     <%= aggrKey %>: string,
     options: API.QueryOptions = { omitNil: true }
@@ -145,10 +148,12 @@ export class <%= PascalCase %>Service extends TenancyService {
     ).findAll({
       ...this.generateFindOptions(options),
       where: { <%= aggrKey %> },
+      transaction: this.getTransaction(),
     });
     return <%= camelCase %>s.map(entity => _.omit(options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>);
   }
 
+  @CtxTransactional()
   public async findOne(
     filter: API.Filter,
     options: API.QueryOptions = { omitNil: true }
@@ -156,6 +161,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     const entity = await <%= PascalCase %>Model.findOne({
     ...this.generateFindOptions(options),
       where: filter,
+      transaction: this.getTransaction(),
     });
     if (entity) {
       return _.omit(
@@ -165,6 +171,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     }
   }
 
+  @CtxTransactional()
   public async findAll(
     filter: API.Filter,
     options: API.QueryOptions = { omitNil: true }
@@ -172,6 +179,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     const entities = await <%= PascalCase %>Model.findAll({
     ...this.generateFindOptions(options),
       where: filter,
+      transaction: this.getTransaction(),
     });
     return entities.map(
       entity =>

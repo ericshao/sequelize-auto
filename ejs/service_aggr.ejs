@@ -109,6 +109,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     const entity = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
       ...this.generateFindOptions(options),
       where: { uid },
+      transaction: this.getTransaction(),
     });
     if (!entity) throw baseError.EntityNotExistsError;
     return _.omit(
