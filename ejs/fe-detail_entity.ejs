@@ -168,7 +168,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         )}
         {tabActiveKey === 'auditLog' && (
           <ProCard bordered>
-            <AuditLog sourceUid={uid!} />
+            <AuditLog bizUid={uid!} />
           </ProCard>
         )}
       </ParentContext.Provider>
