@@ -121,7 +121,7 @@ const <%= PascalCase %>List: React.FC = () => {
                 value={view}
                 onChange={(value) => {
                   setView(value as string);
-                  actionRef.current?.reloadAndRest && actionRef.current?.reloadAndRest();
+                  actionRef.current?.reloadAndRest?.();
                 }}
                 style={{ marginLeft: 4 }}
               />

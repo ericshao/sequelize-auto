@@ -88,10 +88,10 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
           title: currentValues?.uid,
           onBack: props.insideDrawer ? undefined : () => history.back(),
           breadcrumb: {
-            routes: [
+            items: [
               {
                 path: '/',
-                breadcrumbName: '<%= label %>',
+                title: '<%= label %>',
               },
             ],
           },

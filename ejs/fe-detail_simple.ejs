@@ -11,7 +11,7 @@ import AuditLog from '@/pages/components/AuditLog';
 // Services
 import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/cmp/<%= camelCase %>';
 // Utils
-import { ActionMap, renderActions } from '@/utils';
+import { ActionMap, renderActions } from '@/components/utils';
 // Hooks
 import { useDevInspector } from '@/hooks/devInspector';
 import { useFormState } from '@/hooks/formState';
@@ -86,10 +86,10 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
           title: currentValues?.uid,
           onBack: props.insideDrawer ? () => props.onClose?.() : () => history.back(),
           breadcrumb: {
-            routes: [
+            items: [
               {
                 path: '/',
-                breadcrumbName: '<%= label %>',
+                title: '<%= label %>',
               },
             ],
           },

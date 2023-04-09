@@ -1,4 +1,4 @@
-./bin/sequelize-auto -h 192.168.3.61 -d welogix_saas -u root -p 9030  --dialect mysql -l ts --cm p --cp c  -o ./output -t sof_global_detail
+./bin/sequelize-auto -h 192.168.3.61 -d testing_c2cloud -u root -p 9030  --dialect mysql -l ts --cm p --cp c  -o ./output --op 3 -v -t sof_global_detail
 
 ./bin/sequelize-auto -h 192.168.3.66 -u welo -x 123456 -p 3306  --dialect mysql -l ts --cm p --cp c  -o ./output -d qm_saas -t tcs_general_tradeitem
 

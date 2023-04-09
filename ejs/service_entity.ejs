@@ -174,7 +174,7 @@ export class <%= PascalCase %>Service extends TenancyService {
   @CtxTransactional()
   public async findAll(
     filter: API.Filter,
-    options: API.QueryOptions = { omitNil: true }
+    options: API.QueryOptions = { omitNil: true, limit: 1000 }
   ): Promise<<%= PascalCase %>[]> {
     const entities = await <%= PascalCase %>Model.findAll({
     ...this.generateFindOptions(options),
