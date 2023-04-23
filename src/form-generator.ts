@@ -56,26 +56,20 @@ export class FormGenerator {
 
     if (this.options.lang === 'ts') {
       header += "import { AccessType } from '@/access';\n";
+      header += `import {
+          colProps,
+          decimalFieldProps,
+          FormColumnsParams,
+          integerFieldProps,
+          metaCollapsibleProps,
+          ValueTypeMapKey,
+        } from '@/components/schema-components';\n`;
       header +=
-        "import { decimalFieldProps, integerFieldProps, ValueTypeMapKey } from '@/components/schema-components';\n";
-      header +=
-        "import { recurrsiveSetFieldProps } from '@/components/schema-components/util';\n";
+        "import { formColumnsResult } from '@/components/schema-components/util';\n";
       header +=
         "import { ProFormColumnsType } from '@/components/SchemaForm';\n";
       header +=
         "import { convertToNumber, convertToString } from '@/utils';\n\n";
-      header += `const colProps = {
-        xs: 24,
-        md: 12,
-        lg: 6,
-      };\n\n`;
-
-      header += `type FormColumnsParams = {
-        isCreate?: boolean;
-        uid?: string;
-        disabled?: boolean;
-        updateFn?: (key: string, value: any) => void;
-      };\n\n`;
     }
     return header;
   }
@@ -102,13 +96,7 @@ export class FormGenerator {
           'const columns: ProFormColumnsType<#TABLE#, ValueTypeMapKey>[] = [\n';
         str += this.addFormColumns(table, true);
         str += ']\n';
-        str +=
-          `return params?.isCreate ? columns.filter((column) => !column.hideInCreate) : columns.map((column) => {
-            if (params?.disabled) {
-              recurrsiveSetFieldProps([column], { disabled: true });
-            }
-            return column;
-          });\n`
+        str += `return formColumnsResult(columns, params);\n`;
 
         str += '}\n';
       }
@@ -155,10 +143,10 @@ export class FormGenerator {
           str += `    title: '${this.getFieldComment(table, field)}',\n`;
           str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
           if (this.isDecimalField(table, field)) {
-            str +=  "    fieldProps: decimalFieldProps,\n";
+            str += '    fieldProps: decimalFieldProps,\n';
           }
           if (this.isIntegerField(table, field)) {
-            str +=  "    fieldProps: integerFieldProps,\n";
+            str += '    fieldProps: integerFieldProps,\n';
           }
           str += '    colProps,\n';
           str += '  },\n';
@@ -195,18 +183,14 @@ export class FormGenerator {
     const fieldObj = this.tables[table][field] as TSField;
     const rawFieldType = fieldObj['type'] || '';
     const fieldType = String(rawFieldType).toLowerCase();
-    return /^(float|money|smallmoney|double|decimal)/.test(
-      fieldType
-    );
+    return /^(float|money|smallmoney|double|decimal)/.test(fieldType);
   }
 
   private isIntegerField(table: string, field: string) {
     const fieldObj = this.tables[table][field] as TSField;
     const rawFieldType = fieldObj['type'] || '';
     const fieldType = String(rawFieldType).toLowerCase();
-    return /^(smallint|mediumint|tinyint|int|bigint)/.test(
-      fieldType
-    );
+    return /^(smallint|mediumint|tinyint|int|bigint)/.test(fieldType);
   }
 
   private getTypeScriptFieldType(fieldObj: TSField, attr: keyof TSField) {
@@ -281,15 +265,17 @@ export class FormGenerator {
       this.options.extendMode === 'entity' ||
       this.options.extendMode === 'item'
     ) {
-      return [
-        'id',
-        'uid',
-        'tenantId',
-        'createdBy',
-        'createdDate',
-        'lastUpdatedBy',
-        'lastUpdatedDate',
-      ].includes(recase('c', field)) || /(uid)$/.test(field);
+      return (
+        [
+          'id',
+          'uid',
+          'tenantId',
+          'createdBy',
+          'createdDate',
+          'lastUpdatedBy',
+          'lastUpdatedDate',
+        ].includes(recase('c', field)) || /(uid)$/.test(field)
+      );
     }
     return this.options.skipFields && this.options.skipFields.includes(field);
   }

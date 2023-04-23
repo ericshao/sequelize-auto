@@ -3,11 +3,15 @@ import {
   baseError,
   CtxTransactional,
   CtxTXParticipant,
+  omitNil,
 } from '@midwayjs-plus/common';
+import { TraceSpan } from '@midwayjs-plus/otel';
 import { TenancyService } from '@c2pkg/multi-tenancy';
+import { AuditLog } from '@c2pkg/auditlog';
 import { nanoid } from 'nanoid';
 import * as _ from 'lodash';
-import { <%= PascalCase %>Model, <%= PascalCase %>, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '.';
+import { <%= PascalCase %>Model } from '../model';
+import { <%= PascalCase %>, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
 
 
 @Provide()
@@ -52,7 +56,9 @@ export class <%= PascalCase %>Service extends TenancyService {
     );
   }
 
+  @TraceSpan()
   @CtxTransactional()
+  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'req.Update<%= PascalCase %>Dto.identifiers', 'update')
   public async updateByUid(
     updateDto: Update<%= PascalCase %>Dto
   ): Promise<Record<string, number>> {
@@ -64,7 +70,9 @@ export class <%= PascalCase %>Service extends TenancyService {
     return { updated: updated[0] };
   }
 
+  @TraceSpan()
   @CtxTransactional()
+  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'req.Array', 'delete', '删除')
   public async deleteByUid(
     identifiers: string[]
   ): Promise<Record<string, number>> {
@@ -85,22 +93,67 @@ export class <%= PascalCase %>Service extends TenancyService {
       return {
         ...listResult,
         data: listResult.data.map(
-          item => _.omit(item, ['id', 'tenantId']) as <%= PascalCase %>
+          entity =>
+          _.omit(options?.omitNil ? omitNil(entity) : entity, [
+            'id',
+            'tenantId',
+          ]) as <%= PascalCase %>
         ),
       };
   }
 
+  @CtxTransactional()
   public async getByUid(
     uid: string,
     options: API.QueryOptions = { omitNil: true }
   ): Promise<<%= PascalCase %>> {
-    const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
+    const entity = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
       ...this.generateFindOptions(options),
       where: { uid },
       transaction: this.getTransaction(),
     });
-    if (!<%= camelCase %>) throw baseError.EntityNotExistsError;
-    return _.omit(<%= camelCase %>.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>;
+    if (!entity) throw baseError.EntityNotExistsError;
+    return _.omit(
+      options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(),
+      ['id', 'tenantId']
+    ) as <%= PascalCase %>;
+  }
+
+
+  @CtxTransactional()
+  public async findOne(
+    filter: API.Filter,
+    options: API.QueryOptions = { omitNil: true }
+  ): Promise<<%= PascalCase %>> {
+    const entity = await <%= PascalCase %>Model.findOne({
+    ...this.generateFindOptions(options),
+      where: filter,
+      transaction: this.getTransaction(),
+    });
+    if (entity) {
+      return _.omit(
+        options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(),
+        ['id']
+      ) as <%= PascalCase %>;
+    }
+  }
+
+  @CtxTransactional()
+  public async findAll(
+    filter: API.Filter,
+    options: API.QueryOptions = { omitNil: true, limit: 1000 }
+  ): Promise<<%= PascalCase %>[]> {
+    const entities = await <%= PascalCase %>Model.findAll({
+    ...this.generateFindOptions(options),
+      where: filter,
+      transaction: this.getTransaction(),
+    });
+    return entities.map(
+      entity =>
+        _.omit(options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(), [
+          'id',
+        ]) as <%= PascalCase %>
+    );
   }
 
   generateUid(): string {

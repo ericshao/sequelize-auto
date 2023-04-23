@@ -12,10 +12,20 @@ import {
 } from '@midwayjs/core';
 import { Validate } from '@midwayjs/validate';
 import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
+import {
+  PrivilegeResourceProvider,
+  CreatePrivilege,
+  DestroyPrivilege,
+  ListPrivilege,
+  ReadPrivilege,
+  SendPrivilege,
+  WritePrivilege,
+} from '../../../packages/privilege/decorator';
 import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
 import { <%= PascalCase %>Service } from '../service';
 
 @Controller('/<%= lowerCase%>', { description: '<%= label %>管理' })
+@PrivilegeResourceProvider('<%= PascalCase %>', { globalPrefix: GLOBAL_PREFIX })
 export class <%= PascalCase %>Controller extends BaseController {
 
   @Inject()
@@ -25,6 +35,7 @@ export class <%= PascalCase %>Controller extends BaseController {
     description: '创建<%= label %>',
   })
   @Validate()
+  @CreatePrivilege()
   async create<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Create<%= PascalCase %>Dto) {
     const result = await this.<%= camelCase %>Service.create(<%= camelCase %>);
     this.success(result);
@@ -34,6 +45,7 @@ export class <%= PascalCase %>Controller extends BaseController {
     description: '更新<%= label %>',
   })
   @Validate()
+  @WritePrivilege()
   async update<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Update<%= PascalCase %>Dto) {
     const result = await this.<%= camelCase %>Service.updateByUid(<%= camelCase %>);
     this.success(result);
@@ -43,6 +55,7 @@ export class <%= PascalCase %>Controller extends BaseController {
     description: '删除<%= label %>',
   })
   @Validate()
+  @DestroyPrivilege()
   async delete<%= PascalCase %>(@Body() body: IdentifiersDto) {
     const result = await this.<%= camelCase %>Service.deleteByUid(body.identifiers as string[]);
     this.success(result);
@@ -50,6 +63,10 @@ export class <%= PascalCase %>Controller extends BaseController {
 
   @Post('/list', {
     description: '<%= label %>列表',
+  })
+  @ListPrivilege({
+    globalPrefix: GLOBAL_PREFIX,
+    conditionKeys: GLOBAL_CONDITION_KEYS,
   })
   async query<%= PascalCase %>List(@Body(ALL) options: API.ListOptions) {
     const result = await this.<%= camelCase %>Service.omniQuery(options);
@@ -59,6 +76,7 @@ export class <%= PascalCase %>Controller extends BaseController {
   @Get('/:uid', {
     description: '获取<%= label %>',
   })
+  @ReadPrivilege()
   async get<%= PascalCase %>(@Param('uid') uid: string) {
     const result = await this.<%= camelCase %>Service.getByUid(uid);
     this.success(result);

@@ -82,8 +82,9 @@ export class DtoGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `@BizmetaProvider('#TABLE#')\n`;
+        str += `@BizmetaProvider('#TABLE#', { title: ''})\n`;
         str += 'export class #TABLE# extends #ENTITY# {\n';
+        str += 'static readonly BIZMETA_KEY = \'internal/#TABLE#\';';
         str += this.addTypeScriptFields(table, true);
         str += '}\n\n';
       }

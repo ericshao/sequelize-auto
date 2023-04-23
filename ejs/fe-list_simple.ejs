@@ -15,10 +15,9 @@ import UltraTable from '@/components/UltraTable';
 // Services
 import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/cmp/<%= camelCase %>';
 // Hooks
-import { useDetailPageDrawer } from '@/hooks/detailPageDrawer';
-import { useListState } from '@/hooks/listState';
-import { usePageConfig } from '@/hooks/pageConfig';
-import { usePageParam } from '@/hooks/pageParam';
+import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
+import { useListState } from '@/shares/hooks/listState';
+import { usePageParam } from '@/shares/hooks/pageParam';
 // Definitions
 import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
@@ -81,22 +80,19 @@ const <%= PascalCase %>List: React.FC = () => {
 
   // Table Columns
   const ultraColumns = new UltraColumns<<%= PascalCase %>>(
-    gen<%= PascalCase %>Columns({
-      valueEnums,
-      cusParams,
-    }),
+    gen<%= PascalCase %>Columns({}),
     actionRender,
   );
 
   return (
+    <ProProvider.Provider
+      value={{
+        ...contextFormValues,
+        valueTypeMap,
+      }}
+    >
     <Layout className="ant-layout-has-sider">
       <Content style={{ background: '#fff' }}>
-        <ProProvider.Provider
-        value={{
-          ...contextFormValues,
-          valueTypeMap,
-        }}
-      >
           <UltraTable
             rowKey="uid"
             actionRef={actionRef}
@@ -164,7 +160,7 @@ const <%= PascalCase %>List: React.FC = () => {
             scroll={{ x: ultraColumns.totalWidth }}
             // scrollYOffset={344}
           />
-        </ProProvider.Provider>
+
           <DetailPageDrawer
             values={currentRow}
             drawerOpen={detailPageDrawerOpen}
@@ -176,6 +172,7 @@ const <%= PascalCase %>List: React.FC = () => {
           />
           </Content>
     </Layout>
+    </ProProvider.Provider>
   );
 };
 export default <%= PascalCase %>List;

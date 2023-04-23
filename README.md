@@ -6,7 +6,7 @@
 --em 扩展模式: base  entity  vo
 
 生成实体
-./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity  -d dev_c2cloud -t mdm_reg_party
+./bin/sequelize-auto -x 123456 -o ./output --op 4 --em entity  -d c2cloud -t mdm_reg_party
 
 生成值对象
 ./bin/sequelize-auto -x 123456 -o ./output --op 3 --em vo  -d c2cloud -t mdm_reg_party

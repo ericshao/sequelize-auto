@@ -15,14 +15,18 @@ import UltraTable from '@/components/UltraTable';
 // Services
 import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/cmp/<%= camelCase %>';
 // Hooks
-import { useDetailPageDrawer } from '@/hooks/detailPageDrawer';
-import { useListState } from '@/hooks/listState';
-import { usePageConfig } from '@/hooks/pageConfig';
-import { usePageParam } from '@/hooks/pageParam';
+import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
+import { useDevInspector } from '@/shares/hooks/devInspector';
+import { useFlowBacklog } from '@/shares/hooks/flowBacklog';
+import { useImportData } from '@/shares/hooks/importData';
+import { useListState } from '@/shares/hooks/listState';
+import { usePageConfig } from '@/shares/hooks/pageConfig';
+import { usePageParam } from '@/shares/hooks/pageParam';
+import { useStateMachine } from '@/shares/hooks/stateMachine';
 // Definitions
 import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
-
+// Subpages
 
 const { Content } = Layout;
 
@@ -37,7 +41,8 @@ const <%= PascalCase %>List: React.FC = () => {
   // 页面参数
   const { valueEnums, cusParams } = usePageParam();
   // 页面配置
-  const { routeKey, access, privileges, presetColumns, presetFilters, viewFilterEnum } = usePageConfig();
+  const { pageTitle, routeKey, access, privileges, presetColumns, presetFilters, viewFilterEnum, ClearCache } =
+    usePageConfig();
   // 列表状态
   const { view, setView, currentRow, setCurrentRow, setCurrentFilter, confirmDelete } = useListState<<%= PascalCase %>>(
     actionRef,
@@ -46,17 +51,20 @@ const <%= PascalCase %>List: React.FC = () => {
       onDelete: (records: ManifestHead[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
     },
   );
-
- 
+  // 状态机
+  const { getCurrentState } = useStateMachine('internal/<%= PascalCase %>');
+  // Actions
+  const gotoDetailPage = (uid: string) => {
+    history.push(`/filing/<%= camelCase %>/${uid}`);
+  };
+  // 流程待办
+  const { BacklogList } = useFlowBacklog('internal/<%= PascalCase %>', gotoDetailPage);
   // 详情页 Drawer
   const { detailPageDrawerOpen, setDetailPageDrawerOpen, DetailPageDrawer } = useDetailPageDrawer(
     <<%= PascalCase %>Detail uid={currentRow?.uid!} onUpdated={() => {}} insideDrawer />,
   );
 
-  // Actions
-  const gotoDetailPage = (uid: string) => {
-    history.push(`/filing/<%= camelCase %>/${uid}`);
-  };
+
 
   // Table Columns
   const actionRender = (dom: React.ReactNode, record: <%= PascalCase %>) => [
@@ -96,125 +104,149 @@ const <%= PascalCase %>List: React.FC = () => {
     actionRender,
   );
 
+  const { DevInspector } = useDevInspector({ routeKey, presetFilters, access, privileges });
+
   return (
-    <PageContainer
-      ghost
-      header={{
-        title: '<%= label %>',
-        
+    <ProProvider.Provider
+      value={{
+        ...contextFormValues,
+        valueTypeMap,
       }}
     >
-      <Layout className="ant-layout-has-sider">
-        <Content style={{ background: '#fff' }}>
-          <ProProvider.Provider
-          value={{
-            ...contextFormValues,
-            valueTypeMap,
-          }}
-        >
-          <UltraTable
-            rowKey="uid"
-            headerTitle={
-              <Space>
-                <Segmented
-                options={presetFilters}
-                value={view}
-                onChange={(value) => {
-                  setView(value as string);
-                  actionRef.current?.reloadAndRest?.();
-                }}
-                style={{ marginLeft: 4 }}
-              />
-              </Space>
-            }
-            actionRef={actionRef}
-            columns={ultraColumns.getColumns()}
-            search={{
-              labelWidth: 'auto',
-            }}
-            request={async (params, sorter) => {
-              const { current, pageSize, ...search } = params;
-              const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view]};
-              setCurrentFilter(filter);
-              const res = await query<%= PascalCase %>List({
-                current,
-                pageSize,
-                columns: ultraColumns.getColumnKeys(),
-                filter,
-                sorter: Object.keys(sorter).length > 0 ? sorter : undefined,
-                // tenantId,
-              });
-              // setIdentifiers(res.result.data.map((item) => item.uid!));
-              return {
-                data: res.result.data,
-                success: res.success,
-                total: res.result.total,
-              };
-            }}
-            toolBarRender={() => [
-              <Access key="create" accessible={access.canCreate(privileges)}>
-              <CreateModal
-                key="create"
-                title="新建<%= label %>"
-                layoutType="DrawerForm"
-                formLayout="horizontal"
-                formColumns={gen<%= PascalCase %>FormColumns({
-                  isCreate: true,
-                })}
-                onCreate={async (values: <%= PascalCase %>) => {
-                  const res = await create<%= PascalCase %>(values);
-                  if (res.success) {
-                    message.success('新建成功');
-                    actionRef.current?.reload();
-                  }
-                  return res.success;
-                }}
-              />
-            </Access>,
-            ]}
-            rowSelection={{}}
-            tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
-              <Space size={24}>
-                <span>已选 {selectedRowKeys.length} 项</span>
-                <Access accessible={access.canTenantAdmin(privileges)}>
-                <Button
-                  key="delete"
-                  type="link"
-                  icon={<DeleteOutlined />}
-                  onClick={() => {
-                    confirmDelete(selectedRows);
-                  }}
-                >
-                  删除
-                </Button>
-              </Access>
-              </Space>
-            )}
-            locale={
-              {
-                // emptyText: () => renderEmptyText(actionRef, declarationStatistic?.unclassified, setAspect),
+      <PageContainer
+        ghost
+        header={{
+          title: '<%= label %>',
+        }}
+        extra={[
+          <Access key="create" accessible={access.canCreate(privileges)}>
+            <CreateModal
+              key="create"
+              title="新建<%= label %>"
+              layoutType="DrawerForm"
+              formLayout="horizontal"
+              formColumns={gen<%= PascalCase %>FormColumns({
+                isCreate: true,
+              })}
+              onCreate={async (values: <%= PascalCase %>) => {
+                const res = await create<%= PascalCase %>(values);
+                if (res.success) {
+                  message.success('新建成功');
+                  actionRef.current?.reload();
+                }
+                return res.success;
+              }}
+            />
+          </Access>,
+          <DevInspector key="dev" />,
+          <TableDropdown key="dropdown" menus={[ClearCache]} onSelect={(key: string) => {}} />,
+        ]}
+      >
+        <Layout className="ant-layout-has-sider">
+          <Content style={{ background: '#fff' }}>
+            <UltraTable
+              rowKey="uid"
+              headerTitle={
+                <Space>
+                  <Segmented
+                    options={presetFilters}
+                    value={view}
+                    onChange={(value) => {
+                      setView(value as string);
+                      actionRef.current?.reloadAndRest?.();
+                    }}
+                    style={{ marginLeft: 4 }}
+                  />
+                  <BacklogList />
+                </Space>
               }
-            }
-            columnsState={{
-              persistenceKey: routeKey,
-              persistenceType: 'localStorage',
-            }}
-            scroll={{ x: ultraColumns.totalWidth }}
-            // scrollYOffset={344}
-          />
-        </ProProvider.Provider>
-          <DetailPageDrawer
-            values={currentRow}
-            drawerOpen={detailPageDrawerOpen}
-            onCancel={() => {
-              actionRef.current?.reload();
-              setDetailPageDrawerOpen(false);
-              setCurrentRow(undefined);
-            }}
-          />
-        </Content>
-      </Layout>
-    </PageContainer>
+              actionRef={actionRef}
+              columns={ultraColumns.getColumns()}
+              search={{
+                labelWidth: 'auto',
+              }}
+              request={async (params, sorter) => {
+                const { current, pageSize, ...search } = params;
+                const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view]};
+                setCurrentFilter(filter);
+                const res = await query<%= PascalCase %>List({
+                  current,
+                  pageSize,
+                  columns: ultraColumns.getColumnKeys(),
+                  filter,
+                  sorter: Object.keys(sorter).length > 0 ? sorter : undefined,
+                });
+                return {
+                  data: res.result.data,
+                  success: res.success,
+                  total: res.result.total,
+                };
+              }}
+              toolBarRender={() => []}
+              rowSelection={{}}
+              tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => {
+                const stateCodeSet = new Set(selectedRows.map((row) => row.stateCode));
+                if (stateCodeSet.size > 1) {
+                  notification.warning({
+                    key: 'stateCode',
+                    message: '警告',
+                    description: '只能对同一状态的项进行批量操作',
+                  });
+                }
+                let currentState;
+                if (stateCodeSet.size === 1) {
+                  currentState = getCurrentState(Array.from(stateCodeSet)[0]!);
+                }
+                return (
+                  <Space size={24}>
+                    <span>已选 {selectedRowKeys.length} 项</span>
+                    <Access accessible={access.canTenantAdmin() && !!currentState?.actions.includes('delete<%= PascalCase %>')}>
+                      <Button
+                        key="delete"
+                        type="link"
+                        danger
+                        icon={<DeleteOutlined />}
+                        onClick={() => {
+                          confirmDelete(selectedRows);
+                        }}
+                      >
+                        删除
+                      </Button>
+                    </Access>
+                  </Space>
+                );
+              }}
+              locale={
+                {
+                  // emptyText: () => renderEmptyText(actionRef, declarationStatistic?.unclassified, setAspect),
+                }
+              }
+              columnsState={{
+                persistenceKey: routeKey,
+                persistenceType: 'localStorage',
+              }}
+              scroll={{ x: ultraColumns.totalWidth }}
+              rowClassName={(record) => {
+                // if (record.stateCode !== 0) {
+                //   return 'table-row-disabled';
+                // }
+                return '';
+              }}
+            />
+
+            <DetailPageDrawer
+              values={currentRow}
+              drawerOpen={detailPageDrawerOpen}
+              onCancel={() => {
+                actionRef.current?.reload();
+                setDetailPageDrawerOpen(false);
+                setCurrentRow(undefined);
+              }}
+            />
+          </Content>
+        </Layout>
+      </PageContainer>
+    </ProProvider.Provider>
   );
 };
 export default <%= PascalCase %>List;

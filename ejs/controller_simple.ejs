@@ -12,10 +12,10 @@ import {
 } from '@midwayjs/core';
 import { Validate } from '@midwayjs/validate';
 import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
-import { TenancyMiddleware } from '@c2pkg/multi-tenancy';
-import { <%= PascalCase %>Service, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '.';
+import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
+import { <%= PascalCase %>Service } from '../service';
 
-@Controller('/<%= lowerCase%>', { middleware: [TenancyMiddleware], description: '<%= label %>管理' })
+@Controller('/<%= lowerCase%>', { description: '<%= label %>管理' })
 export class <%= PascalCase %>Controller extends BaseController {
 
   @Inject()

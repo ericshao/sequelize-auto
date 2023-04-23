@@ -15,10 +15,10 @@ import UltraTable from '@/components/UltraTable';
 // Services
 import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/cmp/<%= camelCase %>';
 // Hooks
-import { useDetailPageDrawer } from '@/hooks/detailPageDrawer';
-import { useListState } from '@/hooks/listState';
-import { usePageConfig } from '@/hooks/pageConfig';
-import { usePageParam } from '@/hooks/pageParam';
+import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
+import { useListState } from '@/shares/hooks/listState';
+import { usePageConfig } from '@/shares/hooks/pageConfig';
+import { usePageParam } from '@/shares/hooks/pageParam';
 // Definitions
 import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';

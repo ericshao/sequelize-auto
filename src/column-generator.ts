@@ -55,17 +55,12 @@ export class ColumnGenerator {
     const sp = this.space[1];
 
     if (this.options.lang === 'ts') {
-      header += "import { dateRangeSearch, dateTimeRangeSearch, ValueTypeMapKey } from '@/components/schema-components';\n";
-      header += "import { convertValueEnum } from '@/components/schema-components/util';\n";
-      header += "import { UltraColumnType } from '@/components/UltraColumns';\n\n";
-
-      header += `type ColumnsParams = {
-        presetColumns?: { dataIndex: string; title: string; hideInTable: boolean; hideInSearch: boolean }[];
-        valueEnums?: ValueEnums;
-        cusParams?: CusParams;
-        tableColumnKeys?: string[];
-        searchColumnKeys?: string[];
-      };\n\n`;
+      header +=
+        "import { TableColumnsParams, ValueTypeMapKey } from '@/components/schema-components';\n";
+      header +=
+        "import { tableColumnsResult, transformStringToken, convertValueEnum } from '@/components/schema-components/util';\n";
+      header +=
+        "import { UltraColumnType } from '@/components/UltraColumns';\n\n";
     }
     return header;
   }
@@ -87,23 +82,12 @@ export class ColumnGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `export function gen#TABLE#Columns(params?: ColumnsParams): UltraColumnType<#TABLE#, ValueTypeMapKey>[] {\n`;
-        str += 'const columns: UltraColumnType<#TABLE#, ValueTypeMapKey>[] = [\n';
+        str += `export function gen#TABLE#Columns(params?: TableColumnsParams): UltraColumnType<#TABLE#, ValueTypeMapKey>[] {\n`;
+        str +=
+          'const columns: UltraColumnType<#TABLE#, ValueTypeMapKey>[] = [\n';
         str += this.addFormColumns(table, true);
-        str += ']\n'
-        str += `  return columns.map((column) => {
-          if (!column.dataIndex) {
-            return column;
-          }
-          if (params?.presetColumns) {
-            const presetColumn = params.presetColumns.find((preset) => preset.dataIndex === column.dataIndex);
-            if (presetColumn) {
-              return { ...column, ...presetColumn };
-            }
-            return { ...column, hideInTable: true, hideInSearch: true };
-          }
-          return column;
-        });\n`;
+        str += ']\n';
+        str += `  return tableColumnsResult(columns, params);\n`;
         str += '}\n\n';
       }
 
@@ -206,7 +190,8 @@ export class ColumnGenerator {
         'createdDate',
         'lastUpdatedBy',
         'lastUpdatedDate',
-      ].includes(recase('c', field)) || /(uid)$/.test(field)
+      ].includes(recase('c', field)) ||
+      /(uid)$/.test(field)
     ) {
       return '    hideInForm: true,\n';
     }

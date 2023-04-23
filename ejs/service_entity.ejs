@@ -59,9 +59,9 @@ export class <%= PascalCase %>Service extends TenancyService {
     );
   }
 
-  @AuditLog('internal/<%= PascalCase %>', 'req.Update<%= PascalCase %>Dto.identifiers', 'update')
   @TraceSpan()
   @CtxTransactional()
+  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'req.Update<%= PascalCase %>Dto.identifiers', 'update')
   public async updateByUid(
     updateDto: Update<%= PascalCase %>Dto
   ): Promise<Record<string, number>> {
@@ -75,7 +75,7 @@ export class <%= PascalCase %>Service extends TenancyService {
 
   @TraceSpan()
   @CtxTransactional()
-  @AuditLog('internal/<%= PascalCase %>', 'req.Array', 'delete', '删除')
+  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'req.Array', 'delete', '删除')
   public async deleteByUid(
     identifiers: string[]
   ): Promise<Record<string, number>> {

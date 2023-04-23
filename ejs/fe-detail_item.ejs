@@ -13,10 +13,10 @@ import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/cmp/<%
 // Utils
 import { ActionMap, renderActions } from '@/components/utils';
 // Hooks
-import { useDevInspector } from '@/hooks/devInspector';
-import { useFormState } from '@/hooks/formState';
-import { usePageConfig } from '@/hooks/pageConfig';
-import { usePageParam } from '@/hooks/pageParam';
+import { useDevInspector } from '@/shares/hooks/devInspector';
+import { useFormState } from '@/shares/hooks/formState';
+import { usePageConfig } from '@/shares/hooks/pageConfig';
+import { usePageParam } from '@/shares/hooks/pageParam';
 // Definitions
 //import { ParentContext } from '../<%= camelCase %>.detail';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
