@@ -6,13 +6,13 @@ import { PageContainer, ProCard, ProFormInstance, ProProvider, TableDropdown } f
 import { message, Typography } from 'antd';
 // Umi
 // Components
-import { valueTypeMap, ValueTypeMapKey } from '@/components/schema-components';
-import BetaSchemaForm from '@/components/SchemaForm';
+import { valueTypeMap, ValueTypeMapKey } from '@/shares/components/schema-components';
+import BetaSchemaForm from '@/shares/components/SchemaForm';
 import AuditLog from '@/pages/components/AuditLog';
 // Services
 import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/cmp/<%= camelCase %>';
 // Utils
-import { ActionMap, renderActions } from '@/components/utils';
+import { ActionMap, renderActions } from '@/shares/components/utils';
 // Hooks
 import { useDevInspector } from '@/shares/hooks/devInspector';
 import { useEventViewer } from '@/shares/hooks/eventViewer';
