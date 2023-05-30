@@ -11,6 +11,8 @@ import { AutoOptions, TableData } from './types';
 import { FormGenerator } from './form-generator';
 import { ColumnGenerator } from './column-generator';
 import { DorisGenerator } from './doris-generator';
+import { CubeGenerator } from './cube-generator';
+import { ViewGenerator } from './view-generator';
 
 export class SequelizeAuto {
   sequelize: Sequelize;
@@ -89,6 +91,12 @@ export class SequelizeAuto {
     const tdoris = this.generateDoris(td);
     td.text = tdoris;
     await this.write(td, 'doris', 'sql');
+    const tcube = this.generateCube(td);
+    td.text = tcube;
+    await this.write(td, 'cube', 'yml');
+    const tview = this.generateView(td);
+    td.text = tview;
+    await this.write(td, 'view', 'sql');
     // console.log(td.tables);
     return td;
   }
@@ -148,6 +156,18 @@ export class SequelizeAuto {
   generateDoris(tableData: TableData) {
     const dialect = dialects[this.sequelize.getDialect() as Dialect];
     const generator = new DorisGenerator(tableData, dialect, this.options);
+    return generator.generateText();
+  }
+
+  generateCube(tableData: TableData) {
+    const dialect = dialects[this.sequelize.getDialect() as Dialect];
+    const generator = new CubeGenerator(tableData, dialect, this.options);
+    return generator.generateText();
+  }
+
+  generateView(tableData: TableData) {
+    const dialect = dialects[this.sequelize.getDialect() as Dialect];
+    const generator = new ViewGenerator(tableData, dialect, this.options);
     return generator.generateText();
   }
 
