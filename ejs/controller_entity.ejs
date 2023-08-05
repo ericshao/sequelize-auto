@@ -18,13 +18,16 @@ import {
   DestroyPrivilege,
   ListPrivilege,
   ReadPrivilege,
-  SendPrivilege,
   WritePrivilege,
-} from '../../../packages/privilege/decorator';
+} from '@c2pkg/bizmeta';
 import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
 import { <%= PascalCase %>Service } from '../service';
+import {
+  GLOBAL_PREFIX,
+  GLOBAL_CONDITION_KEYS,
+} from '../../../global/constants';
 
-@Controller('/<%= lowerCase%>', { description: '<%= label %>管理' })
+@Controller('/<%= slashPath%>', { description: '<%= label %>管理' })
 @PrivilegeResourceProvider('<%= PascalCase %>', { globalPrefix: GLOBAL_PREFIX })
 export class <%= PascalCase %>Controller extends BaseController {
 

@@ -119,9 +119,7 @@ const <%= PascalCase %>List: React.FC = () => {
               <CreateModal
                 key="create"
                 title="新建<%= label %>"
-                formColumns={gen<%= PascalCase %>FormColumns({
-                  isCreate: true,
-                })}
+                formColumns={createFormColumns}
                 onCreate={async (values: <%= PascalCase %>) => {
                   const res = await create<%= PascalCase %>(values);
                   if (res.success) {

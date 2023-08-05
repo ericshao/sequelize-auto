@@ -56,11 +56,11 @@ export class ColumnGenerator {
 
     if (this.options.lang === 'ts') {
       header +=
-        "import { TableColumnsParams, ValueTypeMapKey } from '@/components/schema-components';\n";
+        "import { TableColumnsParams, ValueTypeMapKey } from '@/shares/components/schema-components';\n";
       header +=
-        "import { tableColumnsResult, transformStringToken, convertValueEnum } from '@/components/schema-components/util';\n";
+        "import { tableColumnsResult, transformStringToken, convertValueEnum } from '@/shares/components/schema-components/util';\n";
       header +=
-        "import { UltraColumnType } from '@/components/UltraColumns';\n\n";
+        "import { UltraColumnType } from '@/shares/components/UltraColumns';\n\n";
     }
     return header;
   }
@@ -126,8 +126,9 @@ export class ColumnGenerator {
     fields.forEach(field => {
       if (!this.isIgnoredField(field)) {
         if (
-          (!this.isDeprecated(table, field) &&
-            !this.isJSONField(table, field)) ||
+          (!this.isDeprecated(table, field) 
+          // && !this.isJSONField(table, field)
+            ) ||
           this.isUid(field)
         ) {
           const name = this.quoteName(recase(this.options.caseProp, field));
@@ -136,11 +137,16 @@ export class ColumnGenerator {
           str += '  {\n';
           str += `    dataIndex: '${name}',\n`;
           str += this.getTitle(table, field);
-          str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
+          // str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
           str += this.getHideInTable(field);
           str += this.getHideInSearch(field, counter);
           str += this.getHideInForm(field);
-          str += '    ellipsis: true\n';
+          if (this.isJSONField(table, field)) {
+            str += `    hideInTable: true,\n`;
+            str += `    hideInSearch: true,\n`;
+            str += `    showInFile: true\n`;
+          }
+          // str += '    ellipsis: true\n';
           str += '  },\n';
         }
       }

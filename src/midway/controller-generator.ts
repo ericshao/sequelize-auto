@@ -1,12 +1,13 @@
 import ejs from 'ejs';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { Entity } from './types';
 
-type Entity = {
-  PascalCase: string;
-  camelCase: string;
-  aggrKey?: string;
-};
+// type Entity = {
+//   PascalCase: string;
+//   camelCase: string;
+//   aggrKey?: string;
+// };
 
 export class ControllerGenerator {
   entity: Entity;

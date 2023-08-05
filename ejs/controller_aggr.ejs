@@ -15,7 +15,7 @@ import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
 import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
 import { <%= PascalCase %>Service } from '../service';
 
-@Controller('/<%= lowerCase%>', { description: '<%= label %>管理' })
+@Controller('/<%= slashPath%>', { description: '<%= label %>管理' })
 export class <%= PascalCase %>Controller extends BaseController {
 
   @Inject()

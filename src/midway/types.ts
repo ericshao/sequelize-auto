@@ -1,22 +1,34 @@
-import { LangOption, recase } from "../types";
+import { LangOption, camelToSlash, recase } from '../types';
 
-export class Entity  {
+export class Entity {
   name: string;
   PascalCase: string;
   camelCase: string;
   lowerCase: string;
+  moduleName?: string;
+  aggrName?: string;
   aggrKey?: string;
   label?: string;
   text?: string;
-  constructor(name: string, label?: string, aggrKey?: string) {
+  slashPath?: string;
+  constructor(
+    name: string,
+    label?: string,
+    moduleName?: string,
+    aggrName?: string,
+    aggrKey?: string
+  ) {
     this.name = name;
     this.PascalCase = recase('p', this.name, true);
     this.camelCase = recase('c', this.name, true);
     this.lowerCase = recase('l', this.name, true);
+    this.slashPath = camelToSlash(this.camelCase);
     this.label = label;
+    this.moduleName = moduleName;
+    this.aggrName = aggrName;
     this.aggrKey = aggrKey;
   }
-};
+}
 
 export interface AutoOptions {
   /** Where to write the model files */

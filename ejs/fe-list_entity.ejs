@@ -43,30 +43,7 @@ const <%= PascalCase %>List: React.FC = () => {
   // 页面配置
   const { pageTitle, routeKey, access, privileges, presetColumns, presetFilters, viewFilterEnum, ClearCache } =
     usePageConfig();
-  // 列表状态
-  const { view, setView, currentRow, setCurrentRow, setCurrentFilter, confirmDelete } = useListState<<%= PascalCase %>>(
-    actionRef,
-    {
-      viewFilterEnum,
-      onDelete: (records: ManifestHead[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
-    },
-  );
-  // 状态机
-  const { getCurrentState } = useStateMachine('internal/<%= PascalCase %>');
-  // Actions
-  const gotoDetailPage = (uid: string) => {
-    history.push(`/filing/<%= camelCase %>/${uid}`);
-  };
-  // 流程待办
-  const { BacklogList } = useFlowBacklog('internal/<%= PascalCase %>', gotoDetailPage);
-  // 详情页 Drawer
-  const { detailPageDrawerOpen, setDetailPageDrawerOpen, DetailPageDrawer } = useDetailPageDrawer(
-    <<%= PascalCase %>Detail uid={currentRow?.uid!} onUpdated={() => {}} insideDrawer />,
-  );
-
-
-
-  // Table Columns
+  // 表单操作项
   const actionRender = (dom: React.ReactNode, record: <%= PascalCase %>) => [
   <Access key="read" accessible={access.canRead(privileges)}>
     <Button
@@ -94,14 +71,30 @@ const <%= PascalCase %>List: React.FC = () => {
     />
   </Access>,
   ];
-
-  const ultraColumns = new UltraColumns<<%= PascalCase %>>(
-    gen<%= PascalCase %>Columns({
+  // 列表状态
+  const { view, setView, currentRow, setCurrentRow, setCurrentFilter, confirmDelete, ultraColumns, createFormColumns } = useListState<<%= PascalCase %>>(
+    actionRef,
+    {
+      viewFilterEnum,
       presetColumns,
-      valueEnums,
-      cusParams,
-    }),
-    actionRender,
+      actionRender,
+      genColumns: gen<%= PascalCase %>Columns,
+      genFormColumns: gen<%= PascalCase %>FormColumns,
+      onDelete: (records: ManifestHead[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
+    },
+  );
+  // 状态机
+  const { getCurrentState } = useStateMachine('internal/<%= PascalCase %>');
+  // Actions
+  const gotoDetailPage = (uid: string) => {
+    // TODO:
+    history.push(`/<%= camelCase %>/${uid}`);
+  };
+  // 流程待办
+  const { BacklogList } = useFlowBacklog('internal/<%= PascalCase %>', gotoDetailPage);
+  // 详情页 Drawer
+  const { detailPageDrawerOpen, setDetailPageDrawerOpen, DetailPageDrawer } = useDetailPageDrawer(
+    <<%= PascalCase %>Detail uid={currentRow?.uid!} onUpdated={() => {}} insideDrawer />,
   );
 
   const { DevInspector } = useDevInspector({ routeKey, presetFilters, access, privileges });
@@ -125,9 +118,7 @@ const <%= PascalCase %>List: React.FC = () => {
               title="新建<%= label %>"
               layoutType="DrawerForm"
               formLayout="horizontal"
-              formColumns={gen<%= PascalCase %>FormColumns({
-                isCreate: true,
-              })}
+              formColumns={createFormColumns}
               onCreate={async (values: <%= PascalCase %>) => {
                 const res = await create<%= PascalCase %>(values);
                 if (res.success) {

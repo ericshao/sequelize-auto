@@ -1,5 +1,7 @@
 ./bin/sequelize-auto -h 192.168.3.61 -d testing_c2cloud -u root -p 9030  --dialect mysql -l ts --cm p --cp c  -o ./output --op 3 -v -t sof_global_detail
 
+./bin/sequelize-auto -h 10.70.44.17 -d ck_backup -u root -p 9030  --dialect mysql -l ts --cm p --cp c  -o ./output  -t dwd_cds_detail
+
 ./bin/sequelize-auto -h 192.168.3.66 -u welo -x 123456 -p 3306  --dialect mysql -l ts --cm p --cp c  -o ./output -d qm_saas -t tcs_general_tradeitem
 
 --op 忽略表名前缀长度
@@ -19,6 +21,10 @@
 
 #生成聚合根
 ./bin/midway-auto -o ./output -n shipment -a 货运 -t aggr --ak shpUid
+
+生成实体
+./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity -d c2cloud_460224065335429 -t bwp_whse_inb_delivery
+./bin/midway-auto -o ./output -n whseOutbDelivery  -a 出库交货单 --ak obdUid  -t entity --mn bwp --an warehouse
 
 # Sequelize-Auto
 

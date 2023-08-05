@@ -63,11 +63,11 @@ export class FormGenerator {
           integerFieldProps,
           metaCollapsibleProps,
           ValueTypeMapKey,
-        } from '@/components/schema-components';\n`;
+        } from '@/shares/components/schema-components';\n`;
       header +=
-        "import { formColumnsResult } from '@/components/schema-components/util';\n";
+        "import { formColumnsResult } from '@/shares/components/schema-components/util';\n";
       header +=
-        "import { ProFormColumnsType } from '@/components/SchemaForm';\n";
+        "import { ProFormColumnsType } from '@/shares/components/SchemaForm';\n";
       header +=
         "import { convertToNumber, convertToString } from '@/utils';\n\n";
     }

@@ -20,7 +20,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).create(
       {
         ...createDto,
-        createdBy: this.getUserId(),
+        createdBy: createDto.createdBy ?? this.getUserId(),
         tenantId: this.getTenantId(),
       },
       {
@@ -39,7 +39,7 @@ export class <%= PascalCase %>Service extends TenancyService {
       ...createDto,
       // TODO: 替换或删除此处
       <%= aggrKey %>,
-      createdBy: this.getUserId(),
+      createdBy: createDto.createdBy ?? this.getUserId(),
       tenantId: this.getTenantId(),
     }));
 

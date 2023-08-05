@@ -253,3 +253,8 @@ export function makeIndent(spaces: boolean | undefined, indent: number | undefin
   }
   return space;
 }
+
+// 将驼峰转换为/分割
+export function camelToSlash(str: string) {
+  return str.replace(/([A-Z])/g, "/$1").toLowerCase();
+}

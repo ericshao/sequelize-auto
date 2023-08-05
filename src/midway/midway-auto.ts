@@ -16,8 +16,16 @@ export class MidwayAuto {
     this.options = options;
   }
 
-  async run(name: string, label: string, ejsExt?: string, aggrKey?: string, index?: boolean) {
-    const entity = new Entity(name, label, aggrKey);
+  async run(
+    name: string,
+    label: string,
+    ejsExt?: string,
+    aggrKey?: string,
+    index?: boolean,
+    moduleName?: string,
+    aggrName?: string
+  ) {
+    const entity = new Entity(name, label, moduleName, aggrName, aggrKey);
     // console.log(entity);
     const es = this.generateService(entity, ejsExt);
     entity.text = es;

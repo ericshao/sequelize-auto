@@ -1,5 +1,5 @@
 // React
-import React, { useContext, useRef } from 'react';
+import React, { useContext } from 'react';
 // Antd
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { ActionType, ProProvider, TableDropdown } from '@ant-design/pro-components';
@@ -10,16 +10,16 @@ import { history } from 'umi';
 // Components
 import { CreateModal } from '@/shares/components/CreateModal';
 import { valueTypeMap } from '@/shares/components/schema-components';
-import { UltraColumns } from '@/shares/components/UltraColumns';
 import UltraTable from '@/shares/components/UltraTable';
 // Services
-import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/cmp/<%= camelCase %>';
+import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/<%= moduleName%>/<%= aggrName %>';
 // Hooks
 import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
 import { useListState } from '@/shares/hooks/listState';
 import { usePageConfig } from '@/shares/hooks/pageConfig';
 import { usePageParam } from '@/shares/hooks/pageParam';
 // Definitions
+import { ParentContext } from '../<%= aggrName %>.detail';
 import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
 
@@ -28,38 +28,15 @@ const { Content } = Layout;
 // Types
 type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
 
-const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string}> = (props) => {
+const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string; actionRef: React.MutableRefObject<ActionType | undefined> }> = (props) => {
   // 引用上下文
   const contextFormValues = useContext(ProProvider);
   const { contextValues, contextState, contextRouteKey } = useContext(ParentContext);
   // 页面参数
   const { valueEnums, cusParams } = usePageParam();
   // 页面配置
-  const { access, privileges } = usePageConfig(contextRouteKey);
-  // useRef
-  const actionRef = useRef<ActionType>();
-  // 列表状态
-  const { view, setView, currentRow, setCurrentRow, confirmDelete } = useListState<<%= PascalCase %>>(actionRef, {
-    onDelete: (records: DeclarationItem[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
-  });
-  // 详情页 Drawer
-  const { detailPageDrawerOpen, setDetailPageDrawerOpen, DetailPageDrawer } = useDetailPageDrawer(
-    <<%= PascalCase %>Detail
-      uid={currentRow?.uid!}
-      onUpdated={() => actionRef.current?.reload()}
-      onClose={() => {
-        setDetailPageDrawerOpen(false);
-        actionRef.current?.reloadAndRest?.();
-      }}
-      insideDrawer
-    />,
-  );
-
-  // Actions
-  const gotoDetailPage = (uid: string) => {
-    history.push(`/filing/<%= camelCase %>/item/${uid}`);
-  };
-
+  const { access, privileges, presetColumns } = usePageConfig(contextRouteKey);
+  // 表单操作项
   const actionRender = (dom: React.ReactNode, record: <%= PascalCase %>) => [
     <Access key="read" accessible={access.canRead(privileges)}>
       <Button
@@ -85,41 +62,58 @@ const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string}> = (props) => {
       />
     </Access>,
   ];
+  // 列表状态
+  const { currentRow, setCurrentRow, setCurrentFilter, confirmDelete, ultraColumns, createFormColumns } =
+    useListState<<%= PascalCase %>>(props.actionRef, {
+      presetColumns,
+      actionRender,
+      genColumns: gen<%= PascalCase %>Columns,
+      genFormColumns: gen<%= PascalCase %>FormColumns,
+    onDelete: (records: <%= PascalCase %>[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
+  });
+  // Actions
+  const gotoDetailPage = (uid: string) => {
+    // TODO: 修改详情页路由
+    history.push(`/<%= aggrName %>/<%= camelCase %>/${uid}`);
+  };
 
-  // Table Columns
-  const ultraColumns = new UltraColumns<<%= PascalCase %>>(
-    gen<%= PascalCase %>Columns({
-      valueEnums,
-      cusParams,
-    }),
-    actionRender,
+  // 详情页 Drawer
+  const { detailPageDrawerOpen, setDetailPageDrawerOpen, DetailPageDrawer } = useDetailPageDrawer(
+    <<%= PascalCase %>Detail
+      uid={currentRow?.uid!}
+      onUpdated={() => props.actionRef.current?.reload()}
+      onClose={() => {
+        setDetailPageDrawerOpen(false);
+        props.actionRef.current?.reloadAndRest?.();
+      }}
+      insideDrawer
+    />,
   );
 
   return (
-    <Layout className="ant-layout-has-sider">
-      <Content style={{ background: '#fff' }}>
-        <ProProvider.Provider
-        value={{
-          ...contextFormValues,
-          valueTypeMap,
-        }}
-      >
+    <ProProvider.Provider
+      value={{
+        ...contextFormValues,
+        valueTypeMap,
+      }}
+    >
+      <Layout className="ant-layout-has-sider">
+        <Content style={{ background: '#fff' }}>
           <UltraTable
             rowKey="uid"
-            actionRef={actionRef}
+            actionRef={props.actionRef}
             columns={ultraColumns.getColumns()}
             request={async (params, sorter) => {
               const { current, pageSize, ...search } = params;
               const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), <%= aggrKey %>: props.<%= aggrKey %>};
+              setCurrentFilter(filter);
               const res = await query<%= PascalCase %>List({
                 current,
                 pageSize,
                 columns: ultraColumns.getColumnKeys(),
                 filter,
                 sorter: Object.keys(sorter).length > 0 ? sorter : undefined,
-                // tenantId,
               });
-              // setIdentifiers(res.result.data.map((item) => item.uid!));
               return {
                 data: res.result.data,
                 success: res.success,
@@ -128,22 +122,21 @@ const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string}> = (props) => {
             }}
             toolBarRender={() => [
               <Access key="create" accessible={access.canWrite(privileges, contextState)}>
-              <CreateModal
-                key="create"
-                title="新建<%= label %>"
-                formColumns={gen<%= PascalCase %>FormColumns({
-                  isCreate: true,
-                })}
-                onCreate={async (values: <%= PascalCase %>) => {
-                  const res = await create<%= PascalCase %>({...values, <%= aggrKey %>: props.<%= aggrKey %>});
-                  if (res.success) {
-                    message.success('新建成功');
-                    actionRef.current?.reload();
-                  }
-                  return res.success;
-                }}
-              />
-            </Access>,
+                <CreateModal
+                  title="新建<%= label %>"
+                  layoutType="DrawerForm"
+                  formLayout="horizontal"
+                  formColumns={createFormColumns}
+                  onCreate={async (values: <%= PascalCase %>) => {
+                    const res = await create<%= PascalCase %>({...values, <%= aggrKey %>: props.<%= aggrKey %>});
+                    if (res.success) {
+                      message.success('新建成功');
+                      props.actionRef.current?.reload();
+                    }
+                    return res.success;
+                  }}
+                />
+              </Access>,
             ]}
             search={{
               filterType: 'light',
@@ -153,10 +146,11 @@ const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string}> = (props) => {
             tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
               <Space size={24}>
                 <span>已选 {selectedRowKeys.length} 项</span>
-                <Access key="delete" accessible={access.canWrite(privileges, contextState)}>
+                <Access accessible={access.canWrite(privileges, contextState)}>
                   <Button
                     key="delete"
                     type="link"
+                    danger
                     icon={<DeleteOutlined />}
                     onClick={() => {
                       confirmDelete(selectedRows);
@@ -173,20 +167,23 @@ const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string}> = (props) => {
               }
             }
             scroll={{ x: ultraColumns.totalWidth }}
-            // scrollYOffset={344}
+            summary={(pageData) => {
+              return ultraColumns.getSummary(pageData);
+            }}
           />
-        </ProProvider.Provider>
+
           <DetailPageDrawer
             values={currentRow}
             drawerOpen={detailPageDrawerOpen}
             onCancel={() => {
-              actionRef.current?.reload();
+              props.actionRef.current?.reload();
               setDetailPageDrawerOpen(false);
               setCurrentRow(undefined);
             }}
           />
-          </Content>
-    </Layout>
+        </Content>
+      </Layout>
+    </ProProvider.Provider>
   );
 };
 export default <%= PascalCase %>List;

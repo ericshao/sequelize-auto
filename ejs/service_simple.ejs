@@ -24,7 +24,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).create(
       {
         ...createDto,
-        createdBy: this.getUserId(),
+        createdBy: createDto.createdBy ?? this.getUserId(),
         tenantId: this.getTenantId(),
       },
       {
@@ -40,7 +40,7 @@ export class <%= PascalCase %>Service extends TenancyService {
   ): Promise<<%= PascalCase %>[]> {
     const <%= camelCase %>s = createDtos.map(createDto => ({
       ...createDto,
-      createdBy: this.getUserId(),
+      createdBy: createDto.createdBy ?? this.getUserId(),
       tenantId: this.getTenantId(),
       uid: this.generateUid(),
     }));
@@ -125,9 +125,11 @@ export class <%= PascalCase %>Service extends TenancyService {
     filter: API.Filter,
     options: API.QueryOptions = { omitNil: true }
   ): Promise<<%= PascalCase %>> {
-    const entity = await <%= PascalCase %>Model.findOne({
+    const entity = await <%= PascalCase %>Model.schema(
+      this.getTenantSchema()
+    ).findOne({
     ...this.generateFindOptions(options),
-      where: filter,
+      where: this.injectTenantId(filter),
       transaction: this.getTransaction(),
     });
     if (entity) {
@@ -143,9 +145,11 @@ export class <%= PascalCase %>Service extends TenancyService {
     filter: API.Filter,
     options: API.QueryOptions = { omitNil: true, limit: 1000 }
   ): Promise<<%= PascalCase %>[]> {
-    const entities = await <%= PascalCase %>Model.findAll({
+    const entities = await <%= PascalCase %>Model.schema(
+      this.getTenantSchema()
+    ).findAll({
     ...this.generateFindOptions(options),
-      where: filter,
+      where: this.injectTenantId(filter),
       transaction: this.getTransaction(),
     });
     return entities.map(

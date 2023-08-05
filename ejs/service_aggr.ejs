@@ -24,7 +24,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).create(
       {
         ...createDto,
-        createdBy: this.getUserId(),
+        createdBy: createDto.createdBy ?? this.getUserId(),
         tenantId: this.getTenantId(),
       },
       {
@@ -40,7 +40,7 @@ export class <%= PascalCase %>Service extends TenancyService {
   ): Promise<<%= PascalCase %>[]> {
     const <%= camelCase %>s = createDtos.map(createDto => ({
       ...createDto,
-      createdBy: this.getUserId(),
+      createdBy: createDto.createdBy ?? this.getUserId(),
       tenantId: this.getTenantId(),
       uid: this.generateUid(),
     }));

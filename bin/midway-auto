@@ -31,6 +31,16 @@ const argv = require('yargs')
     type: 'string',
     alias: 'o'
   })
+  .option('moduleName', {
+    description: '模块名称',
+    type: 'string',
+    alias: 'mn'
+  })
+  .option('aggrName', {
+    description: '聚合名称',
+    type: 'string',
+    alias: 'an'
+  })
   .option('aggrKey', {
     description: '聚合UID键名',
     type: 'string',
@@ -58,7 +68,7 @@ const argv = require('yargs')
   /** @type {import('../types').SequelizeAuto}  */
   const auto = new MidwayAuto({ lang: 'ts', directory: dir});
 
-  await auto.run(argv.name, argv.label, argv.ejsExt, argv.aggrKey, argv.index);
+  await auto.run(argv.name, argv.label, argv.ejsExt, argv.aggrKey, argv.index, argv.moduleName, argv.aggrName);
   console.log("Done!");
 
 }()).catch(err => {
