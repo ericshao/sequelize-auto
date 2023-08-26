@@ -1,0 +1,61 @@
+import { BizmetaProperty, BizmetaProvider } from '@c2pkg/bizmeta';
+import { ApiProperty } from '@midwayjs/swagger';
+import { OmitDto, Rule, RuleType } from '@midwayjs/validate';
+
+import { BaseBndEntity } from '../../common';
+import { <%= PascalCase %>Detail, <%= PascalCase %>Head } from './';
+
+/**
+ * @description <%= label %>聚合根
+ * @domainObjectType AggregateRoot
+ */
+@BizmetaProvider('<%= PascalCase %>', {
+  title: '<%= label %>',
+  isRoot: true,
+})
+export class <%= PascalCase %> extends BaseBndEntity {
+  static BIZMETA_KEY = 'internal/<%= PascalCase %>';
+
+  @ApiProperty({ description: '<%= label %>编号' })
+  @Rule(RuleType.string().max(64).allow('').allow(null))
+  bondInvtNo?: string;
+
+  @ApiProperty({ description: '预录入统一编号' })
+  @Rule(RuleType.string().max(18).allow('').allow(null))
+  seqNo?: string;
+
+  @BizmetaProperty({
+    type: 'object',
+    $ref: 'internal/<%= PascalCase %>Head',
+  })
+  @ApiProperty({ description: '<%= label %>表头' })
+  @Rule(<%= PascalCase %>Head)
+  head: <%= PascalCase %>Head;
+
+  @BizmetaProperty({
+    items: { $ref: 'internal/<%= PascalCase %>Detail' },
+  })
+  @ApiProperty({ description: '<%= label %>表体' })
+  @Rule(<%= PascalCase %>Detail)
+  list: <%= PascalCase %>Detail[];
+
+  @BizmetaProperty({
+    items: { $ref: 'internal/<%= PascalCase %>Detail' },
+  })
+  @ApiProperty({ description: '<%= label %>商品表体' })
+  @Rule(<%= PascalCase %>Detail, { required: false })
+  goods?: <%= PascalCase %>Detail[];
+
+  constructor(head?: <%= PascalCase %>Head, detailList?: <%= PascalCase %>Detail[]) {
+    super();
+    this.head = head;
+    this.list = detailList;
+    this.uid = head?.uid;
+    this.sysId = head?.sysId;
+    this.sasType = head?.sasType;
+    this.chnUid = head?.chnUid;
+    this.legUid = head?.legUid;
+  }
+}
+
+export class Create<%= PascalCase %>Dto extends OmitDto(<%= PascalCase %>, ['uid']) {}

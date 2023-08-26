@@ -1,13 +1,16 @@
-import _ from 'lodash';
-import { ServiceGenerator } from './service-generator';
-import { ControllerGenerator } from './controller-generator';
-import { AutoOptions, Entity } from './types';
 import fs from 'fs';
+import _ from 'lodash';
 import path from 'path';
 import util from 'util';
-import { FeServiceGenerator } from './fe-service-generator';
-import { FeListGenerator } from './fe-list-generator';
+
+import { ControllerGenerator } from './controller-generator';
+import { EventGenerator } from './event-generator';
 import { FeDetailGenerator } from './fe-detail-generator';
+import { FeListGenerator } from './fe-list-generator';
+import { FeServiceGenerator } from './fe-service-generator';
+import { ServiceGenerator } from './service-generator';
+import { StatemachineGenerator } from './statemachine-generator';
+import { AutoOptions, Entity } from './types';
 
 export class MidwayAuto {
   options: AutoOptions;
@@ -30,6 +33,12 @@ export class MidwayAuto {
     const es = this.generateService(entity, ejsExt);
     entity.text = es;
     await this.write(entity, 'service');
+    const statemachine = this.generateStatemachine(entity, ejsExt);
+    entity.text = statemachine;
+    await this.write(entity, 'statemachine');
+    const event = this.generateEvent(entity, ejsExt);
+    entity.text = event;
+    await this.write(entity, 'event');
     const ec = this.generateController(entity, ejsExt);
     entity.text = ec;
     await this.write(entity, 'controller');
@@ -49,6 +58,16 @@ export class MidwayAuto {
 
   generateService(entity: Entity, ejsExt?: string) {
     const generator = new ServiceGenerator(entity, ejsExt);
+    return generator.generateText();
+  }
+
+  generateStatemachine(entity: Entity, ejsExt?: string) {
+    const generator = new StatemachineGenerator(entity, ejsExt);
+    return generator.generateText();
+  }
+
+  generateEvent(entity: Entity, ejsExt?: string) {
+    const generator = new EventGenerator(entity, ejsExt);
     return generator.generateText();
   }
 

@@ -1,19 +1,10 @@
 import _ from 'lodash';
 import { ColumnDescription } from 'sequelize/types';
-import { DialectOptions, FKSpec } from './dialects/dialect-options';
+
+import { DialectOptions } from './dialects/dialect-options';
 import {
-  AutoOptions,
-  CaseFileOption,
-  CaseOption,
-  IndexSpec,
-  LangOption,
-  makeIndent,
-  makeTableName,
-  qNameSplit,
-  recase,
-  Relation,
-  TableData,
-  TSField,
+    AutoOptions, CaseFileOption, CaseOption, LangOption, makeIndent, makeTableName, qNameSplit,
+    recase, TableData, TSField
 } from './types';
 
 /** Generates text from each table in TableData */
@@ -59,6 +50,7 @@ export class DtoGenerator {
       header +=
         "import { Rule, RuleType, OmitDto } from '@midwayjs/validate';\n";
       header += "import { ApiProperty } from '@midwayjs/swagger';\n";
+      header += "import { omitNil } from '@midwayjs-plus/common';\n";
       header +=
         "import { #ENTITY#, BizmetaProvider } from '@c2pkg/bizmeta';\n\n";
     }
@@ -86,6 +78,17 @@ export class DtoGenerator {
         str += 'export class #TABLE# extends #ENTITY# {\n';
         str += 'static readonly BIZMETA_KEY = \'internal/#TABLE#\';';
         str += this.addTypeScriptFields(table, true);
+        str += '  static getUpdateDto(\n';
+        str += '  data: Partial<#TABLE#> & { identifiers?: string[] }\n';
+        str += '): Update#TABLE#Dto {\n';
+          str += '  const dto = new Update#TABLE#Dto();\n';
+          str += '  if (data.uid) {\n';
+            str += '    dto.identifiers = [data.uid];\n';
+            str += '     delete data.uid;\n';
+            str += '    }\n';
+            str += '    Object.assign(dto, omitNil(data));\n';
+            str += '      return dto;\n';
+            str += '  }\n';
         str += '}\n\n';
       }
 

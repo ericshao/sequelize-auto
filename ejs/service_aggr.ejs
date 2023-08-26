@@ -1,124 +1,355 @@
-import { Provide, Scope, ScopeEnum } from '@midwayjs/core';
+import _ = require('lodash');
+
+import { AuditLog } from '@c2pkg/auditlog';
+import { EventHub, EventHubEvent } from '@c2pkg/eventhub';
 import {
-  baseError,
+  BaseError,
   CtxTransactional,
   CtxTXParticipant,
-  omitNil,
 } from '@midwayjs-plus/common';
 import { TraceSpan } from '@midwayjs-plus/otel';
-import { TenancyService } from '@c2pkg/multi-tenancy';
-import { AuditLog } from '@c2pkg/auditlog';
-import { nanoid } from 'nanoid';
-import * as _ from 'lodash';
-import { <%= PascalCase %>Model } from '../model';
-import { <%= PascalCase %>, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
+import { Inject, Provide, Scope, ScopeEnum } from '@midwayjs/core';
 
+import { StateCode, StateMachineFactory } from '../../common';
+import { <%= PascalCase %>, Create<%= PascalCase %>Dto, <%= PascalCase %>Head } from '../entity';
+import { <%= PascalCase %>CreatedEvent } from '../event';
+import { <%= PascalCase %>DetailService, <%= PascalCase %>HeadService } from '../service';
+import { <%= PascalCase %>StateEnum, <%= PascalCase %>StateMachine } from '../statemachine';
+
+/**
+ * @description <%= label %>聚合领域服务
+ * @layer Domain
+ * @domainObjectType DomainService
+ */
 
 @Provide()
 @Scope(ScopeEnum.Request, { allowDowngrade: true })
 @CtxTXParticipant()
-export class <%= PascalCase %>Service extends TenancyService {
+export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
+  @Inject()
+  eventHub: EventHub;
 
+  @Inject()
+  stateMachineFactory: StateMachineFactory;
+
+  @Inject()
+  <%= camelCase %>DetailService: <%= PascalCase %>DetailService;
+
+  /**
+   * 创建<%= label %>
+   * @param createDto
+   * @returns <%= PascalCase %>
+   */
   @CtxTransactional()
-  public async create(createDto: Create<%= PascalCase %>Dto): Promise<<%= PascalCase %>> {
-    const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).create(
-      {
-        ...createDto,
-        createdBy: createDto.createdBy ?? this.getUserId(),
-        tenantId: this.getTenantId(),
-      },
-      {
-        transaction: this.getTransaction(),
-      }
-    );
-    return _.omit(<%= camelCase %>.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>;
-  }
-
-  @CtxTransactional()
-  public async bulkCreate(
-    createDtos: Create<%= PascalCase %>Dto[]
-  ): Promise<<%= PascalCase %>[]> {
-    const <%= camelCase %>s = createDtos.map(createDto => ({
-      ...createDto,
-      createdBy: createDto.createdBy ?? this.getUserId(),
-      tenantId: this.getTenantId(),
-      uid: this.generateUid(),
-    }));
-
-    await <%= PascalCase %>Model.schema(this.getTenantSchema()).bulkCreate(
-      <%= camelCase %>s,
-      {
-        transaction: this.getTransaction(),
-      }
-    );
-    return <%= camelCase %>s.map(
-      entity => _.omit(entity, 'tenantId') as <%= PascalCase %>
-    );
-  }
-
-  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'req.Update<%= PascalCase %>Dto.identifiers', 'update')
   @TraceSpan()
-  @CtxTransactional()
-  public async updateByUid(
-    updateDto: Update<%= PascalCase %>Dto
-  ): Promise<Record<string, number>> {
-    const updated = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
-      { ..._.omit(updateDto, ['id', 'uid', 'createdDate', 'tenantId']), lastUpdatedBy: this.getUserId() }, {
-        where: this.generateWhereClause(updateDto),
-        transaction: this.getTransaction(),
-    });
-    return { updated: updated[0] };
+  public async createFull<%= PascalCase %>(
+    createDto: Create<%= PascalCase %>Dto,
+    flowuid?: string
+  ): Promise<<%= PascalCase %>> {
+    const bond<%= PascalCase %> = new <%= PascalCase %>();
+
+    const <%= camelCase %>Head = await this.create(createDto.head);
+    bond<%= PascalCase %>.head = <%= camelCase %>Head;
+    bond<%= PascalCase %>.uid = <%= camelCase %>Head.uid;
+
+    if (createDto.list && createDto.list.length > 0) {
+      const details = await this.<%= camelCase %>DetailService.bulkCreate(
+        createDto.list,
+        bond<%= PascalCase %>.uid
+      );
+      bond<%= PascalCase %>.list = details;
+    }
+
+    await this.eventHub.emitPersistentEvent(
+      new <%= PascalCase %>CreatedEvent(bond<%= PascalCase %>, flowuid)
+    );
+
+    return bond<%= PascalCase %>;
   }
 
   @TraceSpan()
   @CtxTransactional()
-  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'req.Array', 'delete', '删除')
-  public async deleteByUid(
+  @AuditLog('internal/<%= PascalCase %>', 'req.Array', 'delete', '删除')
+  public async deleteFull<%= PascalCase %>(
     identifiers: string[]
   ): Promise<Record<string, number>> {
-    const deleted = await <%= PascalCase %>Model.schema(this.getTenantSchema()).destroy({
-      where: {
-        uid: identifiers,
-        tenantId: this.getTenantId(),
-      },
-      transaction: this.getTransaction(),
-    });
-    return { deleted };
+    const promises = [
+      this.deleteByUid(identifiers),
+      this.<%= camelCase %>DetailService.deleteByAggrUid(identifiers),
+    ];
+
+    const results = await Promise.all(promises);
+    return results[0];
   }
 
-  public async omniQuery(
-    options?: API.ListOptions
-  ): Promise<API.ListResult<<%= PascalCase %>>> {
-    const listResult = await <%= PascalCase %>Model.omniQuery<typeof <%= PascalCase %>Model, <%= PascalCase %>>(this.filterByTenantId(options), this.getTenantSchema());
-      return {
-        ...listResult,
-        data: listResult.data.map(
-          entity =>
-          _.omit(options?.omitNil ? omitNil(entity) : entity, [
-            'id',
-            'tenantId',
-          ]) as <%= PascalCase %>
-        ),
-      };
-  }
-
-  public async getByUid(
+  @CtxTransactional()
+  public async getFull<%= PascalCase %>(
     uid: string,
     options: API.QueryOptions = { omitNil: true }
   ): Promise<<%= PascalCase %>> {
-    const entity = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
-      ...this.generateFindOptions(options),
-      where: { uid },
-      transaction: this.getTransaction(),
-    });
-    if (!entity) throw baseError.EntityNotExistsError;
-    return _.omit(
-      options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(),
-      ['id', 'tenantId']
-    ) as <%= PascalCase %>;
+    const { cascading = true, ...queryOptions } = options || {};
+
+    const <%= camelCase %>Head = await this.getByUid(uid, queryOptions);
+    const bond<%= PascalCase %> = new <%= PascalCase %>(<%= camelCase %>Head);
+
+    if (cascading) {
+      const details = await this.<%= camelCase %>DetailService.findAllByAggrUid(uid);
+      bond<%= PascalCase %>.list = details;
+    }
+    return bond<%= PascalCase %>;
   }
 
-  generateUid(): string {
-    return `${<%= PascalCase %>Model.PREFIX}${nanoid()}`;
+  @CtxTransactional()
+  public async findBySeqNo(
+    seqNo: string,
+    options: API.QueryOptions = { omitNil: true }
+  ): Promise<<%= PascalCase %>> {
+    const { cascading = true, ...queryOptions } = options || {};
+    const bond<%= PascalCase %> = new <%= PascalCase %>();
+    const <%= camelCase %>Head = await this.findOne({ seqNo }, queryOptions);
+    if (!<%= camelCase %>Head) {
+      return null;
+    }
+    bond<%= PascalCase %>.head = <%= camelCase %>Head;
+    bond<%= PascalCase %>.uid = <%= camelCase %>Head.uid;
+
+    if (cascading) {
+      const details = await this.<%= camelCase %>DetailService.findAllByAggrUid(
+        <%= camelCase %>Head.uid
+      );
+      bond<%= PascalCase %>.list = details;
+    }
+    return bond<%= PascalCase %>;
+  }
+
+  // @CtxTransactional()
+  // public async update<%= PascalCase %>Head(
+  //   <%= camelCase %>Head: Update<%= PascalCase %>HeadDto
+  // ): Promise<Record<string, number>> {
+  //   const result = await this.updateByUid(<%= camelCase %>Head);
+  //   if (<%= camelCase %>Head.netWt) {
+  //     const items = await this.bond<%= PascalCase %>ItemService.findAllByAggrUid(
+  //       <%= camelCase %>Head.identifiers[0] as string,
+  //       { columns: ['uid', 'netWt'] }
+  //     );
+  //     const itemUpdateDtos = await this.recalculateNetWeight(
+  //       <%= camelCase %>Head.netWt,
+  //       items
+  //     );
+  //     if (itemUpdateDtos.length > 0) {
+  //       await Promise.all(
+  //         itemUpdateDtos.map(itemUpdateDto =>
+  //           this.bond<%= PascalCase %>ItemService.updateByUid(itemUpdateDto)
+  //         )
+  //       );
+  //     }
+  //   }
+  //   return result;
+  // }
+
+  //*** 请求事件操作 ***//
+
+  //*** 状态转移 ***/
+
+  /**
+   *
+   * @param invUid
+   * @param event
+   */
+  @CtxTransactional()
+  public async transitStateBy<%= PascalCase %>(
+    invUid: string,
+    event: EventHubEvent<any>
+  ): Promise<{
+    success: boolean;
+    stateCode?: string;
+    targetStateCode?: string;
+  }> {
+    const stateMachine = await this.getStateMachine();
+    return await this.transitState(invUid, event, stateMachine);
+  }
+
+  /**
+   *
+   * @param invUid
+   * @param event
+   */
+  @CtxTransactional()
+  public async transitStateByDefault(
+    invUid: string,
+    event: EventHubEvent<any>,
+    targetStateCode?: StateCode
+  ): Promise<{
+    success: boolean;
+    stateCode?: string;
+    targetStateCode?: string;
+  }> {
+    const stateMachine = await this.getStateMachine(true);
+    return await this.transitState(
+      invUid,
+      event,
+      stateMachine,
+      targetStateCode
+    );
+  }
+
+  @CtxTransactional()
+  @TraceSpan()
+  public async transitState(
+    invUid: string,
+    event: EventHubEvent<any>,
+    stateMachine: <%= PascalCase %>StateMachine,
+    targetStateCode?: StateCode
+  ): Promise<{
+    success: boolean;
+    stateCode?: string;
+    targetStateCode?: string;
+  }> {
+    if (!invUid || !invUid.startsWith('inv')) {
+      return { success: false };
+    }
+
+    const <%= camelCase %>Head = await this.getByUid(invUid, {
+      columns: ['uid', 'stateCode'],
+    });
+
+    if (!targetStateCode) {
+      targetStateCode = stateMachine?.transit(
+        <%= camelCase %>Head.stateCode,
+        event
+      ) as StateCode;
+    }
+    const res = {
+      success: !!targetStateCode,
+      stateCode: <%= camelCase %>Head.stateCode,
+      targetStateCode,
+    };
+    if (targetStateCode) {
+      await this.updateByUid(
+        <%= PascalCase %>Head.getUpdateDto({
+          stateCode: targetStateCode,
+          seqNo: event.data?.seqNo,
+          bond<%= PascalCase %>No: event.data?.bond<%= PascalCase %>No,
+          localSid: event.data?.localSid,
+
+          identifiers: [invUid],
+        })
+      );
+      this.logger.info(
+        `<%= PascalCase %> ${invUid} TranistStateSuccess to: ${targetStateCode} event: ${event.type}`
+      );
+    } else {
+      this.logger.warn(
+        `<%= PascalCase %> ${invUid} TranistStateFailed from: ${<%= camelCase %>Head.stateCode} event: ${event.type}`
+      );
+    }
+    return res;
+  }
+
+  @CtxTransactional()
+  @TraceSpan()
+  public async transitToTargetState(
+    invUids: string[],
+    targetStateCode: string
+  ): Promise<void> {
+    if (!invUids?.length) {
+      return;
+    }
+    const stateMachine = await this.getStateMachine();
+
+    const <%= camelCase %>Heads = await this.findAll(
+      { uid: invUids },
+      { columns: ['uid', 'stateCode'] }
+    );
+
+    const allowedHeads = <%= camelCase %>Heads.filter(<%= camelCase %>Head => {
+      const isAllowed = stateMachine.allowTransit(
+        <%= camelCase %>Head.stateCode,
+        targetStateCode
+      );
+      if (!isAllowed) {
+        this.logger.warn(
+          '状态机未配置转换规则，无法转换状态 %s %s',
+          <%= camelCase %>Head.stateCode,
+          targetStateCode
+        );
+      }
+      return isAllowed;
+    });
+
+    if (allowedHeads.length !== <%= camelCase %>Heads.length) {
+      const notAllowedUids = _.difference(
+        <%= camelCase %>Heads.map(head => head.uid),
+        allowedHeads.map(head => head.uid)
+      );
+      throw new BaseError(
+        `不允许更改状态为${targetStateCode}:\n${notAllowedUids.join('\n')}`
+      );
+    }
+
+    await this.updateByUid(
+      <%= PascalCase %>Head.getUpdateDto({
+        stateCode: targetStateCode,
+        identifiers: allowedHeads.map(head => head.uid),
+      })
+    );
+  }
+
+  public async getStateMachine(
+    useDefault = false
+  ): Promise<<%= PascalCase %>StateMachine> {
+    if (useDefault) {
+      return new <%= PascalCase %>StateMachine();
+    }
+    let stateMachine = await this.stateMachineFactory.createInstance(
+      this.getTenantId(),
+      <%= PascalCase %>Head.BIZMETA_KEY
+    );
+    if (!stateMachine) {
+      this.logger.warn(
+        <%= PascalCase %>Head.BIZMETA_KEY,
+        `state machine for ${this.getTenantId()}  not defined, use default`
+      );
+      stateMachine = new <%= PascalCase %>StateMachine();
+    }
+    return stateMachine as unknown as <%= PascalCase %>StateMachine;
+  }
+
+  @TraceSpan()
+  @CtxTransactional()
+  public async getExecutable<%= PascalCase %>Heads(
+    stateMachine: <%= PascalCase %>StateMachine,
+    actionCode: string,
+    invUids?: string[],
+    options?: API.QueryOptions
+  ): Promise<{
+    <%= camelCase %>Heads: <%= PascalCase %>Head[];
+    notAllowedUids?: string[];
+  }> {
+    const executableStateCodes = stateMachine
+      .getStatesCanExecute(actionCode)
+      .map(({ stateCode }) => stateCode);
+
+    if (executableStateCodes.length === 0) {
+      this.logger.warn(
+        `no executable state for ${actionCode} action in ${<%= PascalCase %>Head.BIZMETA_KEY} state machine`
+      );
+      return { <%= camelCase %>Heads: [], notAllowedUids: invUids };
+    }
+    const filter = {
+      stateCode: executableStateCodes,
+    };
+    if (invUids?.length > 0) {
+      filter['uid'] = invUids;
+    }
+    const <%= camelCase %>Heads = await this.findAll(filter, options);
+    if (<%= camelCase %>Heads.length !== invUids?.length) {
+      const notAllowedUids = _.difference(
+        invUids,
+        <%= camelCase %>Heads.map(d => d.uid)
+      );
+      return { <%= camelCase %>Heads, notAllowedUids };
+    }
+    return { <%= camelCase %>Heads };
   }
 }

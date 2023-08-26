@@ -112,7 +112,7 @@ const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string; actionRef: React
                 pageSize,
                 columns: ultraColumns.getColumnKeys(),
                 filter,
-                sorter: Object.keys(sorter).length > 0 ? sorter : undefined,
+                sorter: sorter && Object.keys(sorter).length > 0 ? sorter : undefined,
               });
               return {
                 data: res.result.data,

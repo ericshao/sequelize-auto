@@ -105,7 +105,7 @@ const <%= PascalCase %>List: React.FC = () => {
                 pageSize,
                 columns: ultraColumns.getColumnKeys(),
                 filter,
-                sorter: Object.keys(sorter).length > 0 ? sorter : undefined,
+                sorter: sorter && Object.keys(sorter).length > 0 ? sorter : undefined,
                 // tenantId,
               });
               // setIdentifiers(res.result.data.map((item) => item.uid!));

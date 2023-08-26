@@ -23,7 +23,7 @@
 ./bin/midway-auto -o ./output -n shipment -a 货运 -t aggr --ak shpUid
 
 生成实体
-./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity -d c2cloud_460224065335429 -t bwp_whse_inb_delivery
+./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity -d c2cloud -t bwp_whse_inb_delivery
 ./bin/midway-auto -o ./output -n whseOutbDelivery  -a 出库交货单 --ak obdUid  -t entity --mn bwp --an warehouse
 
 # Sequelize-Auto
