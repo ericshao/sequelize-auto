@@ -2,15 +2,15 @@
 import React, { useContext, useMemo, useRef, useState } from 'react';
 // Antd
 import { SaveOutlined } from '@ant-design/icons';
-import { PageContainer, ProCard, ProFormInstance, ProProvider, TableDropdown } from '@ant-design/pro-components';
+import { ActionType, PageContainer, ProCard, ProFormInstance, ProProvider, TableDropdown } from '@ant-design/pro-components';
 import { message, Typography } from 'antd';
 // Umi
 // Components
 import { valueTypeMap, ValueTypeMapKey } from '@/shares/components/schema-components';
 import BetaSchemaForm from '@/shares/components/SchemaForm';
-import AuditLog from '@/pages/components/AuditLog';
+import AuditLog from '@/components/AuditLog';
 // Services
-import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/cmp/<%= camelCase %>';
+import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/<%= moduleName%>/<%= camelCase %>';
 // Utils
 import { ActionMap, renderActions } from '@/shares/components/utils';
 // Hooks
@@ -46,6 +46,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
   const { pageTitle, routeKey, access, privileges, presetColumns, getTabName, ClearCache } = usePageConfig();
   // useRef
   const formRef = useRef<ProFormInstance<<%= PascalCase %>>>();
+  const itemActionRef = useRef<ActionType>();
   // 表单状态
   const {
     loading,
@@ -115,8 +116,8 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
           }}
           tabList={[
             {
-              tab: pageTitle,
-              key: 'main',
+              tab: '表头',
+              key: 'head',
               children: (
                 <ProCard bordered>
                   <BetaSchemaForm<<%= PascalCase %>, ValueTypeMapKey>
@@ -162,9 +163,9 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
               ),
             },
             {
-              tab: getTabName('<%= lowerCase %>Item'),
-              key: '<%= lowerCase %>Item',
-              children: <<%= PascalCase %>ItemList dlvUid={uid!} />,
+              tab: '表体',
+              key: 'items',
+              children: <<%= PascalCase %>ItemList <%= aggrKey %>={uid!} actionRef={itemActionRef}/>,
             },
             {
               tab: '操作记录',

@@ -1,4 +1,4 @@
-import request from '@/services/cmpApi';
+import request from '@/services/<%= moduleName%>Api';
 
 export async function query<%= PascalCase %>List(data: Partial<API.ListOptions<<%= PascalCase %>>>) {
   return request.post<API.BaseResponse<API.ListResult<<%= PascalCase %>>>>('/<%= slashPath %>/list', {

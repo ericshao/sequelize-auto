@@ -3,7 +3,7 @@ import React, { useContext, useRef } from 'react';
 // Antd
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { ActionType, PageContainer, ProProvider, TableDropdown } from '@ant-design/pro-components';
-import { Button, Layout, message, Segmented, Space, Typography } from 'antd';
+import { Button, Layout, message, notification, Segmented, Space, Typography } from 'antd';
 // Umi
 import { Access } from '@umijs/max';
 import { history } from 'umi';
@@ -13,7 +13,7 @@ import { valueTypeMap } from '@/shares/components/schema-components';
 import { UltraColumns } from '@/shares/components/UltraColumns';
 import UltraTable from '@/shares/components/UltraTable';
 // Services
-import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/cmp/<%= camelCase %>';
+import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/<%= moduleName%>/<%= camelCase %>';
 // Hooks
 import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
 import { useDevInspector } from '@/shares/hooks/devInspector';
@@ -26,6 +26,7 @@ import { useStateMachine } from '@/shares/hooks/stateMachine';
 // Definitions
 import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
+import <%= PascalCase %>Detail from './<%= camelCase %>.detail';
 // Subpages
 
 const { Content } = Layout;
@@ -158,7 +159,7 @@ const <%= PascalCase %>List: React.FC = () => {
               }}
               request={async (params, sorter) => {
                 const { current, pageSize, ...search } = params;
-                const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view]};
+                const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view!]};
                 setCurrentFilter(filter);
                 const res = await query<%= PascalCase %>List({
                   current,
