@@ -1,20 +1,21 @@
 import _ from 'lodash';
 import { ColumnDescription } from 'sequelize/types';
-import { DialectOptions, FKSpec } from './dialects/dialect-options';
+
 import {
   AutoOptions,
   CaseFileOption,
   CaseOption,
   IndexSpec,
   LangOption,
+  Relation,
+  TSField,
+  TableData,
   makeIndent,
   makeTableName,
   qNameSplit,
   recase,
-  Relation,
-  TableData,
-  TSField,
 } from './types';
+import { DialectOptions, FKSpec } from './dialects/dialect-options';
 
 /** Generates text from each table in TableData */
 export class ColumnGenerator {
@@ -56,7 +57,7 @@ export class ColumnGenerator {
 
     if (this.options.lang === 'ts') {
       header +=
-        "import { TableColumnsParams, ValueTypeMapKey } from '@/shares/components/schema-components';\n";
+        "import { dateTimeRangeSearch, TableColumnsParams, ValueTypeMapKey } from '@/shares/components/schema-components';\n";
       header +=
         "import { tableColumnsResult, transformStringToken, convertValueEnum } from '@/shares/components/schema-components/util';\n";
       header +=
@@ -126,9 +127,8 @@ export class ColumnGenerator {
     fields.forEach(field => {
       if (!this.isIgnoredField(field)) {
         if (
-          (!this.isDeprecated(table, field) 
+          !this.isDeprecated(table, field) ||
           // && !this.isJSONField(table, field)
-            ) ||
           this.isUid(field)
         ) {
           const name = this.quoteName(recase(this.options.caseProp, field));
@@ -157,10 +157,10 @@ export class ColumnGenerator {
 
   private getTitle(table: string, field: string) {
     if (field === 'created_date') {
-      return "    title: '创建时间',\n";
+      return "    title: '创建时间',\nvalueType: 'dateTimeRangeSearch',\nsearch: dateTimeRangeSearch,\n";
     }
     if (field === 'last_updated_date') {
-      return "    title: '最后更新时间',\n";
+      return "    title: '最后更新时间',\nvalueType: 'dateTimeRangeSearch',\nsearch: dateTimeRangeSearch,\n";
     }
     const fieldObj = this.tables[table][field] as TSField;
     if (fieldObj.comment) {
@@ -174,7 +174,7 @@ export class ColumnGenerator {
     if (/(uid)$/.test(field)) {
       return '    hideInTable: true,\n';
     }
-    return '';
+    return '    ellipsis: true,\n';
   }
 
   private getHideInSearch(field: string, counter: number) {

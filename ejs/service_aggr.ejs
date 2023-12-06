@@ -10,7 +10,7 @@ import {
 import { TraceSpan } from '@midwayjs-plus/otel';
 import { Inject, Provide, Scope, ScopeEnum } from '@midwayjs/core';
 
-import { StateCode, StateMachineFactory } from '../../common';
+import { StateMachineFactory } from '../../common';
 import { <%= PascalCase %>, Create<%= PascalCase %>Dto, <%= PascalCase %>Head } from '../entity';
 import { <%= PascalCase %>CreatedEvent } from '../event';
 import { <%= PascalCase %>DetailService, <%= PascalCase %>HeadService } from '../service';
@@ -178,7 +178,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
   public async transitStateByDefault(
     invUid: string,
     event: EventHubEvent<any>,
-    targetStateCode?: StateCode
+    targetStateCode?: string
   ): Promise<{
     success: boolean;
     stateCode?: string;
@@ -199,7 +199,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
     invUid: string,
     event: EventHubEvent<any>,
     stateMachine: <%= PascalCase %>StateMachine,
-    targetStateCode?: StateCode
+    targetStateCode?: string
   ): Promise<{
     success: boolean;
     stateCode?: string;
@@ -217,7 +217,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
       targetStateCode = stateMachine?.transit(
         <%= camelCase %>Head.stateCode,
         event
-      ) as StateCode;
+      );
     }
     const res = {
       success: !!targetStateCode,

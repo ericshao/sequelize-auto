@@ -8,8 +8,9 @@ import { message, Typography } from 'antd';
 // Components
 import { valueTypeMap, ValueTypeMapKey } from '@/shares/components/schema-components';
 import BetaSchemaForm from '@/shares/components/SchemaForm';
-import AuditLog from '@/components/AuditLog';
+import AuditLog from '@/shares/components/AuditLog';
 // Services
+import { queryAuditLogList } from '@/services/<%= moduleName%>/audit/log';
 import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/<%= moduleName%>/<%= camelCase %>';
 // Utils
 import { ActionMap, renderActions } from '@/shares/components/utils';
@@ -103,7 +104,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
                 {currentValues?.uid}
               </Typography.Text>
             ),
-            onBack: props.insideDrawer ? undefined : () => history.back(),
+            onBack: props.insideDrawer ? () => props.onClose?.() : () => history.back(),
             breadcrumb: {
               items: [
                 {
@@ -172,7 +173,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
               key: 'auditLog',
               children: (
                 <ProCard bordered>
-                  <AuditLog bizUid={uid!} reload={tabActiveKey === 'auditLog'} />
+                  <AuditLog queryFn={queryAuditLogList} bizUid={uid!} reload={tabActiveKey === 'auditLog'} />
                 </ProCard>
               ),
             },

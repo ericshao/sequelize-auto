@@ -1,15 +1,15 @@
 import { StandardState, StatusType } from '@c2pkg/statemachine';
 import { Init, Provide, Scope, ScopeEnum } from '@midwayjs/core';
 
-import { BaseBndStateMachine, StateCode } from '../../common';
+import { BaseBndStateMachine } from '../../common';
 import { <%= PascalCase %>Head } from '../entity';
 
 export enum <%= PascalCase %>StateEnum {}
 
 export class <%= PascalCase %>State extends StandardState {
-  stateCode: StateCode;
+  stateCode: string;
   constructor(
-    stateCode: StateCode,
+    stateCode: string,
     label: string,
     status: StatusType,
     customizable = false
@@ -30,7 +30,7 @@ export class <%= PascalCase %>StateMachine extends BaseBndStateMachine {
   async init() {
     super.initCommonStates();
     this.declareExtraStates();
-    this.allStates = this.stateList;
+
   }
 
   declareExtraStates() {
