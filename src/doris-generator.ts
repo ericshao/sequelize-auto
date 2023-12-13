@@ -1,20 +1,21 @@
-import _ from 'lodash';
-import { ColumnDescription } from 'sequelize/types';
-import { DialectOptions, FKSpec } from './dialects/dialect-options';
 import {
   AutoOptions,
   CaseFileOption,
   CaseOption,
   IndexSpec,
   LangOption,
+  Relation,
+  TSField,
+  TableData,
   makeIndent,
   makeTableName,
   qNameSplit,
   recase,
-  Relation,
-  TableData,
-  TSField,
 } from './types';
+import { DialectOptions, FKSpec } from './dialects/dialect-options';
+
+import { ColumnDescription } from 'sequelize/types';
+import _ from 'lodash';
 
 /** Generates text from each table in TableData */
 export class DorisGenerator {
@@ -87,12 +88,12 @@ export class DorisGenerator {
 
       str += 'DROP TABLE IF EXISTS `#TABLE#`;\n';
       str += 'CREATE TABLE `#TABLE#` (\n';
-      str += "  `tenant_id` BIGINT(20) NOT NULL COMMENT '租户ID',\n";
       str += "  `uid` VARCHAR(24) NOT NULL COMMENT 'UID',\n";
       str += "  `created_date` DATETIME NOT NULL COMMENT '创建时间',\n";
+      str += "  `tenant_id` BIGINT(20) NOT NULL COMMENT '租户ID',\n";
       str += this.addFormColumns(table, true);
       str += ') ENGINE=OLAP\n';
-      str += 'UNIQUE KEY(`tenant_id`, `uid`, `created_date`)\n';
+      str += 'UNIQUE KEY(`uid`, `created_date`)\n';
       str += 'PARTITION BY RANGE(`created_date`) ()\n';
       str += 'DISTRIBUTED BY HASH(`uid`) BUCKETS 10\n';
       str += `PROPERTIES (
