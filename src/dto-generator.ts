@@ -1,11 +1,19 @@
-import _ from 'lodash';
-import { ColumnDescription } from 'sequelize/types';
-
-import { DialectOptions } from './dialects/dialect-options';
 import {
-    AutoOptions, CaseFileOption, CaseOption, LangOption, makeIndent, makeTableName, qNameSplit,
-    recase, TableData, TSField
+    AutoOptions,
+    CaseFileOption,
+    CaseOption,
+    LangOption,
+    TSField,
+    TableData,
+    makeIndent,
+    makeTableName,
+    qNameSplit,
+    recase
 } from './types';
+
+import { ColumnDescription } from 'sequelize/types';
+import { DialectOptions } from './dialects/dialect-options';
+import _ from 'lodash';
 
 /** Generates text from each table in TableData */
 export class DtoGenerator {
@@ -79,16 +87,19 @@ export class DtoGenerator {
         str += 'static readonly BIZMETA_KEY = \'internal/#TABLE#\';';
         str += this.addTypeScriptFields(table, true);
         str += '  static getUpdateDto(\n';
-        str += '  data: Partial<#TABLE#> & { identifiers?: string[] }\n';
+        str += '  data: Partial<#TABLE#> & { identifiers?: string[] },\n';
+        str += '  omitNullValue = true\n';
         str += '): Update#TABLE#Dto {\n';
-          str += '  const dto = new Update#TABLE#Dto();\n';
-          str += '  if (data.uid) {\n';
-            str += '    dto.identifiers = [data.uid];\n';
-            str += '     delete data.uid;\n';
-            str += '    }\n';
-            str += '    Object.assign(dto, omitNil(data));\n';
-            str += '      return dto;\n';
-            str += '  }\n';
+        str += '  const { uid, ...dataWithoutUid } = data || {};\n';
+        str += '  const identifiers = uid ? [uid] : data.identifiers || [];\n'
+        str += '  const dto = new Update#TABLE#Dto();\n';
+        str += '  Object.assign(\n';
+        str += '    dto,\n';
+        str += '    omitNullValue ? omitNil(dataWithoutUid) : dataWithoutUid,\n';
+        str += '    { identifiers }\n';
+        str += '  );\n';
+        str += '  return dto;\n';
+        str += '  }\n';
         str += '}\n\n';
       }
 

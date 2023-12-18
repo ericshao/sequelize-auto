@@ -147,7 +147,7 @@ export class DorisGenerator {
           }
         }
         if (this.isJSON(fieldType)) {
-          type = 'STRING';
+          type = 'JSONB';
         }
         if (rawFieldType.includes('UNSIGNED')) {
           type = rawFieldType.replace('UNSIGNED', '');
