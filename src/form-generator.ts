@@ -148,6 +148,9 @@ export class FormGenerator {
           if (this.isIntegerField(table, field)) {
             str += '    fieldProps: integerFieldProps,\n';
           }
+          if (this.isUidField(field)) {
+            str += '    hideInForm: true,\n';
+          }
           str += '    colProps,\n';
           str += '  },\n';
         }
@@ -274,12 +277,20 @@ export class FormGenerator {
           'createdDate',
           'lastUpdatedBy',
           'lastUpdatedDate',
-        ].includes(recase('c', field)) || /(uid)$/.test(field)
+        ].includes(recase('c', field))
       );
     }
     return this.options.skipFields && this.options.skipFields.includes(field);
   }
 
+  private isUidField(field: string) {
+    if (
+      this.options.extendMode === 'entity' ||
+      this.options.extendMode === 'item'
+    ) {
+      return /(uid)$/.test(field);
+    }
+  }
   private escapeSpecial(val: string) {
     if (typeof val !== 'string') {
       return val;

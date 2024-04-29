@@ -13,11 +13,14 @@ export class StatemachineGenerator {
   ejsExt: string;
   constructor(entity: Entity, ejsExt?: string) {
     this.entity = entity;
-    this.ejsExt = `../../ejs/statemachine_${ejsExt}.ejs`;
+    this.ejsExt = `../../ejs/statemachine.ejs`;
 
   }
   generateText() {
     const path = join(__dirname, this.ejsExt);
+    if (!path) {
+      return;
+    }
     // console.log(this.entity);
     return ejs.compile(readFileSync(path, 'utf8'), { filename: path })(this.entity);
   }

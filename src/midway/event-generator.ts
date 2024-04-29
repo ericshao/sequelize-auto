@@ -14,11 +14,15 @@ export class EventGenerator {
   constructor(entity: Entity, ejsExt?: string) {
     this.entity = entity;
     this.ejsExt = `../../ejs/event_${ejsExt}.ejs`;
-
   }
   generateText() {
     const path = join(__dirname, this.ejsExt);
+    if (!path) {
+      return;
+    }
     // console.log(this.entity);
-    return ejs.compile(readFileSync(path, 'utf8'), { filename: path })(this.entity);
+    return ejs.compile(readFileSync(path, 'utf8'), { filename: path })(
+      this.entity
+    );
   }
 }

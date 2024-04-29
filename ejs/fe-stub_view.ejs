@@ -1,0 +1,22 @@
+import request from '@/shares/services/<%=moduleName %>Api';
+
+export async function query<%= PascalCase %>List(data: Partial<API.ListOptions<<%= PascalCase %>>>) {
+  return request.post<API.BaseResponse<API.ListResult<<%= PascalCase %>>>>('/<%= slashPath %>/list', {
+    data,
+  });
+}
+
+export async function get<%= PascalCase %>(uid: string) {
+  return request.get<API.BaseResponse<<%= PascalCase %>>>(`/<%= slashPath %>/${uid}`);
+}
+
+export async function request<%= PascalCase %>Generating(
+  filter: API.Filter<<%= PascalCase %>>,
+  sorter: Record<string, API.SortOrder>,
+  columns?: string[],
+  templateUid?: string,
+) {
+  return request.post<API.BaseResponse<void>>('/<%= slashPath %>/request/generating', {
+    data: { filter, sorter, columns, templateUid },
+  });
+}

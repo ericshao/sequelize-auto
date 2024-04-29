@@ -1,14 +1,14 @@
 import {
-    AutoOptions,
-    CaseFileOption,
-    CaseOption,
-    LangOption,
-    TSField,
-    TableData,
-    makeIndent,
-    makeTableName,
-    qNameSplit,
-    recase
+  AutoOptions,
+  CaseFileOption,
+  CaseOption,
+  LangOption,
+  TSField,
+  TableData,
+  makeIndent,
+  makeTableName,
+  qNameSplit,
+  recase,
 } from './types';
 
 import { ColumnDescription } from 'sequelize/types';
@@ -20,7 +20,7 @@ export class DtoGenerator {
   dialect: DialectOptions;
   tables: { [tableName: string]: { [fieldName: string]: ColumnDescription } };
   space: string[];
-  options: {
+  options: AutoOptions & {
     indentation?: number;
     spaces?: boolean;
     lang?: LangOption;
@@ -81,43 +81,46 @@ export class DtoGenerator {
         this.options.lang
       );
 
-      if (this.options.lang === 'ts') {
-        str += `@BizmetaProvider('#TABLE#', { title: ''})\n`;
-        str += 'export class #TABLE# extends #ENTITY# {\n';
-        str += 'static readonly BIZMETA_KEY = \'internal/#TABLE#\';';
-        str += this.addTypeScriptFields(table, true);
+      const namespace = this.options.views ? 'report' : 'internal';
+
+      str += `@BizmetaProvider('#TABLE#', { title: '', namespace: '${namespace}' })\n`;
+      str += 'export class #TABLE# extends #ENTITY# {\n';
+      str += `static readonly BIZMETA_KEY = \'${namespace}/#TABLE#\';`;
+      str += this.addTypeScriptFields(table, true);
+
+      if (!this.options.views) {
         str += '  static getUpdateDto(\n';
         str += '  data: Partial<#TABLE#> & { identifiers?: string[] },\n';
         str += '  omitNullValue = true\n';
         str += '): Update#TABLE#Dto {\n';
         str += '  const { uid, ...dataWithoutUid } = data || {};\n';
-        str += '  const identifiers = uid ? [uid] : data.identifiers || [];\n'
+        str += '  const identifiers = uid ? [uid] : data.identifiers || [];\n';
         str += '  const dto = new Update#TABLE#Dto();\n';
         str += '  Object.assign(\n';
         str += '    dto,\n';
-        str += '    omitNullValue ? omitNil(dataWithoutUid) : dataWithoutUid,\n';
+        str +=
+          '    omitNullValue ? omitNil(dataWithoutUid) : dataWithoutUid,\n';
         str += '    { identifiers }\n';
         str += '  );\n';
         str += '  return dto;\n';
         str += '  }\n';
         str += '}\n\n';
-      }
 
-      str +=
-        "export class Create#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate', 'lastUpdatedDate']) {}\n\n";
-      str +=
-        "export class Update#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate']) {\n";
-      str += "@ApiProperty({ description: '批量更新UID' })\n";
-      str += '@Rule(RuleType.array())\n';
-      str += 'identifiers: number[] | string[];\n\n';
-      str += "@ApiProperty({ description: '更新前值' })\n";
-      str += '@Rule(RuleType.object())\n';
-      str += 'oldValues?: Partial<#TABLE#>;\n';
-      str += `  @ApiProperty({ description: '时间戳' })
+        str +=
+          "export class Create#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate', 'lastUpdatedDate']) {}\n\n";
+        str +=
+          "export class Update#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate']) {\n";
+        str += "@ApiProperty({ description: '批量更新UID' })\n";
+        str += '@Rule(RuleType.array().allow(null))\n';
+        str += 'identifiers: number[] | string[];\n\n';
+        str += "@ApiProperty({ description: '更新前值' })\n";
+        str += '@Rule(RuleType.object())\n';
+        str += 'oldValues?: Partial<#TABLE#>;\n';
+        str += `  @ApiProperty({ description: '时间戳' })
       @Rule(RuleType.date())
       timestamp?: Date;\n`;
+      }
       str += '}\n\n';
-
       const additional = this.options.additional;
       // str += "export class Delete#TABLE#Dto extends PickDto(#TABLE#Dto, ['uid', 'tenantId']) {\n";
       // if (additional.paranoid) {

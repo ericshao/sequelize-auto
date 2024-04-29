@@ -131,7 +131,7 @@ export class ViewGenerator {
           type = rawFieldType.replace('UNSIGNED', '');
         }
         str += `  \`${table}\`.\`${field}\` AS \`#TABLE#_${recase(
-          'c',
+          'l',
           field
         )}\`,\n`;
       }

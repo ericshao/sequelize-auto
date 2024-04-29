@@ -1,0 +1,73 @@
+import { BizmetaProvider } from '@c2pkg/bizmeta';
+import { EventHubEvent, EventMetadata } from '@c2pkg/eventhub';
+import { nanoid } from 'nanoid';
+import { BaseReportRequest } from '../../common/entity';
+import { <%= PascalCase %> } from '../entity';
+
+export enum <%= PascalCase %>EventEnum {
+  REQUEST_GENERATING = 'bwp:bond:invt:Report:RequestGenerating',
+}
+
+@BizmetaProvider('<%= PascalCase %>Request', {
+  title: '<%= label %>查询请求',
+  namespace: 'report',
+})
+export class <%= PascalCase %>Request extends BaseReportRequest<<%= PascalCase %>> {
+  static readonly BIZMETA_KEY = 'report/<%= PascalCase %>Request';
+
+  constructor(
+    filter: Partial<<%= PascalCase %>>,
+    sorter: Record<string, 'ascend' | 'descend'>,
+    columns: string[],
+    templateUid: string
+  ) {
+    super(filter, sorter, columns, templateUid);
+    this.interface = 'query<%= PascalCase %>List';
+    this.bizmetaKey = <%= PascalCase %>.BIZMETA_KEY;
+  }
+}
+  
+
+
+export class <%= PascalCase %>Event extends EventHubEvent<<%= PascalCase %>Request> {
+  constructor(
+    type: <%= PascalCase %>EventEnum,
+    data?: <%= PascalCase %>Request,
+    flowuid?: string,
+    dataschema?: string
+  ) {
+    super({
+      source: '<%= moduleName%>',
+      type,
+      dataschema: dataschema ?? <%= PascalCase %>Request.BIZMETA_KEY,
+      data,
+      subject: `RPT${nanoid()}`,
+    });
+    this.flowuid = flowuid;
+  }
+  public setTrigger(actionCode: string) {
+    this.trigger = actionCode;
+  }
+}
+
+@EventMetadata({
+  name: '请求生成<%= label %>事件',
+  type: <%= PascalCase %>EventEnum.REQUEST_GENERATING,
+  dataschema: <%= PascalCase %>Request.BIZMETA_KEY,
+})
+export class <%= PascalCase %>RequestGeneratingEvent extends <%= PascalCase %>Event {
+  constructor(
+    filter: Partial<<%= PascalCase %>>,
+    sorter: Record<string, API.SortOrder>,
+    columns: string[],
+    templateUid?: string
+  ) {
+    const request = new <%= PascalCase %>Request(
+      filter,
+      sorter,
+      columns,
+      templateUid
+    );
+    super(<%= PascalCase %>EventEnum.REQUEST_GENERATING, request);
+  }
+}

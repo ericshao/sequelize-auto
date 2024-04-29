@@ -13,7 +13,7 @@ import { valueTypeMap } from '@/shares/components/schema-components';
 import { UltraColumns } from '@/shares/components/UltraColumns';
 import UltraTable from '@/shares/components/UltraTable';
 // Services
-import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/<%= moduleName%>/<%= camelCase %>';
+import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/<%= moduleName%>/<%= aggrName %>';
 // Hooks
 import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
 import { useListState } from '@/shares/hooks/listState';
@@ -130,9 +130,8 @@ const <%= PascalCase %>List: React.FC = () => {
                 }}
               />,
             ]}
-            search={{
-              filterType: 'light',
-            }}
+            embedded={props.embedded}
+            tabbed={props.tabbed}
             cardProps={{ bodyStyle: { padding: 0 } }}
             rowSelection={{}}
             tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (

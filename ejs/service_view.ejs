@@ -1,0 +1,126 @@
+import { EventHub } from '@c2pkg/eventhub';
+import { TenancyService } from '@c2pkg/multi-tenancy';
+import {
+  CtxTXParticipant,
+  CtxTransactional,
+  baseError,
+  omitNil,
+} from '@midwayjs-plus/common';
+import { Inject, Provide, Scope, ScopeEnum } from '@midwayjs/core';
+import * as _ from 'lodash';
+import { <%= PascalCase %> } from '../entity';
+import { <%= PascalCase %>RequestGeneratingEvent } from '../event';
+import { <%= PascalCase %>Model } from '../model';
+
+@Provide()
+@Scope(ScopeEnum.Request, { allowDowngrade: true })
+@CtxTXParticipant()
+export class <%= PascalCase %>Service extends TenancyService {
+  @Inject()
+  eventHub: EventHub;
+
+  public async omniQuery(
+    options?: API.ListOptions
+  ): Promise<API.ListResult<<%= PascalCase %>>> {
+    const listResult = await <%= PascalCase %>Model.omniQuery<typeof <%= PascalCase %>Model, <%= PascalCase %>>(this.filterByTenantId(options), this.getTenantSchema());
+      return {
+        ...listResult,
+        data: listResult.data.map(
+          entity =>
+          _.omit(options?.omitNil ? omitNil(entity) : entity, [
+            'id',
+            'tenantId',
+          ]) as <%= PascalCase %>
+        ),
+      };
+  }
+
+  @CtxTransactional()
+  public async getByUid(
+    uid: string,
+    options: API.QueryOptions = { omitNil: true }
+  ): Promise<<%= PascalCase %>> {
+    const entity = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
+      ...this.generateFindOptions(options),
+      where: { uid },
+      transaction: this.getTransaction(),
+    });
+    if (!entity) throw baseError.EntityNotExistsError;
+    return _.omit(
+      options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(),
+      ['id', 'tenantId']
+    ) as <%= PascalCase %>;
+  }
+
+  @CtxTransactional()
+  public async findAllByAggrUid(
+    aggrUid: string | string[],
+    options: API.QueryOptions = { omitNil: true },
+    aggrUidProp = '<%= aggrKey %>'
+  ): Promise<<%= PascalCase %>[]> {
+    const <%= camelCase %>s = await <%= PascalCase %>Model.schema(
+      this.getTenantSchema()
+    ).findAll({
+      ...this.generateFindOptions(options),
+      where: { [aggrUidProp]: aggrUid },
+      transaction: this.getTransaction(),
+    });
+    return <%= camelCase %>s.map(entity => _.omit(options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>);
+  }
+
+  @CtxTransactional()
+  public async findOne(
+    filter: API.Filter,
+    options: API.QueryOptions = { omitNil: true }
+  ): Promise<<%= PascalCase %>> {
+    const entity = await <%= PascalCase %>Model.schema(
+      this.getTenantSchema()
+    ).findOne({
+    ...this.generateFindOptions(options),
+      where: this.injectTenantId(filter),
+      transaction: this.getTransaction(),
+    });
+    if (entity) {
+      return _.omit(
+        options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(),
+        ['id']
+      ) as <%= PascalCase %>;
+    }
+  }
+
+  @CtxTransactional()
+  public async findAll(
+    filter: API.Filter,
+    options: API.QueryOptions = { omitNil: true, limit: 10000 }
+  ): Promise<<%= PascalCase %>[]> {
+    const entities = await <%= PascalCase %>Model.schema(
+      this.getTenantSchema()
+    ).findAll({
+    ...this.generateFindOptions(options),
+      where: this.injectTenantId(filter),
+      transaction: this.getTransaction(),
+    });
+    return entities.map(
+      entity =>
+        _.omit(options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(), [
+          'id',
+        ]) as <%= PascalCase %>
+    );
+  }
+
+  public async requestGenerating(
+    filter: API.Filter,
+    sorter: Record<string, API.SortOrder>,
+    columns: string[],
+    templateUid: string
+  ) {
+    const event = new <%= PascalCase %>RequestGeneratingEvent(
+      filter,
+      sorter,
+      columns,
+      templateUid
+    );
+
+    await this.eventHub.emitPersistentEvent(event);
+  }
+}

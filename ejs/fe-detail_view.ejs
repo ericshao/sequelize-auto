@@ -1,26 +1,18 @@
 // React
 import React, { useContext, useMemo, useRef, useState } from 'react';
 // Antd
-import { SaveOutlined } from '@ant-design/icons';
 import { ActionType, PageContainer, ProCard, ProFormInstance, ProProvider, TableDropdown } from '@ant-design/pro-components';
-import { message, Typography } from 'antd';
+import { Typography } from 'antd';
 // Umi
 // Components
 import { valueTypeMap, ValueTypeMapKey } from '@/shares/components/schema-components';
 import BetaSchemaForm from '@/shares/components/SchemaForm';
-import AuditLog from '@/shares/components/AuditLog';
 // Services
-import { queryAuditLogList } from '@/services/<%= moduleName%>/audit/log';
-import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/<%= moduleName%>/<%= aggrName %>';
-// Utils
-import { ActionMap, renderActions } from '@/shares/components/utils';
+import { get<%= PascalCase %> } from '@/services/<%= moduleName%>/<%= aggrName %>';
 // Hooks
-import { useDevInspector } from '@/shares/hooks/devInspector';
-import { useEventViewer } from '@/shares/hooks/eventViewer';
 import { useFormState } from '@/shares/hooks/formState';
 import { usePageConfig } from '@/shares/hooks/pageConfig';
 import { usePageParam } from '@/shares/hooks/pageParam';
-import { useStateMachine } from '@/shares/hooks/stateMachine';
 // Definitions
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
 // Subpages
@@ -62,28 +54,9 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
     getUpdateValues,
     Reload,
     ResolveConflictModal,
-  } = useFormState<<%= PascalCase %>>(formRef, get<%= PascalCase %>, update<%= PascalCase %>);
-  // 状态机
-  const { currentState } = useStateMachine('internal/<%= PascalCase %>', currentValues?.stateCode!);
+  } = useFormState<<%= PascalCase %>>(formRef, get<%= PascalCase %>);
 
-  const [tabActiveKey, setTabActiveKey] = useState('main');
-
-  const actions: ActionMap = useMemo(() => {
-    return {
-      update<%= PascalCase %>: {
-        text: '保存',
-        icon: <SaveOutlined />,
-        type: 'primary',
-        disabled: !valuesChanged,
-        onClick: () => formRef.current?.submit(),
-        accessible: access.canWrite(privileges, currentState),
-      },
-    };
-  }, [valuesChanged, access, privileges, formRef.current, currentValues, currentState]);
-
-  const { EventViewer } = useEventViewer(currentValues?.uid!);
-
-  const { DevInspector } = useDevInspector({ routeKey, currentValues, currentState, access, privileges });
+  const [tabActiveKey, setTabActiveKey] = useState('head');
 
   return (
     <ProProvider.Provider
@@ -93,7 +66,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
       }}
     >
       <ParentContext.Provider
-        value={{ contextRouteKey: routeKey, contextValues: currentValues, contextState: currentState }}
+        value={{ contextRouteKey: routeKey, contextValues: currentValues }}
       >
         <PageContainer
           ghost
@@ -133,13 +106,6 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
                       {
                         presetColumns,
                         uid: currentValues?.uid!,
-                        disabled: !access.canWrite(privileges, currentState),
-                        updateFn: (key, value) => {
-                          if (key) {
-                            formRef.current?.setFieldValue(key, value);
-                          }
-                          formRef.current?.submit();
-                        },
                       },
                       access,
                     )}
@@ -152,28 +118,8 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
                     }}
                     //** 允许字段更新为null */
                     omitNil={false}
-                    onFinish={async (values: any) => {
-                      updateCurrentValues(values);
-                    }}
-                    onValuesChange={async (changedValues: any) => {
-                      setValuesChanged(true);
-                    }}
                     submitter={false}
                   />
-                </ProCard>
-              ),
-            },
-            {
-              tab: '表体',
-              key: 'items',
-              children: <<%= PascalCase %>ItemList <%= aggrKey %>={uid!} actionRef={itemActionRef}/>,
-            },
-            {
-              tab: '操作记录',
-              key: 'auditLog',
-              children: (
-                <ProCard bordered>
-                  <AuditLog queryFn={queryAuditLogList} bizUid={uid!} reload={tabActiveKey === 'auditLog'} />
                 </ProCard>
               ),
             },
@@ -181,11 +127,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
           tabActiveKey={tabActiveKey}
           onTabChange={(key: string) => setTabActiveKey(key)}
           extra={[
-            ...renderActions(actions, currentState!),
             <Reload key="reload" />,
-            <EventViewer key="eventViewer" />,
-            <DevInspector key="dev" />,
-            <ResolveConflictModal key="resolveConflict" />,
             <TableDropdown key="dropdown" menus={[ClearCache, FormLayoutSegmented]} onSelect={(key: string) => {}} />,
           ]}
           style={{ marginBottom: 45 }}

@@ -140,8 +140,9 @@ export class <%= PascalCase %>Service extends TenancyService {
 
   @CtxTransactional()
   public async findAllByAggrUid(
-    <%= aggrKey %>: string,
-    options: API.QueryOptions = { omitNil: true }
+    aggrUid: string | string[],
+    options: API.QueryOptions = { omitNil: true },
+    aggrUidProp = '<%= aggrKey %>'
   ): Promise<<%= PascalCase %>[]> {
     const <%= camelCase %>s = await <%= PascalCase %>Model.schema(
       this.getTenantSchema()
@@ -176,7 +177,7 @@ export class <%= PascalCase %>Service extends TenancyService {
   @CtxTransactional()
   public async findAll(
     filter: API.Filter,
-    options: API.QueryOptions = { omitNil: true, limit: 1000 }
+    options: API.QueryOptions = { omitNil: true, limit: 10000 }
   ): Promise<<%= PascalCase %>[]> {
     const entities = await <%= PascalCase %>Model.schema(
       this.getTenantSchema()

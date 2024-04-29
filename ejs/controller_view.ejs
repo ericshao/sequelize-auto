@@ -1,0 +1,72 @@
+import {
+  ListPrivilege,
+  PrivilegeResourceProvider,
+  ReadPrivilege,
+} from '@c2pkg/bizmeta';
+import { EventResource, EventResourceMethod } from '@c2pkg/eventhub';
+import { BaseController } from '@midwayjs-plus/common';
+import {
+  ALL,
+  Body,
+  Controller,
+  Get,
+  Inject,
+  Param,
+  Post,
+} from '@midwayjs/core';
+import { GLOBAL_PREFIX } from '../../../global/constants';
+import { <%= PascalCase %> } from '../entity';
+import { <%= PascalCase %>Service } from '../service';
+
+@Controller('/<%= slashPath%>', { description: '<%= label %>管理' })
+@PrivilegeResourceProvider('<%= PascalCase %>', { globalPrefix: GLOBAL_PREFIX })
+@EventResource({
+  type: 'http',
+  url: `http://${process.env.C2BWP_API_HOST}:${process.env.C2BWP_HTTP_PORT}${GLOBAL_PREFIX}/<%= slashPath%>`,
+})
+export class <%= PascalCase %>Controller extends BaseController {
+  @Inject()
+  <%= camelCase %>Service: <%= PascalCase %>Service;
+
+  @Post('/list', {
+    description: '<%= label %>列表',
+  })
+  @ListPrivilege()
+  @EventResourceMethod({
+    method: 'POST',
+    path: '/list',
+    querySchema: <%= PascalCase %>.BIZMETA_KEY,
+  })
+  async query<%= PascalCase %>List(@Body(ALL) options: API.ListOptions) {
+    const result = await this.<%= camelCase %>Service.omniQuery(options);
+    this.success(result);
+  }
+
+  @Get('/:uid', {
+    description: '获取<%= label %>',
+  })
+  @ReadPrivilege()
+  async get<%= PascalCase %>(@Param('uid') uid: string) {
+    const result = await this.<%= camelCase %>Service.getByUid(uid);
+    this.success(result);
+  }
+
+  @Post('/request/generating', {
+    description: '请求生成<%= label %>',
+  })
+  @ReadPrivilege()
+  async request<%= PascalCase %>Generating(
+    @Body('filter') filter: API.Filter,
+    @Body('sorter') sorter: Record<string, API.SortOrder>,
+    @Body('columns') columns: string[],
+    @Body('templateUid') templateUid: string
+  ) {
+    const result = await this.<%= camelCase %>Service.requestGenerating(
+      filter,
+      sorter,
+      columns,
+      templateUid
+    );
+    this.success(result);
+  }
+}

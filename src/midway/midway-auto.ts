@@ -7,7 +7,7 @@ import { ControllerGenerator } from './controller-generator';
 import { EventGenerator } from './event-generator';
 import { FeDetailGenerator } from './fe-detail-generator';
 import { FeListGenerator } from './fe-list-generator';
-import { FeServiceGenerator } from './fe-service-generator';
+import { FeStubGenerator } from './fe-stub-generator';
 import { ServiceGenerator } from './service-generator';
 import { StatemachineGenerator } from './statemachine-generator';
 import { AutoOptions, Entity } from './types';
@@ -34,16 +34,20 @@ export class MidwayAuto {
     entity.text = es;
     await this.write(entity, 'service');
     const statemachine = this.generateStatemachine(entity, ejsExt);
-    entity.text = statemachine;
-    await this.write(entity, 'statemachine');
+    if (statemachine) {
+      entity.text = statemachine;
+      await this.write(entity, 'statemachine');
+    }
     const event = this.generateEvent(entity, ejsExt);
-    entity.text = event;
-    await this.write(entity, 'event');
+    if (event) {
+      entity.text = event;
+      await this.write(entity, 'event');
+    }
     const ec = this.generateController(entity, ejsExt);
     entity.text = ec;
     await this.write(entity, 'controller');
-    const feService = this.generateFeService(entity, ejsExt);
-    entity.text = feService;
+    const feStub = this.generateFeStub(entity, ejsExt);
+    entity.text = feStub;
     await this.write(entity, 'stub');
     const feList = this.generateFeList(entity, ejsExt);
     entity.text = feList;
@@ -76,8 +80,8 @@ export class MidwayAuto {
     return generator.generateText();
   }
 
-  generateFeService(entity: Entity, ejsExt?: string) {
-    const generator = new FeServiceGenerator(entity, ejsExt);
+  generateFeStub(entity: Entity, ejsExt?: string) {
+    const generator = new FeStubGenerator(entity, ejsExt);
     return generator.generateText();
   }
 

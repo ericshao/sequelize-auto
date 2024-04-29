@@ -1,6 +1,6 @@
 ./bin/sequelize-auto -h 192.168.3.61 -d testing_c2cloud -u root -p 9030  --dialect mysql -l ts --cm p --cp c  -o ./output --op 3 -v -t sof_global_detail
 
-./bin/sequelize-auto -h 10.70.44.17 -d ck_backup -u root -p 9030  --dialect mysql -l ts --cm p --cp c  -o ./output  -t dwd_cds_detail
+./bin/sequelize-auto -h 10.70.44.17 -d welogix_dw -u root -p 9030  --dialect mysql -l ts --cm p --cp c  -o ./output  -t dwd_cms_entry_prdt
 
 ./bin/sequelize-auto -h 192.168.3.66 -u welo -x 123456 -p 3306  --dialect mysql -l ts --cm p --cp c  -o ./output -d qm_saas -t tcs_general_tradeitem
 
@@ -23,8 +23,19 @@
 ./bin/midway-auto -o ./output -n shipment -a 货运 -t aggr --ak shpUid
 
 生成实体
-./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity -d c2cloud -t bwp_whse_inb_delivery
-./bin/midway-auto -o ./output -n whseOutbDelivery  -a 出库单 --ak obdUid  -t entity --mn bwp --an warehouse
+./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity -d c2cloud -t bwp_blc_exception
+./bin/midway-auto -o ./output -n sasApplUcns  -a 业务申报表单耗 --ak aplUid   -t entity --mn bwp --an sasAppl
+
+./bin/midway-auto -o ./output -n permitTradeView  -a 许可证商品归类视图 --ak pctUid   -t entity --mn tcs --an permit
+
+视图
+./bin/midway-auto -o ./output -n bondInvtReportView  -a 核注清单报表视图 --ak invUid   -t view --mn bwp --an bondInvt
+
+ ./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity -d c2cloud -v -t tcs_permit_trade_view
+
+./bin/sequelize-auto -x 123456 -o ./output --op 4 --em entity -d c2cloud -t meta_kitting
+
+./bin/sequelize-auto -h pc-uf6e83x2j0m347qu1.mysql.polardb.rds.aliyuncs.com -u c2cloud  -x App#3220 -o ./output --op 3 --em entity -d c2cloud -t bwp_req_resp
 
 # Sequelize-Auto
 

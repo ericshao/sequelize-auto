@@ -29,7 +29,7 @@ export class ModelGenerator {
   indexes: { [tableName: string]: IndexSpec[] };
   relations: Relation[];
   space: string[];
-  options: {
+  options: AutoOptions & {
     indentation?: number;
     spaces?: boolean;
     lang?: LangOption;
@@ -154,7 +154,7 @@ export class ModelGenerator {
 
       str += this.addTable(table);
 
-      if (this.options.extendMode === 'entity') {
+      if (this.options.extendMode === 'entity' && !this.options.views) {
         str += 'static PREFIX = _PREFIX_;\n\n';
 
         str += '@BeforeCreate\n';

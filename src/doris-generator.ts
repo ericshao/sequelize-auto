@@ -111,6 +111,9 @@ export class DorisGenerator {
         "dynamic_partition.hot_partition_num" = "0",
         "dynamic_partition.reserved_history_periods" = "NULL",
         "dynamic_partition.start_day_of_month" = "1",
+        "enable_unique_key_merge_on_write" = "true",
+        "light_schema_change" = "true",
+        "store_row_column" = "true",
         "in_memory" = "false",
         "storage_format" = "V2"
         );\n`;

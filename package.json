@@ -1,6 +1,6 @@
 {
-  "name": "sequelize-auto",
-  "version": "0.8.7",
+  "name": "@midwayjs-plus/code-generator",
+  "version": "0.1.0",
   "publishConfig": {
     "tag": "latest"
   },
@@ -25,14 +25,8 @@
     "*.md"
   ],
   "bin": {
-    "sequelize-auto": "bin/sequelize-auto"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/sequelize/sequelize-auto.git"
-  },
-  "bugs": {
-    "url": "https://github.com/sequelize/sequelize-auto/issues"
+    "sequelize-auto": "bin/sequelize-auto",
+    "midway-auto": "bin/midway-auto"
   },
   "nyc": {
     "exclude": [
@@ -50,17 +44,12 @@
     "test-mysql": "cross-env DEBUG='sequelize-auto:*' DIALECT=mysql nyc mocha",
     "test-sqlite": "cross-env DEBUG='sequelize-auto:*' DIALECT=sqlite nyc mocha",
     "test-mssql": "cross-env DEBUG='sequelize-auto:*' DIALECT=mssql nyc mocha",
-    "coveralls": "nyc report --reporter=text-lcov | coveralls"
+    "coveralls": "nyc report --reporter=text-lcov | coveralls",
+    "release": "npm run clean && tsc && npm publish"
   },
   "engines": {
     "node": ">= 10"
   },
-  "author": "Steve Schmitt (https://github.com/steveschmitt)",
-  "contributors": [
-    "Daniel Durante <me@danieldurante.com>",
-    "Yuping Zuo (https://github.com/zypA13510)"
-  ],
-  "license": "MIT",
   "dependencies": {
     "lodash": "^4.17.21",
     "mkdirp": "^1.0.4",

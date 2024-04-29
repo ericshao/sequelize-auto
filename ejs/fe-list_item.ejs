@@ -29,7 +29,7 @@ const { Content } = Layout;
 // Types
 type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
 
-const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string; actionRef: React.MutableRefObject<ActionType | undefined> }> = (props) => {
+const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string; actionRef: React.MutableRefObject<ActionType | undefined> }> = (props) => {
   // 引用上下文
   const contextFormValues = useContext(ProProvider);
   const { contextValues, contextState, contextRouteKey } = useContext(ParentContext);
@@ -139,9 +139,8 @@ const <%= PascalCase %>List: React.FC<{ <%= aggrKey %>: string; actionRef: React
                 />
               </Access>,
             ]}
-            search={{
-              filterType: 'light',
-            }}
+            embedded={props.embedded}
+            tabbed={props.tabbed}
             cardProps={{ bodyStyle: { padding: 0 } }}
             rowSelection={{}}
             tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (

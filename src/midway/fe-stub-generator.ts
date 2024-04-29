@@ -9,12 +9,12 @@ import { Entity } from './types';
 //   aggrKey?: string;
 // };
 
-export class FeServiceGenerator {
+export class FeStubGenerator {
   entity: Entity;
   ejsExt: string;
   constructor(entity: Entity, ejsExt?: string) {
     this.entity = entity;
-    this.ejsExt = `../../ejs/fe-service_${ejsExt}.ejs`;
+    this.ejsExt = `../../ejs/fe-stub_${ejsExt}.ejs`;
 
   }
   generateText() {

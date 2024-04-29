@@ -158,7 +158,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         )}
         {tabActiveKey === 'auditLog' && (
           <ProCard bordered>
-            <AuditLog queryFn={queryAuditLogList} bizUid={uid!} />
+            <AuditLog queryFn={queryAuditLogList} bizUid={uid!} reload={tabActiveKey === 'auditLog'} />
           </ProCard>
         )}
       </PageContainer>

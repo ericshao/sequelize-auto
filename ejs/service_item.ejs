@@ -127,14 +127,15 @@ export class <%= PascalCase %>Service extends TenancyService {
 
   @CtxTransactional()
   public async findAllByAggrUid(
-    <%= aggrKey %>: string,
-    options: API.QueryOptions = { omitNil: true }
+    aggrUid: string | string[],
+    options: API.QueryOptions = { omitNil: true },
+    aggrUidProp = '<%= aggrKey %>'
   ): Promise<<%= PascalCase %>[]> {
     const <%= camelCase %>s = await <%= PascalCase %>Model.schema(
       this.getTenantSchema()
     ).findAll({
       ...this.generateFindOptions(options),
-      where: { <%= aggrKey %> },
+      where: { [aggrUidProp]: aggrUid },
       transaction: this.getTransaction(),
     });
     return <%= camelCase %>s.map(entity => _.omit(entity.toJSON(), 'tenantId') as <%= PascalCase %>);

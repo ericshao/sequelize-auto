@@ -1,0 +1,167 @@
+// React
+import React, { useContext, useEffect, useRef } from 'react';
+// Antd
+import { EyeOutlined } from '@ant-design/icons';
+import { ActionType, PageContainer, ProProvider, TableDropdown } from '@ant-design/pro-components';
+import { Button, Layout, Segmented, Space } from 'antd';
+// Umi
+import { Access } from '@umijs/max';
+import { history } from 'umi';
+// Components
+import { valueTypeMap } from '@/shares/components/schema-components';
+import UltraTable from '@/shares/components/UltraTable';
+// Services
+import { query<%= PascalCase %>List } from '@/services/<%= moduleName%>/<%= aggrName %>';
+// Hooks
+import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
+import { useListState } from '@/shares/hooks/listState';
+import { usePageConfig } from '@/shares/hooks/pageConfig';
+// Definitions
+import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
+import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
+import <%= PascalCase %>Detail from './<%= camelCase %>.detail';
+// Subpages
+
+const { Content } = Layout;
+
+// Types
+type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
+
+const <%= PascalCase %>List: React.FC<
+  ListCommonProps & {}
+> = (props) => {
+  // 引用上下文
+  const { warehouseCode } = useContext(WarehouseContext);
+  useEffect(() => {
+    actionRef.current?.reloadAndRest?.();
+  }, [warehouseCode]);
+  // useRef
+  const actionRef = useRef<ActionType>();
+
+  // 页面配置
+  const { routeKey, presetColumns, presetFilters, viewFilterEnum, ClearCache } = usePageConfig(
+    undefined,
+    {
+      childKey: '<%= PascalCase %>',
+    },
+  );
+
+  // 列表状态
+  const {     
+    view,
+    setView,
+    currentRow,
+    setCurrentRow,
+    setCurrentFilter,
+    currentFilter,
+    setCurrentSorter,
+    currentSorter,
+    ultraColumns, 
+  } = useListState<<%= PascalCase %>>(actionRef,
+    {
+      viewFilterEnum,
+      presetColumns,
+      genColumns: gen<%= PascalCase %>Columns,
+      genFormColumns: gen<%= PascalCase %>FormColumns,
+    },
+  );
+
+  // 详情页 Drawer
+  const { detailPageDrawerOpen, setDetailPageDrawerOpen, DetailPageDrawer } = useDetailPageDrawer(
+    <<%= PascalCase %>Detail 
+      uid={currentRow?.uid!}
+      onUpdated={() => { }}
+      onClose={() => {
+        setDetailPageDrawerOpen(false);
+        actionRef.current?.reloadAndRest?.();
+      }}
+      insideDrawer
+    />,
+  );
+
+  const { ReportingModal } = useRequestReporting(
+    'report/<%= PascalCase %>',
+    request<%= PascalCase %>Generating,
+    ultraColumns.getColumnKeys(),
+  );
+
+  return (
+        <Layout className="ant-layout-has-sider">
+          <Content style={{ background: '#fff' }}>
+            <UltraTable
+              rowKey="uid"
+              headerTitle={
+                <Space>
+                  <Segmented
+                    options={presetFilters}
+                    value={view}
+                    onChange={(value) => {
+                      setView(value as string);
+                      actionRef.current?.reloadAndRest?.();
+                    }}
+                    style={{ marginLeft: 4 }}
+                  />
+                </Space>
+              }
+              actionRef={actionRef}
+              columns={ultraColumns.getColumns()}
+              embedded={props.embedded}
+              tabbed={props.tabbed}
+              request={async (params, sorter) => {
+                const { current, pageSize, ...search } = params;
+                const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view!]};
+                setCurrentFilter(filter);
+                const res = await query<%= PascalCase %>List({
+                  current,
+                  pageSize,
+                  columns: ultraColumns.getColumnKeys(),
+                  filter,
+                  sorter: sorter && Object.keys(sorter).length > 0 ? sorter : undefined,
+                });
+                return {
+                  data: res.result.data,
+                  success: res.success,
+                  total: res.result.total,
+                };
+              }}
+              toolBarRender={() => [
+                <ReportingModal key="reporting" filter={currentFilter} sorter={currentSorter} />,
+              ]}
+              rowSelection={{}}
+              tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => {
+
+                return (
+                  <Space size={24}>
+                    <span>已选 {selectedRowKeys.length} 项</span>
+                  </Space>
+                );
+              }}
+              locale={
+                {
+                  // emptyText: () => renderEmptyText(actionRef, declarationStatistic?.unclassified, setAspect),
+                }
+              }
+              columnsState={{
+                persistenceKey: routeKey,
+                persistenceType: 'localStorage',
+              }}
+              scroll={{ x: ultraColumns.totalWidth }}
+              summary={(pageData) => {
+                return ultraColumns.getSummary(pageData);
+              }}
+            />
+
+            <DetailPageDrawer
+              values={currentRow}
+              drawerOpen={detailPageDrawerOpen}
+              onCancel={() => {
+                actionRef.current?.reload();
+                setDetailPageDrawerOpen(false);
+                setCurrentRow(undefined);
+              }}
+            />
+          </Content>
+        </Layout>
+  );
+};
+export default <%= PascalCase %>List;

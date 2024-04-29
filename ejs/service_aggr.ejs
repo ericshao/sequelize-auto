@@ -100,7 +100,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
   }
 
   @CtxTransactional()
-  public async findBySeqNo(
+  public async findBySeqOrSasNo(
     seqNo: string,
     options: API.QueryOptions = { omitNil: true }
   ): Promise<<%= PascalCase %>> {

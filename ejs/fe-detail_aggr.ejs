@@ -1,6 +1,6 @@
 import { BizmetaProperty, BizmetaProvider } from '@c2pkg/bizmeta';
 import { ApiProperty } from '@midwayjs/swagger';
-import { OmitDto, Rule, RuleType } from '@midwayjs/validate';
+import { OmitDto, Rule, RuleType, getSchema } from '@midwayjs/validate';
 
 import { BaseBndEntity } from '../../common';
 import { <%= PascalCase %>Detail, <%= PascalCase %>Head } from './';
@@ -29,21 +29,21 @@ export class <%= PascalCase %> extends BaseBndEntity {
     $ref: 'internal/<%= PascalCase %>Head',
   })
   @ApiProperty({ description: '<%= label %>表头' })
-  @Rule(<%= PascalCase %>Head)
+  @Rule(getSchema(<%= PascalCase %>Head))
   head: <%= PascalCase %>Head;
 
   @BizmetaProperty({
     items: { $ref: 'internal/<%= PascalCase %>Detail' },
   })
   @ApiProperty({ description: '<%= label %>表体' })
-  @Rule(<%= PascalCase %>Detail)
+  @Rule(RuleType.array().items(getSchema(<%= PascalCase %>Detail)))
   list: <%= PascalCase %>Detail[];
 
   @BizmetaProperty({
     items: { $ref: 'internal/<%= PascalCase %>Detail' },
   })
   @ApiProperty({ description: '<%= label %>商品表体' })
-  @Rule(<%= PascalCase %>Detail, { required: false })
+  @Rule(RuleType.array().items(getSchema(<%= PascalCase %>Detail)), { required: false })
   goods?: <%= PascalCase %>Detail[];
 
   constructor(head?: <%= PascalCase %>Head, detailList?: <%= PascalCase %>Detail[]) {

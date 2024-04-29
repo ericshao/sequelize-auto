@@ -18,7 +18,7 @@ export class <%= PascalCase %>Event<
     dataschema?: string
   ) {
     super({
-      source: 'bwp',
+      source: '<%= moduleName%>',
       type,
       dataschema: dataschema ?? <%= PascalCase %>Head.BIZMETA_KEY,
       data,
