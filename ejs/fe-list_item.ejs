@@ -36,7 +36,7 @@ const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string
   // 页面参数
   const { valueEnums, cusParams } = usePageParam();
   // 页面配置
-  const { access, privileges, presetColumns } = usePageConfig(contextRouteKey);
+  const { access, privileges, presetColumns } = usePageConfig({ contextRouteKey });
   // 表单操作项
   const actionRender = (dom: React.ReactNode, record: <%= PascalCase %>) => [
     <Access key="read" accessible={access.canRead(privileges)}>

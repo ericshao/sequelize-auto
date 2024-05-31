@@ -148,7 +148,7 @@ export class <%= PascalCase %>Service extends TenancyService {
       this.getTenantSchema()
     ).findAll({
       ...this.generateFindOptions(options),
-      where: { <%= aggrKey %> },
+      where: { [aggrUidProp]: aggrUid },
       transaction: this.getTransaction(),
     });
     return <%= camelCase %>s.map(entity => _.omit(options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>);

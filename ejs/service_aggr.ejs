@@ -3,7 +3,7 @@ import _ = require('lodash');
 import { AuditLog } from '@c2pkg/auditlog';
 import { EventHub, EventHubEvent } from '@c2pkg/eventhub';
 import {
-  BaseError,
+  BaseBizError,
   CtxTransactional,
   CtxTXParticipant,
 } from '@midwayjs-plus/common';
@@ -282,7 +282,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
         <%= camelCase %>Heads.map(head => head.uid),
         allowedHeads.map(head => head.uid)
       );
-      throw new BaseError(
+      throw new BaseBizError(
         `不允许更改状态为${targetStateCode}:\n${notAllowedUids.join('\n')}`
       );
     }

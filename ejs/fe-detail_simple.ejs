@@ -37,7 +37,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
   // 页面参数
   const { uid } = usePageParam(props);
   // 页面配置
-  const { access, privileges } = usePageConfig(contextRouteKey);
+  const { access, privileges } = usePageConfig({ contextRouteKey });
 
   // useRef
   const formRef = useRef<ProFormInstance<<%= PascalCase %>>>();

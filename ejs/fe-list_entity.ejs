@@ -34,13 +34,14 @@ const { Content } = Layout;
 // Types
 type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
 
-const <%= PascalCase %>List: React.FC = () => {
+const <%= PascalCase %>List: React.FC<
+  ListCommonProps & {}
+> = (props) => {
   // 引用上下文
   const contextFormValues = useContext(ProProvider);
   // useRef
   const actionRef = useRef<ActionType>();
-  // 页面参数
-  const { valueEnums, cusParams } = usePageParam();
+
   // 页面配置
   const { pageTitle, routeKey, access, privileges, presetColumns, presetFilters, viewFilterEnum, ClearCache } =
     usePageConfig();
@@ -81,7 +82,7 @@ const <%= PascalCase %>List: React.FC = () => {
       actionRender,
       genColumns: gen<%= PascalCase %>Columns,
       genFormColumns: gen<%= PascalCase %>FormColumns,
-      onDelete: (records: ManifestHead[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
+      onDelete: (records: <%= PascalCase %>[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
     },
   );
   // 状态机
@@ -154,9 +155,8 @@ const <%= PascalCase %>List: React.FC = () => {
               }
               actionRef={actionRef}
               columns={ultraColumns.getColumns()}
-              search={{
-                labelWidth: 'auto',
-              }}
+              embedded={props.embedded}
+              tabbed={props.tabbed}
               request={async (params, sorter) => {
                 const { current, pageSize, ...search } = params;
                 const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view!]};

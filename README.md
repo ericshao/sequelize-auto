@@ -26,7 +26,7 @@
 ./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity -d c2cloud -t bwp_blc_exception
 ./bin/midway-auto -o ./output -n sasApplUcns  -a 业务申报表单耗 --ak aplUid   -t entity --mn bwp --an sasAppl
 
-./bin/midway-auto -o ./output -n permitTradeView  -a 许可证商品归类视图 --ak pctUid   -t entity --mn tcs --an permit
+./bin/midway-auto -o ./output -n tradeFranchiseUsage  -a 特许权使用 --ak repoUid   -t entity --mn tcs --an classification
 
 视图
 ./bin/midway-auto -o ./output -n bondInvtReportView  -a 核注清单报表视图 --ak invUid   -t view --mn bwp --an bondInvt
@@ -35,7 +35,9 @@
 
 ./bin/sequelize-auto -x 123456 -o ./output --op 4 --em entity -d c2cloud -t meta_kitting
 
-./bin/sequelize-auto -h pc-uf6e83x2j0m347qu1.mysql.polardb.rds.aliyuncs.com -u c2cloud  -x App#3220 -o ./output --op 3 --em entity -d c2cloud -t bwp_req_resp
+./bin/sequelize-auto -h pc-uf6e83x2j0m347qu1.mysql.polb.rds.aliyuncs.com -u c2cloud  -x App#3220 -o ./output --op 3 --em entity -d c2cloud -t bwp_req_resp
+
+./bin/sequelize-auto -h pc-uf6e83x2j0m347qu1.mysql.polardb.rds.aliyuncs.com -u c2cloud  -x App#3220 -o ./output --op 3 --em entity -d c2cloud -v -t bwp_blc_bws_balance_seqno_view
 
 # Sequelize-Auto
 
