@@ -1,33 +1,21 @@
-// React
-import React, { useContext, useRef } from 'react';
-// Antd
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { ActionType, PageContainer, ProProvider, TableDropdown } from '@ant-design/pro-components';
-import { Button, Layout, message, notification, Segmented, Space, Typography } from 'antd';
-// Umi
 import { Access } from '@umijs/max';
+import { Button, Layout, Segmented, Space, Typography, message, notification } from 'antd';
+import React, { useContext, useRef } from 'react';
 import { history } from 'umi';
-// Components
+
+import { create<%= PascalCase %>, delete<%= PascalCase %>, export<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/<%= moduleName%>/<%= aggrName %>';
 import { CreateModal } from '@/shares/components/CreateModal';
-import { valueTypeMap } from '@/shares/components/schema-components';
-import { UltraColumns } from '@/shares/components/UltraColumns';
 import UltraTable from '@/shares/components/UltraTable';
-// Services
-import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/<%= moduleName%>/<%= aggrName %>';
-// Hooks
-import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
-import { useDevInspector } from '@/shares/hooks/devInspector';
-import { useFlowBacklog } from '@/shares/hooks/flowBacklog';
-import { useImportData } from '@/shares/hooks/importData';
-import { useListState } from '@/shares/hooks/listState';
-import { usePageConfig } from '@/shares/hooks/pageConfig';
-import { usePageParam } from '@/shares/hooks/pageParam';
-import { useStateMachine } from '@/shares/hooks/stateMachine';
-// Definitions
+import { valueTypeMap } from '@/shares/components/schema-components';
+import { genExportColumnKeys } from '@/shares/components/schema-components/util';
+import { useDetailPageDrawer, useExportData, useFlowBacklog, useImportData, useListState, usePageConfig, useStateMachine } from '@/shares/hooks';
+import { ListCommonProps } from '@/shares/typings/common';
 import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
-import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
 import <%= PascalCase %>Detail from './<%= camelCase %>.detail';
-// Subpages
+import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
+
 
 const { Content } = Layout;
 
@@ -35,12 +23,14 @@ const { Content } = Layout;
 type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
 
 const <%= PascalCase %>List: React.FC<
-  ListCommonProps & {}
+  ListCommonProps & {
+    <%= aggrKey %>?: string;
+  }
 > = (props) => {
   // 引用上下文
   const contextFormValues = useContext(ProProvider);
   // useRef
-  const actionRef = useRef<ActionType>();
+  const actionRef = props.actionRef || useRef<ActionType>();
 
   // 页面配置
   const { pageTitle, routeKey, access, privileges, presetColumns, presetFilters, viewFilterEnum, ClearCache } =
@@ -74,7 +64,7 @@ const <%= PascalCase %>List: React.FC<
   </Access>,
   ];
   // 列表状态
-  const { view, setView, currentRow, setCurrentRow, setCurrentFilter, confirmDelete, ultraColumns, createFormColumns } = useListState<<%= PascalCase %>>(
+  const { view, setView, currentRow, setCurrentRow, currentFilter, setCurrentFilter, confirmDelete, ultraColumns, createFormColumns } = useListState<<%= PascalCase %>>(
     actionRef,
     {
       viewFilterEnum,
@@ -96,10 +86,34 @@ const <%= PascalCase %>List: React.FC<
   const { BacklogList } = useFlowBacklog('internal/<%= PascalCase %>', gotoDetailPage);
   // 详情页 Drawer
   const { detailPageDrawerOpen, setDetailPageDrawerOpen, DetailPageDrawer } = useDetailPageDrawer(
-    <<%= PascalCase %>Detail uid={currentRow?.uid!} onUpdated={() => {}} insideDrawer />,
+    <<%= PascalCase %>Detail       
+      uid={currentRow?.uid!}
+      onUpdated={() => {}}
+      onClose={() => {
+        setDetailPageDrawerOpen(false);
+        // props.actionRef.current?.reloadAndRest?.();
+      }}
+      insideDrawer 
+    />,
   );
 
-  const { DevInspector } = useDevInspector({ routeKey, presetFilters, access, privileges });
+  const { ExportData } = useExportData(
+    export<%= PascalCase %>,
+    genExportColumnKeys(gen<%= PascalCase %>Columns, { presetColumns }),
+    {
+      noAttachment: true,
+      bizUid: props.<%= aggrKey %>,
+    },
+  );
+
+  // import<%= PascalCase %>
+  const { ImportData } = useImportData('internal/<%= PascalCase %>', '/<%=moduleName %>/api/<%= slashPath %>/import', {
+    plain: true,
+    initialValues: {
+      <%= aggrKey %>: props.<%= aggrKey %>,
+    },
+    hideFlow: true,
+  });
 
   return (
     <ProProvider.Provider
@@ -131,7 +145,6 @@ const <%= PascalCase %>List: React.FC<
               }}
             />
           </Access>,
-          <DevInspector key="dev" />,
           <TableDropdown key="dropdown" menus={[ClearCache]} onSelect={(key: string) => {}} />,
         ]}
       >
@@ -174,7 +187,10 @@ const <%= PascalCase %>List: React.FC<
                   total: res.result.total,
                 };
               }}
-              toolBarRender={() => []}
+              toolBarRender={() => [
+                <ImportData key="import" onSuccess={() => actionRef.current?.reloadAndRest?.()} />,
+                <ExportData key="export" filter={currentFilter} />,
+              ]}
               rowSelection={{}}
               tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => {
                 const stateCodeSet = new Set(selectedRows.map((row) => row.stateCode));

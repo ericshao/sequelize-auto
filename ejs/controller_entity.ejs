@@ -3,6 +3,8 @@ import {
   Body,
   Controller,
   Del,
+  Fields,
+  File,
   Get,
   Inject,
   Param,
@@ -11,7 +13,7 @@ import {
   Put,
 } from '@midwayjs/core';
 import { Validate } from '@midwayjs/validate';
-import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
+import { IdentifiersDto } from '@midwayjs-plus/common';
 import {
   PrivilegeResourceProvider,
   CreatePrivilege,
@@ -20,16 +22,18 @@ import {
   ReadPrivilege,
   WritePrivilege,
 } from '@c2pkg/bizmeta';
-import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
+import { <%= PascalCase %>, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
 import { <%= PascalCase %>Service } from '../service';
 import {
   GLOBAL_PREFIX,
   GLOBAL_CONDITION_KEYS,
 } from '../../../global/constants';
+import { BaseFileController } from '../../common/controller/baseFileController';
+import _ = require('lodash');
 
 @Controller('/<%= slashPath%>', { description: '<%= label %>管理' })
 @PrivilegeResourceProvider('<%= PascalCase %>', { globalPrefix: GLOBAL_PREFIX })
-export class <%= PascalCase %>Controller extends BaseController {
+export class <%= PascalCase %>Controller extends BaseFileController {
 
   @Inject()
   <%= camelCase %>Service: <%= PascalCase %>Service;
@@ -83,5 +87,46 @@ export class <%= PascalCase %>Controller extends BaseController {
   async get<%= PascalCase %>(@Param('uid') uid: string) {
     const result = await this.<%= camelCase %>Service.getByUid(uid);
     this.success(result);
+  }
+
+  @Post('/export', {
+    description: '导出<%= label %>',
+  })
+  public async export<%= PascalCase %>(
+    @Body('columns') columns: string[],
+    @Body('filter') filter: API.Filter
+  ) {
+    await this.doExport(
+      <%= PascalCase %>.BIZMETA_KEY,
+      this.<%= camelCase %>Service,
+      columns,
+      { filter, bizUid: filter['<%= aggrKey %>'] as string }
+    );
+  }
+
+  @Post('/import', {
+    description: '导入<%= label %>',
+  })
+  async import<%= PascalCase %>(
+    @File() file: API.UploadFile,
+    @Fields() fields: { <%= aggrKey %>?: string }
+  ) {
+    const { items, columns, error } = await this.prepareImport(
+      <%= PascalCase %>.BIZMETA_KEY,
+      file
+    );
+    const result = await this.<%= camelCase %>Service.bulkUpsert(
+      items.map(item => ({
+        ..._.omit(item, [
+          'createdDate',
+          'lastUpdatedDate',
+          'createdBy',
+          'lastUpdatedBy',
+        ]),
+      })),
+      fields?.<%= aggrKey %>
+    );
+
+    this.success({ result, columns, error });
   }
 }

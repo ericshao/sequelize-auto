@@ -29,3 +29,12 @@ export async function delete<%= PascalCase %>(uids: string[]) {
     },
   });
 }
+
+export async function export<%= PascalCase %>(columns: string[], filter?: API.Filter<<%= PascalCase %>>) {
+  return request.post<API.BaseResponse>('/<%= slashPath %>/export', {
+    data: {
+      columns,
+      filter,
+    },
+  });
+}

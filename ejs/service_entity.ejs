@@ -10,6 +10,7 @@ import { TenancyService } from '@c2pkg/multi-tenancy';
 import { AuditLog } from '@c2pkg/auditlog';
 import { nanoid } from 'nanoid';
 import * as _ from 'lodash';
+import { concurrentLimit20 } from '../../../util';
 import { <%= PascalCase %>Model } from '../model';
 import { <%= PascalCase %>, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
 
@@ -57,6 +58,43 @@ export class <%= PascalCase %>Service extends TenancyService {
     return <%= camelCase %>s.map(
       entity => _.omit(entity, 'tenantId') as <%= PascalCase %>
     );
+  }
+
+  @CtxTransactional()
+  public async bulkUpsert(
+    upsertDtos: Create<%= PascalCase %>Dto[],
+    <%= aggrKey %>?: string
+  ): Promise<{ total: number; created: number; updated: number }> {
+    const result = {
+      total: upsertDtos.length,
+      created: 0,
+      updated: 0,
+    };
+    await Promise.all(
+      upsertDtos.map(async upsertDto => {
+        return await concurrentLimit20(async () => {
+          const [, created] = await <%= PascalCase %>Model.schema(
+            this.getTenantSchema()
+          ).upsert(
+            {
+              ...upsertDto,
+              <%= aggrKey %>,
+              uid: upsertDto.uid || this.generateUid(),
+              tenantId: this.getTenantId(),
+            },
+            {
+              transaction: this.getTransaction(),
+            }
+          );
+          if (created) {
+            result.created = (result.created ?? 0) + 1;
+          } else {
+            result.updated = (result.updated ?? 0) + 1;
+          }
+        });
+      })
+    );
+    return result;
   }
 
   @TraceSpan()

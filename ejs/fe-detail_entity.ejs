@@ -1,29 +1,16 @@
-// React
-import React, { useContext, useMemo, useRef, useState } from 'react';
-// Antd
 import { SaveOutlined } from '@ant-design/icons';
 import { ActionType, PageContainer, ProCard, ProFormInstance, ProProvider, TableDropdown } from '@ant-design/pro-components';
-import { message, Typography } from 'antd';
-// Umi
-// Components
-import { valueTypeMap, ValueTypeMapKey } from '@/shares/components/schema-components';
-import BetaSchemaForm from '@/shares/components/SchemaForm';
-import AuditLog from '@/shares/components/AuditLog';
-// Services
-import { queryAuditLogList } from '@/services/<%= moduleName%>/audit/log';
+import { Typography } from 'antd';
+import React, { useContext, useMemo, useRef, useState } from 'react';
+
+import { queryAuditLogList } from '@/services/bwp/audit/log';
 import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/<%= moduleName%>/<%= aggrName %>';
-// Utils
+import AuditLog from '@/shares/components/AuditLog';
+import BetaSchemaForm from '@/shares/components/SchemaForm';
+import { ValueTypeMapKey, valueTypeMap } from '@/shares/components/schema-components';
 import { ActionMap, renderActions } from '@/shares/components/utils';
-// Hooks
-import { useDevInspector } from '@/shares/hooks/devInspector';
-import { useEventViewer } from '@/shares/hooks/eventViewer';
-import { useFormState } from '@/shares/hooks/formState';
-import { usePageConfig } from '@/shares/hooks/pageConfig';
-import { usePageParam } from '@/shares/hooks/pageParam';
-import { useStateMachine } from '@/shares/hooks/stateMachine';
-// Definitions
+import { useEventViewer, useFormState, usePageConfig, usePageParam, useStateMachine } from '@/shares/hooks';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
-// Subpages
 
 type <%= PascalCase %>DetailProps = {
   uid: string;
@@ -66,7 +53,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
   // 状态机
   const { currentState } = useStateMachine('internal/<%= PascalCase %>', currentValues?.stateCode!);
 
-  const [tabActiveKey, setTabActiveKey] = useState('main');
+  const [tabActiveKey, setTabActiveKey] = useState('head');
 
   const actions: ActionMap = useMemo(() => {
     return {
@@ -83,7 +70,6 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
 
   const { EventViewer } = useEventViewer(currentValues?.uid!);
 
-  const { DevInspector } = useDevInspector({ routeKey, currentValues, currentState, access, privileges });
 
   return (
     <ProProvider.Provider
@@ -117,7 +103,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
           }}
           tabList={[
             {
-              tab: '表头',
+              tab: '<%= label %>',
               key: 'head',
               children: (
                 <ProCard bordered>
@@ -163,11 +149,11 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
                 </ProCard>
               ),
             },
-            {
-              tab: '表体',
-              key: 'items',
-              children: <<%= PascalCase %>ItemList <%= aggrKey %>={uid!} actionRef={itemActionRef}/>,
-            },
+            //{
+            //  tab: '表体',
+            //  key: 'items',
+            //  children: <<%= PascalCase %>ItemList <%= aggrKey %>={uid!} actionRef={itemActionRef}/>,
+            //},
             {
               tab: '操作记录',
               key: 'auditLog',
@@ -184,13 +170,10 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
             ...renderActions(actions, currentState!),
             <Reload key="reload" />,
             <EventViewer key="eventViewer" />,
-            <DevInspector key="dev" />,
             <ResolveConflictModal key="resolveConflict" />,
             <TableDropdown key="dropdown" menus={[ClearCache, FormLayoutSegmented]} onSelect={(key: string) => {}} />,
           ]}
-          style={{ marginBottom: 45 }}
-        >
-        </PageContainer>
+        />
       </ParentContext.Provider>
     </ProProvider.Provider>
   );
