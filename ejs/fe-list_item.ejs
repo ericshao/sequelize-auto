@@ -144,7 +144,7 @@ const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string
             cardProps={{ bodyStyle: { padding: 0 } }}
             rowSelection={{}}
             tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
-              <Space size={24}>
+              <Space size={8}>
                 <span>已选 {selectedRowKeys.length} 项</span>
                 <Access accessible={access.canWrite(privileges, contextState)}>
                   <Button

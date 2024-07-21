@@ -29,7 +29,7 @@ import {
   GLOBAL_CONDITION_KEYS,
 } from '../../../global/constants';
 import { BaseFileController } from '../../common/controller/baseFileController';
-import _ = require('lodash');
+import * as _ from 'lodash';
 
 @Controller('/<%= slashPath%>', { description: '<%= label %>管理' })
 @PrivilegeResourceProvider('<%= PascalCase %>', { globalPrefix: GLOBAL_PREFIX })

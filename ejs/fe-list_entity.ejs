@@ -64,7 +64,7 @@ const <%= PascalCase %>List: React.FC<
   </Access>,
   ];
   // 列表状态
-  const { view, setView, currentRow, setCurrentRow, currentFilter, setCurrentFilter, confirmDelete, ultraColumns, createFormColumns } = useListState<<%= PascalCase %>>(
+  const { view, setView, currentRow, setCurrentRow, currentFilter, setCurrentFilter, setCurrentSorter, currentSorter, confirmDelete, ultraColumns, createFormColumns, openDetailPage } = useListState<<%= PascalCase %>>(
     actionRef,
     {
       viewFilterEnum,
@@ -79,8 +79,7 @@ const <%= PascalCase %>List: React.FC<
   const { getCurrentState } = useStateMachine('internal/<%= PascalCase %>');
   // Actions
   const gotoDetailPage = (uid: string) => {
-    // TODO:
-    history.push(`/<%= camelCase %>/${uid}`);
+    openDetailPage('<%= camelCase %>', uid);
   };
   // 流程待办
   const { BacklogList } = useFlowBacklog('internal/<%= PascalCase %>', gotoDetailPage);
@@ -174,12 +173,14 @@ const <%= PascalCase %>List: React.FC<
                 const { current, pageSize, ...search } = params;
                 const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view!]};
                 setCurrentFilter(filter);
+                const currentSorter = sorter && Object.keys(sorter).length > 0 ? sorter : undefined;
+                setCurrentSorter(currentSorter);
                 const res = await query<%= PascalCase %>List({
                   current,
                   pageSize,
                   columns: ultraColumns.getColumnKeys(),
                   filter,
-                  sorter: sorter && Object.keys(sorter).length > 0 ? sorter : undefined,
+                  sorter: currentSorter,
                 });
                 return {
                   data: res.result.data,
@@ -189,7 +190,7 @@ const <%= PascalCase %>List: React.FC<
               }}
               toolBarRender={() => [
                 <ImportData key="import" onSuccess={() => actionRef.current?.reloadAndRest?.()} />,
-                <ExportData key="export" filter={currentFilter} />,
+                <ExportData key="export" filter={currentFilter} sorter={currentSorter} />,
               ]}
               rowSelection={{}}
               tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => {
@@ -206,7 +207,7 @@ const <%= PascalCase %>List: React.FC<
                   currentState = getCurrentState(Array.from(stateCodeSet)[0]!);
                 }
                 return (
-                  <Space size={24}>
+                  <Space size={8}>
                     <span>已选 {selectedRowKeys.length} 项</span>
                     <Access accessible={access.canTenantAdmin() && !!currentState?.actions.includes('delete<%= PascalCase %>')}>
                       <Button

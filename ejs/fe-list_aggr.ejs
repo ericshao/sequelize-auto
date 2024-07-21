@@ -189,7 +189,7 @@ const <%= PascalCase %>List: React.FC = () => {
                   currentState = getCurrentState(Array.from(stateCodeSet)[0]!);
                 }
                 return (
-                  <Space size={24}>
+                  <Space size={8}>
                     <span>已选 {selectedRowKeys.length} 项</span>
                     <Access accessible={access.canTenantAdmin() && !!currentState?.actions.includes('delete<%= PascalCase %>')}>
                       <Button
