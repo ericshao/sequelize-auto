@@ -199,7 +199,7 @@ const <%= PascalCase %>List: React.FC<
                   notification.warning({
                     key: 'stateCode',
                     message: '警告',
-                    description: '只能对同一状态的项进行批量操作',
+                    description: '已选择项的状态不一致，导致部分批量操作受限',
                   });
                 }
                 let currentState;
