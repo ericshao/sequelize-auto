@@ -10,7 +10,7 @@ export enum <%= PascalCase %>EventEnum {
 
 @BizmetaProvider('<%= PascalCase %>Request', {
   title: '<%= label %>查询请求',
-  namespace: 'report',
+  namespace: 'request',
 })
 export class <%= PascalCase %>Request extends BaseReportRequest<<%= PascalCase %>> {
   static readonly BIZMETA_KEY = 'report/<%= PascalCase %>Request';
