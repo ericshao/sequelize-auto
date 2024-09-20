@@ -121,7 +121,7 @@ const <%= PascalCase %>List: React.FC = () => {
               formColumns={createFormColumns}
               onCreate={async (values: <%= PascalCase %>) => {
                 const res = await create<%= PascalCase %>(values);
-                if (res.success) {
+                if (res?.success) {
                   message.success('新建成功');
                   actionRef.current?.reload();
                 }

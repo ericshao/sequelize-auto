@@ -130,7 +130,7 @@ const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string
                   formColumns={createFormColumns}
                   onCreate={async (values: <%= PascalCase %>) => {
                     const res = await create<%= PascalCase %>({...values, <%= aggrKey %>: props.<%= aggrKey %>});
-                    if (res.success) {
+                    if (res?.success) {
                       message.success('新建成功');
                       props.actionRef.current?.reload();
                     }
