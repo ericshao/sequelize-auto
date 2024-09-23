@@ -121,6 +121,7 @@ export class <%= PascalCase %>Service extends TenancyService {
       templateUid
     );
 
-    await this.eventHub.emitPersistentEvent(event);
+    await this.eventHub.produceCommand('eventtarget_reportDocGen', event);
+    return { requestId: event.requestId, eventId: event.id };
   }
 }
