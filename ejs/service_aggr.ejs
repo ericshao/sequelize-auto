@@ -1,20 +1,21 @@
-import * as _ from 'lodash';
-
 import { AuditLog } from '@c2pkg/auditlog';
-import { EventHub, EventHubEvent } from '@c2pkg/eventhub';
+import { EventFlowContext, EventHub, EventHubEvent } from '@c2pkg/eventhub';
+import { StateMachineLog } from '@c2pkg/statemachine';
 import {
-  BaseBizError,
+  BaseError,
   CtxTransactional,
   CtxTXParticipant,
 } from '@midwayjs-plus/common';
 import { TraceSpan } from '@midwayjs-plus/otel';
 import { Inject, Provide, Scope, ScopeEnum } from '@midwayjs/core';
-
-import { StateMachineFactory } from '../../common';
-import { <%= PascalCase %>, Create<%= PascalCase %>Dto, <%= PascalCase %>Head } from '../entity';
-import { <%= PascalCase %>CreatedEvent } from '../event';
-import { <%= PascalCase %>DetailService, <%= PascalCase %>HeadService } from '../service';
-import { <%= PascalCase %>StateEnum, <%= PascalCase %>StateMachine } from '../statemachine';
+import { ValidateService } from '@midwayjs/validate';
+import * as _ from 'lodash';
+import { ActionNotAllowedError } from '../../common/bizError';
+import { StateMachineFactory } from '../../common/statemachine';
+import { Create<%= PascalCase %>BscDto, <%= PascalCase %>Bsc } from '../entity';
+import { <%= PascalCase %>BscCreatedEvent, <%= PascalCase %>BscCancelledEvent } from '../event';
+import { <%= PascalCase %>DtService, <%= PascalCase %>BscService } from '../service';
+import { <%= PascalCase %>BscStateMachine } from '../statemachine';
 
 /**
  * @description <%= label %>聚合领域服务
@@ -25,15 +26,24 @@ import { <%= PascalCase %>StateEnum, <%= PascalCase %>StateMachine } from '../st
 @Provide()
 @Scope(ScopeEnum.Request, { allowDowngrade: true })
 @CtxTXParticipant()
-export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
+export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
   @Inject()
   eventHub: EventHub;
+
+  @Inject()
+  eventFlowContext: EventFlowContext;
 
   @Inject()
   stateMachineFactory: StateMachineFactory;
 
   @Inject()
-  <%= camelCase %>DetailService: <%= PascalCase %>DetailService;
+  <%= camelCase %>BscStateMachine: <%= PascalCase %>BscStateMachine;
+
+  @Inject()
+  validateService: ValidateService;
+
+  @Inject()
+  <%= camelCase %>DtService: <%= PascalCase %>DtService;
 
   /**
    * 创建<%= label %>
@@ -42,40 +52,40 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
    */
   @CtxTransactional()
   @TraceSpan()
-  public async createFull<%= PascalCase %>(
-    createDto: Create<%= PascalCase %>Dto,
-    flowuid?: string
-  ): Promise<<%= PascalCase %>> {
-    const bond<%= PascalCase %> = new <%= PascalCase %>();
+  public async createFull<%= PascalCase %>Bsc(
+    createDto: Create<%= PascalCase %>BscDto,
+    options?: { flowuid?: string; omitEvent?: boolean }
+  ): Promise<<%= PascalCase %>Bsc> {
 
-    const <%= camelCase %>Head = await this.create(createDto.head);
-    bond<%= PascalCase %>.head = <%= camelCase %>Head;
-    bond<%= PascalCase %>.uid = <%= camelCase %>Head.uid;
+    const { <%= camelCase %>Dt, ...bsc } = createDto;
 
-    if (createDto.list && createDto.list.length > 0) {
-      const details = await this.<%= camelCase %>DetailService.bulkCreate(
-        createDto.list,
-        bond<%= PascalCase %>.uid
+    const <%= camelCase %>Bsc = await this.create(bsc);
+
+    if (<%= camelCase %>Dt?.length > 0) {
+      const details = await this.<%= camelCase %>DtService.bulkCreate(
+        <%= camelCase %>Dt,
+        <%= camelCase %>Bsc.uid
       );
-      bond<%= PascalCase %>.list = details;
+      <%= camelCase %>Bsc.<%= camelCase %>Dt = details;
     }
-
-    await this.eventHub.emitPersistentEvent(
-      new <%= PascalCase %>CreatedEvent(bond<%= PascalCase %>, flowuid)
-    );
-
-    return bond<%= PascalCase %>;
+    if (!options?.omitEvent) {
+      await this.eventHub.emitPersistentEvent(
+        new <%= PascalCase %>BscCreatedEvent(<%= camelCase %>Bsc, options?.flowuid),
+        { delay: 5000 }
+      );
+    }
+    return <%= camelCase %>Bsc;
   }
 
   @TraceSpan()
   @CtxTransactional()
-  @AuditLog('internal/<%= PascalCase %>', 'req.Array', 'delete', '删除')
-  public async deleteFull<%= PascalCase %>(
+  @AuditLog('internal/<%= PascalCase %>Bsc', 'req.Array', 'delete', '删除')
+  public async deleteFull<%= PascalCase %>Bsc(
     identifiers: string[]
   ): Promise<Record<string, number>> {
     const promises = [
       this.deleteByUid(identifiers),
-      this.<%= camelCase %>DetailService.deleteByAggrUid(identifiers),
+      this.<%= camelCase %>DtService.deleteByAggrUid(identifiers),
     ];
 
     const results = await Promise.all(promises);
@@ -83,69 +93,142 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
   }
 
   @CtxTransactional()
-  public async getFull<%= PascalCase %>(
+  public async getFull<%= PascalCase %>Bsc(
     uid: string,
     options: API.QueryOptions = { omitNil: true }
-  ): Promise<<%= PascalCase %>> {
+  ): Promise<<%= PascalCase %>Bsc> {
     const { cascading = true, ...queryOptions } = options || {};
 
-    const <%= camelCase %>Head = await this.getByUid(uid, queryOptions);
-    const bond<%= PascalCase %> = new <%= PascalCase %>(<%= camelCase %>Head);
+    const <%= camelCase %>Bsc = await this.getByUid(uid, queryOptions);
 
     if (cascading) {
-      const details = await this.<%= camelCase %>DetailService.findAllByAggrUid(uid);
-      bond<%= PascalCase %>.list = details;
+      const details = await this.<%= camelCase %>DtService.findAllByAggrUid(uid);
+      <%= camelCase %>Bsc.<%= camelCase %>Dt = details;
     }
-    return bond<%= PascalCase %>;
+    return <%= camelCase %>Bsc;
   }
 
   @CtxTransactional()
-  public async findBySeqOrSasNo(
-    seqNo: string,
+  public async findByBillNo(
+    billNo: string,
     options: API.QueryOptions = { omitNil: true }
-  ): Promise<<%= PascalCase %>> {
+  ): Promise<<%= PascalCase %>Bsc> {
     const { cascading = true, ...queryOptions } = options || {};
-    const bond<%= PascalCase %> = new <%= PascalCase %>();
-    const <%= camelCase %>Head = await this.findOne({ seqNo }, queryOptions);
-    if (!<%= camelCase %>Head) {
+
+    const <%= camelCase %>Bsc = await this.findOne({ billNo }, queryOptions);
+    if (!<%= camelCase %>Bsc) {
       return null;
     }
-    bond<%= PascalCase %>.head = <%= camelCase %>Head;
-    bond<%= PascalCase %>.uid = <%= camelCase %>Head.uid;
 
     if (cascading) {
-      const details = await this.<%= camelCase %>DetailService.findAllByAggrUid(
-        <%= camelCase %>Head.uid
+      const details = await this.<%= camelCase %>DtService.findAllByAggrUid(
+        <%= camelCase %>Bsc.uid
       );
-      bond<%= PascalCase %>.list = details;
+      <%= camelCase %>Bsc.<%= camelCase %>Dt = details;
     }
-    return bond<%= PascalCase %>;
+    return <%= camelCase %>Bsc;
   }
 
-  // @CtxTransactional()
-  // public async update<%= PascalCase %>Head(
-  //   <%= camelCase %>Head: Update<%= PascalCase %>HeadDto
-  // ): Promise<Record<string, number>> {
-  //   const result = await this.updateByUid(<%= camelCase %>Head);
-  //   if (<%= camelCase %>Head.netWt) {
-  //     const items = await this.bond<%= PascalCase %>ItemService.findAllByAggrUid(
-  //       <%= camelCase %>Head.identifiers[0] as string,
-  //       { columns: ['uid', 'netWt'] }
-  //     );
-  //     const itemUpdateDtos = await this.recalculateNetWeight(
-  //       <%= camelCase %>Head.netWt,
-  //       items
-  //     );
-  //     if (itemUpdateDtos.length > 0) {
-  //       await Promise.all(
-  //         itemUpdateDtos.map(itemUpdateDto =>
-  //           this.bond<%= PascalCase %>ItemService.updateByUid(itemUpdateDto)
-  //         )
-  //       );
-  //     }
-  //   }
-  //   return result;
-  // }
+  @CtxTransactional()
+  @TraceSpan()
+  @StateMachineLog(<%= PascalCase %>Bsc.BIZMETA_KEY, '$.uid')
+  public async updateFull<%= PascalCase %>Bsc(bscData: <%= PascalCase %>Bsc): Promise<{
+    success: boolean;
+    stateCode?: string;
+  }> {
+    const { uid: <%= aggrKey%>, <%= camelCase%>Dt, ...bsc } = bscData;
+
+    const stateMachine = await this.getStateMachine();
+    const currentBsc = await this.getByUid(<%= aggrKey%>, {
+      columns: ['uid', 'stateCode'],
+    });
+    if (!stateMachine.canExecute(currentBsc.stateCode, 'updateFull<%= PascalCase %>Bsc')) {
+      this.logger.warn(
+        'updateFull<%= PascalCase %>Bsc',
+        <%= aggrKey%>,
+        `当前状态${currentBsc.stateCode}不允许更新`
+      );
+      return { success: false, stateCode: currentBsc.stateCode };
+    }
+
+    await Promise.all([
+      this.updateByUid(
+        <%= PascalCase %>Bsc.getUpdateDto({
+          ...bsc,
+          identifiers: [currentBsc.uid],
+        })
+      ),
+      <%= camelCase%>Dt?.length > 0 &&
+        this.<%= camelCase %>DtService.syncByAggrUid(currentBsc.uid, <%= camelCase%>Dt),
+    ]);
+    return { success: true, stateCode: currentBsc.stateCode };
+  }
+
+  public validate(bscData: <%= PascalCase %>Bsc): <%= PascalCase %>Bsc {
+    const result = this.validateService.validate(<%= PascalCase %>Bsc, bscData, {
+      validationOptions: { stripUnknown: { arrays: false, objects: true } },
+    });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    const <%= camelCase %>Bsc = result.value as unknown as <%= PascalCase %>Bsc;
+    return <%= camelCase %>Bsc;
+  }
+
+  @CtxTransactional()
+  @StateMachineLog(<%= PascalCase %>Bsc.BIZMETA_KEY)
+  public async recycle(
+    uid: string,
+    options?: { stateCode?: string }
+  ): Promise<string> {
+    const currentBsc = await this.checkDependents(uid);
+
+    const stateMachine = await this.getStateMachine();
+    if (!stateMachine.canExecute(currentBsc.stateCode, 'recycle<%= PascalCase %>Bsc')) {
+      throw new BaseError('当前状态不允许作废');
+    }
+
+    await Promise.all([
+      this.recycleByUid([uid], options?.stateCode),
+      this.<%= camelCase %>DtService.recycleByAggrUid([uid]),
+    ]);
+
+    const flowuid = await this.getContextFlowuid(uid);
+
+    const { eventMsgId } = await this.eventHub.emitPersistentEvent(
+      new <%= PascalCase %>BscCancelledEvent(currentBsc, flowuid)
+    );
+    return eventMsgId;
+  }
+
+  @CtxTransactional()
+  async checkDependents(uid: string): Promise<<%= PascalCase %>Bsc> {
+    const currentBsc = await this.getByUid(uid, {
+      columns: [
+        'uid',
+        'stateCode',
+        'batUid',
+
+      ],
+    });
+   // if (currentBsc.decUid) {
+   //   throw new ActionNotAllowedError('存在依赖的报关单，不允许继续当前的操作');
+   // }
+   // if (currentBsc.pspUids?.length) {
+   //   throw new ActionNotAllowedError('存在依赖的核放单，不允许继续当前的操作');
+   // }
+    return currentBsc;
+  }
+
+  @CtxTransactional()
+  public async recover(uid: string): Promise<void> {
+    await Promise.all([
+      this.recoverByUid([uid]),
+      this.<%= camelCase %>DtService.recoverByAggrUid([uid]),
+    ]);
+  }
 
   //*** 请求事件操作 ***//
 
@@ -153,12 +236,12 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
 
   /**
    *
-   * @param invUid
+   * @param <%= aggrKey%>
    * @param event
    */
   @CtxTransactional()
-  public async transitStateBy<%= PascalCase %>(
-    invUid: string,
+  public async transitStateBy<%= PascalCase %>Bsc(
+    <%= aggrKey%>: string,
     event: EventHubEvent<any>
   ): Promise<{
     success: boolean;
@@ -166,17 +249,17 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
     targetStateCode?: string;
   }> {
     const stateMachine = await this.getStateMachine();
-    return await this.transitState(invUid, event, stateMachine);
+    return await this.transitState(<%= aggrKey%>, event, stateMachine);
   }
 
   /**
    *
-   * @param invUid
+   * @param <%= aggrKey%>
    * @param event
    */
   @CtxTransactional()
   public async transitStateByDefault(
-    invUid: string,
+    <%= aggrKey%>: string,
     event: EventHubEvent<any>,
     targetStateCode?: string
   ): Promise<{
@@ -186,7 +269,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
   }> {
     const stateMachine = await this.getStateMachine(true);
     return await this.transitState(
-      invUid,
+      <%= aggrKey%>,
       event,
       stateMachine,
       targetStateCode
@@ -196,51 +279,50 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
   @CtxTransactional()
   @TraceSpan()
   public async transitState(
-    invUid: string,
+    <%= aggrKey%>: string,
     event: EventHubEvent<any>,
-    stateMachine: <%= PascalCase %>StateMachine,
+    stateMachine: <%= PascalCase %>BscStateMachine,
     targetStateCode?: string
   ): Promise<{
     success: boolean;
     stateCode?: string;
     targetStateCode?: string;
   }> {
-    if (!invUid || !invUid.startsWith('inv')) {
+    if (!<%= aggrKey%> || !<%= aggrKey%>.startsWith('inv')) {
       return { success: false };
     }
 
-    const <%= camelCase %>Head = await this.getByUid(invUid, {
+    const <%= camelCase %>Bsc = await this.getByUid(<%= aggrKey%>, {
       columns: ['uid', 'stateCode'],
     });
 
     if (!targetStateCode) {
       targetStateCode = stateMachine?.transit(
-        <%= camelCase %>Head.stateCode,
+        <%= camelCase %>Bsc.stateCode,
         event
       );
     }
     const res = {
       success: !!targetStateCode,
-      stateCode: <%= camelCase %>Head.stateCode,
+      stateCode: <%= camelCase %>Bsc.stateCode,
       targetStateCode,
     };
     if (targetStateCode) {
       await this.updateByUid(
-        <%= PascalCase %>Head.getUpdateDto({
+        <%= PascalCase %>Bsc.getUpdateDto({
           stateCode: targetStateCode,
-          seqNo: event.data?.seqNo,
-          bond<%= PascalCase %>No: event.data?.bond<%= PascalCase %>No,
-          localSid: event.data?.localSid,
+          orgId: event.data?.orgId,
+          localSid: event.data?.id,
 
-          identifiers: [invUid],
+          identifiers: [<%= aggrKey%>],
         })
       );
       this.logger.info(
-        `<%= PascalCase %> ${invUid} TranistStateSuccess to: ${targetStateCode} event: ${event.type}`
+        `<%= PascalCase %>Bsc ${<%= aggrKey%>} TranistStateSuccess to: ${targetStateCode} event: ${event.type}`
       );
     } else {
       this.logger.warn(
-        `<%= PascalCase %> ${invUid} TranistStateFailed from: ${<%= camelCase %>Head.stateCode} event: ${event.type}`
+        `<%= PascalCase %>Bsc ${<%= aggrKey%>} TranistStateFailed from: ${<%= camelCase %>Bsc.stateCode} event: ${event.type}`
       );
     }
     return res;
@@ -249,82 +331,87 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
   @CtxTransactional()
   @TraceSpan()
   public async transitToTargetState(
-    invUids: string[],
-    targetStateCode: string
+    <%= aggrKey%>s: string[],
+    targetStateCode: string,
+    forced = false
   ): Promise<void> {
-    if (!invUids?.length) {
+    if (!<%= aggrKey%>s?.length) {
       return;
     }
+    let transitUids = <%= aggrKey%>s;
+    if (!forced) {
     const stateMachine = await this.getStateMachine();
 
-    const <%= camelCase %>Heads = await this.findAll(
-      { uid: invUids },
+    const <%= camelCase %>Bscs = await this.findAll(
+      { uid: <%= aggrKey%>s },
       { columns: ['uid', 'stateCode'] }
     );
 
-    const allowedHeads = <%= camelCase %>Heads.filter(<%= camelCase %>Head => {
+    const allowedBscs = <%= camelCase %>Bscs.filter(<%= camelCase %>Bsc => {
       const isAllowed = stateMachine.allowTransit(
-        <%= camelCase %>Head.stateCode,
+        <%= camelCase %>Bsc.stateCode,
         targetStateCode
       );
       if (!isAllowed) {
         this.logger.warn(
           '状态机未配置转换规则，无法转换状态 %s %s',
-          <%= camelCase %>Head.stateCode,
+          <%= camelCase %>Bsc.stateCode,
           targetStateCode
         );
       }
       return isAllowed;
     });
 
-    if (allowedHeads.length !== <%= camelCase %>Heads.length) {
+    if (allowedBscs.length !== <%= camelCase %>Bscs.length) {
       const notAllowedUids = _.difference(
-        <%= camelCase %>Heads.map(head => head.uid),
-        allowedHeads.map(head => head.uid)
+        <%= camelCase %>Bscs.map(head => head.uid),
+        allowedBscs.map(head => head.uid)
       );
-      throw new BaseBizError(
+      throw new ActionNotAllowedError(
         `不允许更改状态为${targetStateCode}:\n${notAllowedUids.join('\n')}`
       );
     }
-
+    transitUids = allowedBscs.map(head => head.uid);
+    }
     await this.updateByUid(
-      <%= PascalCase %>Head.getUpdateDto({
+      <%= PascalCase %>Bsc.getUpdateDto({
         stateCode: targetStateCode,
-        identifiers: allowedHeads.map(head => head.uid),
+        identifiers: transitUids,
       })
     );
   }
 
   public async getStateMachine(
     useDefault = false
-  ): Promise<<%= PascalCase %>StateMachine> {
+  ): Promise<<%= PascalCase %>BscStateMachine> {
     if (useDefault) {
-      return new <%= PascalCase %>StateMachine();
+      return this.<%= camelCase %>BscStateMachine;
     }
     let stateMachine = await this.stateMachineFactory.createInstance(
       this.getTenantId(),
-      <%= PascalCase %>Head.BIZMETA_KEY
+      <%= PascalCase %>Bsc.BIZMETA_KEY
     );
     if (!stateMachine) {
-      this.logger.warn(
-        <%= PascalCase %>Head.BIZMETA_KEY,
+      this.logger.info(
+        <%= PascalCase %>Bsc.BIZMETA_KEY,
         `state machine for ${this.getTenantId()}  not defined, use default`
       );
-      stateMachine = new <%= PascalCase %>StateMachine();
+      stateMachine = this.<%= camelCase %>BscStateMachine;
     }
-    return stateMachine as unknown as <%= PascalCase %>StateMachine;
+    return stateMachine as unknown as <%= PascalCase %>BscStateMachine;
   }
 
   @TraceSpan()
   @CtxTransactional()
-  public async getExecutable<%= PascalCase %>Heads(
-    stateMachine: <%= PascalCase %>StateMachine,
+  public async getExecutable<%= PascalCase %>Bsc(
+    stateMachine: <%= PascalCase %>BscStateMachine,
     actionCode: string,
-    invUids?: string[],
+    <%= aggrKey%>s?: string[],
     options?: API.QueryOptions
   ): Promise<{
-    <%= camelCase %>Heads: <%= PascalCase %>Head[];
+    <%= camelCase %>Bscs: <%= PascalCase %>Bsc[];
     notAllowedUids?: string[];
+    executableStateCodes?: string[];
   }> {
     const executableStateCodes = stateMachine
       .getStatesCanExecute(actionCode)
@@ -332,24 +419,29 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>HeadService {
 
     if (executableStateCodes.length === 0) {
       this.logger.warn(
-        `no executable state for ${actionCode} action in ${<%= PascalCase %>Head.BIZMETA_KEY} state machine`
+        `no executable state for ${actionCode} action in ${<%= PascalCase %>Bsc.BIZMETA_KEY} state machine`
       );
-      return { <%= camelCase %>Heads: [], notAllowedUids: invUids };
+      return { <%= camelCase %>Bscs: [], notAllowedUids: <%= aggrKey%>s };
     }
     const filter = {
+      ...(options?.filter as API.Filter),
       stateCode: executableStateCodes,
     };
-    if (invUids?.length > 0) {
-      filter['uid'] = invUids;
+    if (<%= aggrKey%>s?.length > 0) {
+      filter['uid'] = <%= aggrKey%>s;
     }
-    const <%= camelCase %>Heads = await this.findAll(filter, options);
-    if (<%= camelCase %>Heads.length !== invUids?.length) {
+    const <%= camelCase %>Bscs = await this.findAll(filter, options);
+    if (<%= camelCase %>Bscs.length !== <%= aggrKey%>s?.length) {
       const notAllowedUids = _.difference(
-        invUids,
-        <%= camelCase %>Heads.map(d => d.uid)
+        <%= aggrKey%>s,
+        <%= camelCase %>Bscs.map(d => d.uid)
       );
-      return { <%= camelCase %>Heads, notAllowedUids };
+      return { <%= camelCase %>Bscs, notAllowedUids, executableStateCodes };
     }
-    return { <%= camelCase %>Heads };
+    return { <%= camelCase %>Bscs, executableStateCodes };
+  }
+
+  async getContextFlowuid(uid: string): Promise<string> {
+    return (await this.eventFlowContext.getFlowContext(uid))?.flowuid;
   }
 }

@@ -10,8 +10,8 @@ import { dialects } from './dialects/dialects';
 import { AutoOptions, TableData } from './types';
 import { FormGenerator } from './form-generator';
 import { ColumnGenerator } from './column-generator';
-import { DorisGenerator } from './doris-generator';
-import { CubeGenerator } from './cube-generator';
+// import { DorisGenerator } from './doris-generator';
+// import { CubeGenerator } from './cube-generator';
 import { ViewGenerator } from './view-generator';
 
 export class SequelizeAuto {
@@ -88,12 +88,12 @@ export class SequelizeAuto {
     const tc = this.generateColumn(td);
     td.text = tc;
     await this.write(td, 'column', 'tsx');
-    const tdoris = this.generateDoris(td);
-    td.text = tdoris;
-    await this.write(td, 'doris', 'sql');
-    const tcube = this.generateCube(td);
-    td.text = tcube;
-    await this.write(td, 'cube', 'yml');
+    // const tdoris = this.generateDoris(td);
+    // td.text = tdoris;
+    // await this.write(td, 'doris', 'sql');
+    // const tcube = this.generateCube(td);
+    // td.text = tcube;
+    // await this.write(td, 'cube', 'yml');
     const tview = this.generateView(td);
     td.text = tview;
     await this.write(td, 'view', 'sql');
@@ -153,17 +153,17 @@ export class SequelizeAuto {
     return generator.generateText();
   }
 
-  generateDoris(tableData: TableData) {
-    const dialect = dialects[this.sequelize.getDialect() as Dialect];
-    const generator = new DorisGenerator(tableData, dialect, this.options);
-    return generator.generateText();
-  }
+  // generateDoris(tableData: TableData) {
+  //   const dialect = dialects[this.sequelize.getDialect() as Dialect];
+  //   const generator = new DorisGenerator(tableData, dialect, this.options);
+  //   return generator.generateText();
+  // }
 
-  generateCube(tableData: TableData) {
-    const dialect = dialects[this.sequelize.getDialect() as Dialect];
-    const generator = new CubeGenerator(tableData, dialect, this.options);
-    return generator.generateText();
-  }
+  // generateCube(tableData: TableData) {
+  //   const dialect = dialects[this.sequelize.getDialect() as Dialect];
+  //   const generator = new CubeGenerator(tableData, dialect, this.options);
+  //   return generator.generateText();
+  // }
 
   generateView(tableData: TableData) {
     const dialect = dialects[this.sequelize.getDialect() as Dialect];

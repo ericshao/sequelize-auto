@@ -1,5 +1,5 @@
 import ejs from 'ejs';
-import { readFileSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { Entity } from './types';
 
@@ -18,7 +18,9 @@ export class ControllerGenerator {
   }
   generateText() {
     const path = join(__dirname, this.ejsExt);
-    // console.log(this.entity);
+    if (!existsSync(path)) {
+      return ''
+    }
     return ejs.compile(readFileSync(path, 'utf8'), { filename: path })(this.entity);
   }
 }

@@ -6,12 +6,12 @@ import React, { useContext, useEffect, useRef } from 'react';
 import { WarehouseContext } from '@/pages';
 import { getClassNameByStateCode } from '@/utils';
 import { 
-  delete<%= PascalCase %>Bsc, 
-  export<%= PascalCase %>Bsc,
-  query<%= PascalCase %>BscList,
-  recover<%= PascalCase %>Bsc, 
-  recycle<%= PascalCase %>Bsc, 
-  transit<%= PascalCase %>BscToTargetState 
+  delete<%= PascalCase %>, 
+  export<%= PascalCase %>,
+  query<%= PascalCase %>List,
+  recover<%= PascalCase %>, 
+  recycle<%= PascalCase %>, 
+  transit<%= PascalCase %>ToTargetState 
 } from '@/services/<%= moduleName%>/<%= aggrName %>';
 import UltraTable from '@/shares/components/UltraTable';
 import { genExportColumnKeys } from '@/shares/components/schema-components/util';
@@ -27,15 +27,15 @@ import {
   useTransitState 
 } from '@/shares/hooks';
 import { ListCommonProps } from '@/shares/typings/common';
-import { gen<%= PascalCase %>BscColumns } from './bsc/<%= camelCase %>Bsc.column';
-import { gen<%= PascalCase %>BscFormColumns } from './bsc/<%= camelCase %>Bsc.form';
+import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
 import <%= PascalCase %>Detail from './<%= camelCase %>.detail';
+import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
 
 
 const { Content } = Layout;
 
 // Types
-type T<%= PascalCase %>BscFilter = API.Filter<<%= PascalCase %>Bsc>;
+type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
 
 const <%= PascalCase %>List: React.FC<
   ListCommonProps & {
@@ -54,7 +54,7 @@ const <%= PascalCase %>List: React.FC<
   const {  routeKey, access, privileges, presetColumns, presetFilters, viewFilterEnum, ClearCache } =
     usePageConfig();
   // 表单操作项
-  const actionRender = (dom: React.ReactNode, record: <%= PascalCase %>Bsc) => [
+  const actionRender = (dom: React.ReactNode, record: <%= PascalCase %>) => [
   <Button key="read" type="link" size="small" onClick={() => gotoDetailPage(record.uid)}>
     <EditOutlined />
   </Button>,
@@ -69,31 +69,31 @@ const <%= PascalCase %>List: React.FC<
     RecycleBin,
     polling,
     setPollingPaused,
-    PollingSwitch, } = useListState<<%= PascalCase %>Bsc>(
+    PollingSwitch, } = useListState<<%= PascalCase %>>(
     actionRef,
     {
       viewFilterEnum,
       presetColumns,
       actionRender,
-      genColumns: gen<%= PascalCase %>BscColumns,
-      genFormColumns: gen<%= PascalCase %>BscFormColumns,
+      genColumns: gen<%= PascalCase %>Columns,
+      genFormColumns: gen<%= PascalCase %>FormColumns,
       genColumnsOptions: {
         warehouseCode,
         embedded: props.embedded,
         onRefresh: () => actionRef.current?.reload(),
       },
-      onDelete: (records: <%= PascalCase %>Bsc[]) => delete<%= PascalCase %>Bsc(records.map((record) => record.uid)),
+      onDelete: (records: <%= PascalCase %>[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
     },
   );
   // 状态机
-  const { getCurrentState } = useStateMachine('internal/<%= PascalCase %>Bsc');
-  const { TransitStateModal } = useTransitState(transit<%= PascalCase %>BscToTargetState, 'internal/<%= PascalCase %>Bsc');
+  const { getCurrentState } = useStateMachine('internal/<%= PascalCase %>');
+  const { TransitStateModal } = useTransitState(transit<%= PascalCase %>ToTargetState, 'internal/<%= PascalCase %>');
   // Actions
   const gotoDetailPage = (uid: string) => {
     openDetailPage('<%= camelCase %>', uid);
   };
   // 流程待办
-  const { BacklogList } = useFlowBacklog('internal/<%= PascalCase %>Bsc', gotoDetailPage);
+  const { BacklogList } = useFlowBacklog('internal/<%= PascalCase %>', gotoDetailPage);
   // 详情页 Drawer
   const { detailPageDrawerOpen, setDetailPageDrawerOpen, DetailPageDrawer } = useDetailPageDrawer(
     <<%= PascalCase %>Detail       
@@ -107,18 +107,18 @@ const <%= PascalCase %>List: React.FC<
     />,
   );
 
-  const { BatchRecycleModal, BatchRecoverModal } = useRecycleBin(recycle<%= PascalCase %>Bsc, recover<%= PascalCase %>Bsc);
+  const { BatchRecycleModal, BatchRecoverModal } = useRecycleBin(recycle<%= PascalCase %>, recover<%= PascalCase %>);
 
   const { ExportData } = useExportData(
-    export<%= PascalCase %>Bsc,
-    genExportColumnKeys(gen<%= PascalCase %>BscColumns, { presetColumns }),
+    export<%= PascalCase %>,
+    genExportColumnKeys(gen<%= PascalCase %>Columns, { presetColumns }),
     {
       noAttachment: true,
     },
   );
 
-  // import<%= PascalCase %>Bsc
-  const { ImportData } = useImportData('internal/<%= PascalCase %>Bsc', '/<%=moduleName %>/api/<%= slashPath %>/import', {
+  // import<%= PascalCase %>
+  const { ImportData } = useImportData('internal/<%= PascalCase %>', '/<%=moduleName %>/api/<%= slashPath %>/import', {
     plain: true,
     initialValues: {
     },
@@ -163,11 +163,11 @@ const <%= PascalCase %>List: React.FC<
               polling={polling}
               request={async (params, sorter) => {
                 const { current, pageSize, ...search } = params;
-                const filter: T<%= PascalCase %>BscFilter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view!]};
+                const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view!]};
                 setCurrentFilter(filter);
                 const currentSorter = sorter && Object.keys(sorter).length > 0 ? sorter : undefined;
                 setCurrentSorter(currentSorter);
-                const res = await query<%= PascalCase %>BscList({
+                const res = await query<%= PascalCase %>List({
                   current,
                   pageSize,
                   columns: ultraColumns.getColumnKeys(),
@@ -212,7 +212,7 @@ const <%= PascalCase %>List: React.FC<
                 return (
                   <Space size={8}>
                     <span>已选 {selectedRowKeys.length} 项</span>
-                    <Access accessible={!!currentState?.actions.includes('recycle<%= PascalCase %>Bsc') && !recycled}>
+                    <Access accessible={!!currentState?.actions.includes('recycle<%= PascalCase %>') && !recycled}>
                       <BatchRecycleModal
                         selectedRows={selectedRows}
                         onSuccess={() => {
@@ -232,7 +232,7 @@ const <%= PascalCase %>List: React.FC<
                     </Access>
                     <Access
                     accessible={
-                      (access.canTenantAdmin() || !!currentState?.actions.includes('transit<%= PascalCase %>BscToTargetState')) &&
+                      (access.canTenantAdmin() || !!currentState?.actions.includes('transit<%= PascalCase %>ToTargetState')) &&
                       !recycled
                     }
                   >
@@ -247,7 +247,7 @@ const <%= PascalCase %>List: React.FC<
                   </Access>
                   <Access
                   accessible={
-                    (access.canTenantAdmin() && recycled) || !!currentState?.actions.includes('deleteFull<%= PascalCase %>Bsc')
+                    (access.canTenantAdmin() && recycled) || !!currentState?.actions.includes('deleteFull<%= PascalCase %>')
                   }
                 >
                       <Button

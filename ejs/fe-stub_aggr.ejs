@@ -1,0 +1,73 @@
+import request from '@/shares/services/<%=moduleName %>Api';
+
+export async function createFull<%= PascalCase %>Bsc(data: <%= PascalCase %>Bsc) {
+  return request.put<API.BaseResponse<<%= PascalCase %>Bsc>>('/<%= slashPath %>', {
+    data,
+  });
+}
+
+export async function deleteFull<%= PascalCase %>Bsc(uids: string[]) {
+  return request.delete<API.BaseResponse<API.DeleteResult>>('/<%= slashPath %>', {
+    data: {
+      identifiers: uids,
+    },
+  });
+}
+
+export async function getFull<%= PascalCase %>Bsc(uid: string) {
+  return request.get<API.BaseResponse<<%= PascalCase %>Bsc>>(`/<%= slashPath %>/${uid}`);
+}
+
+export async function transit<%= PascalCase %>BscToTargetState(uid: string[], targetState: string, forced: boolean) {
+  return request.post<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/transit', {
+    data: {
+      uid,
+      targetState,
+      forced,
+    },
+  });
+}
+
+export async function recycle<%= PascalCase %>Bsc(uid: string) {
+  return request.patch<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/${uid}/recycle');
+}
+
+export async function recover<%= PascalCase %>Bsc(uid: string) {
+  return request.patch<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/${uid}/recover');
+}
+
+export async function save<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
+  return request.put<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/save', {
+    data: {
+      uid,
+      chnUid,
+    },
+  });
+}
+
+export async function deleteSaved<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
+  return request.delete<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/save', {
+    data: {
+      uid,
+      chnUid,
+    },
+  });
+}
+
+export async function declare<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
+  return request.post<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/declare', {
+    data: {
+      uid,
+      chnUid,
+    },
+  });
+}
+
+export async function invalidate<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
+  return request.post<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/invalidate', {
+    data: {
+      uid,
+      chnUid,
+    },
+  });
+}

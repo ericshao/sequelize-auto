@@ -1,0 +1,85 @@
+import { ActionType, PageContainer, ProProvider, TableDropdown } from '@ant-design/pro-components';
+import { Access } from '@umijs/max';
+import { Space, message } from 'antd';
+import React, { useContext, useRef, useState } from 'react';
+
+import { pageContainerToken } from '@/pages';
+import { createFull<%= PascalCase %>Bsc } from '@/services/<%= moduleName%>/<%= aggrName %>';
+import { CreateModal } from '@/shares/components/CreateModal';
+import { valueTypeMap } from '@/shares/components/schema-components';
+import { useListState, usePageConfig, usePageParam } from '@/shares/hooks';
+import <%= PascalCase %>List from './<%= camelCase %>.list';
+import { gen<%= PascalCase %>BscFormColumns } from './bsc/<%= camelCase %>Bsc.form';
+
+
+const <%= PascalCase %>Index: React.FC = (props) => {
+  // 引用上下文
+  const contextFormValues = useContext(ProProvider);
+  // useRef
+  const actionRef = useRef<ActionType>();
+  // 页面参数
+  const { valueEnums, cusParams } = usePageParam();
+  // 页面配置
+  const { access, privileges, presetColumns, viewFilterEnum, ClearCache } =
+    usePageConfig();
+  // 列表状态
+  const { OpenDetailSegmented, createFormColumns } = useListState<<%= PascalCase %>Bsc>(
+    actionRef,
+    {
+      valueEnums,
+      cusParams,
+      viewFilterEnum,
+      presetColumns,
+      genFormColumns: gen<%= PascalCase %>BscFormColumns,
+    },
+  );
+  const [tabActiveKey, settabActiveKey] = useState<string>('list');
+
+  return (
+    <ProProvider.Provider
+      value={{
+        ...contextFormValues,
+        valueTypeMap,
+      }}
+    >
+      <PageContainer
+        ghost
+        token={pageContainerToken}
+        tabBarExtraContent={
+          <Space>
+            <Access key="create" accessible={access.canCreate(privileges) && tabActiveKey === 'list'}>
+            <CreateModal
+              key="create"
+              title="新建<%= label %>"
+              layoutType="DrawerForm"
+              formLayout="horizontal"
+              formColumns={createFormColumns}
+              onCreate={async (values: <%= PascalCase %>Bsc) => {
+                const res = await createFull<%= PascalCase %>Bsc(values);
+                if (res?.success) {
+                  message.success('新建成功');
+                  actionRef.current?.reload();
+                }
+                return res.success;
+              }}
+            />
+          </Access>
+          <TableDropdown key="dropdown" menus={[ClearCache, OpenDetailSegmented]} onSelect={(key: string) => {}} />
+          </Space>
+        }
+        tabList={[
+          {
+            tab: '列表',
+            key: 'list',
+            children: <<%= PascalCase %>List actionRef={actionRef} reload={tabActiveKey === 'list'} tabbed />,
+          },
+        ]}
+        tabActiveKey={tabActiveKey}
+        onTabChange={(key) => {
+          settabActiveKey(key);
+        }}
+      />
+    </ProProvider.Provider>
+  );
+};
+export default <%= PascalCase %>Index;

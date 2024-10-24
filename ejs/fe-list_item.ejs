@@ -1,24 +1,21 @@
-// React
-import React, { useContext } from 'react';
-// Antd
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import { ActionType, ProProvider, TableDropdown } from '@ant-design/pro-components';
-import { Button, Layout, message, Space, Typography } from 'antd';
-// Umi
-import { Access } from '@umijs/max';
-import { history } from 'umi';
-// Components
 import { CreateModal } from '@/shares/components/CreateModal';
-import { valueTypeMap } from '@/shares/components/schema-components';
+import { genExportColumnKeys, valueTypeMap } from '@/shares/components/schema-components';
 import UltraTable from '@/shares/components/UltraTable';
-// Services
-import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/<%= moduleName%>/<%= aggrName %>';
-// Hooks
-import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
-import { useListState } from '@/shares/hooks/listState';
-import { usePageConfig } from '@/shares/hooks/pageConfig';
-import { usePageParam } from '@/shares/hooks/pageParam';
-// Definitions
+import { useDetailPageDrawer, useExportData, useListState, usePageConfig } from '@/shares/hooks';
+import { ListCommonProps } from '@/shares/typings/common';
+import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { ActionType, ProProvider } from '@ant-design/pro-components';
+import { Access } from '@umijs/max';
+import { Button, Layout, message, Space } from 'antd';
+import React, { useContext, useMemo, useRef } from 'react';
+import { history } from 'umi';
+
+import { 
+  create<%= PascalCase %>, 
+  delete<%= PascalCase %>, 
+  export<%= PascalCase %>, 
+  query<%= PascalCase %>List 
+} from '@/services/<%= moduleName%>/<%= aggrName %>';
 import { ParentContext } from '../<%= aggrName %>.detail';
 import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
@@ -29,17 +26,20 @@ const { Content } = Layout;
 // Types
 type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
 
-const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string; actionRef: React.MutableRefObject<ActionType | undefined> }> = (props) => {
+const <%= PascalCase %>List: React.FC<
+ListCommonProps & {
+   <%= aggrKey %>: string; 
+   actionRef: React.MutableRefObject<ActionType | undefined> 
+}> = (props) => {
   // 引用上下文
   const contextFormValues = useContext(ProProvider);
   const { contextValues, contextState, contextRouteKey } = useContext(ParentContext);
-  // 页面参数
-  const { valueEnums, cusParams } = usePageParam();
+  // useRef
+  const actionRef = props.actionRef || useRef<ActionType>();
   // 页面配置
   const { access, privileges, presetColumns } = usePageConfig({ contextRouteKey });
   // 表单操作项
   const actionRender = (dom: React.ReactNode, record: <%= PascalCase %>) => [
-    <Access key="read" accessible={access.canRead(privileges)}>
       <Button
         type="link"
         size="small"
@@ -50,21 +50,11 @@ const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string
         }}
       >
         <EditOutlined />
-      </Button>
-    </Access>,
-    <Access key="dropdown" accessible={access.canWrite(privileges, contextState)}>
-      <TableDropdown
-        menus={[{ key: 'delete', name: <Typography.Text type="danger">删除</Typography.Text> }]}
-        onSelect={(key: string) => {
-          if (key === 'delete') {
-            confirmDelete([record]);
-          }
-        }}
-      />
-    </Access>,
+      </Button>,
+
   ];
   // 列表状态
-  const { currentRow, setCurrentRow, setCurrentFilter, confirmDelete, ultraColumns, createFormColumns } =
+  const { currentRow, setCurrentRow, setCurrentFilter, confirmDelete, ultraColumns } =
     useListState<<%= PascalCase %>>(props.actionRef, {
       presetColumns,
       actionRender,
@@ -72,6 +62,13 @@ const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string
       genFormColumns: gen<%= PascalCase %>FormColumns,
     onDelete: (records: <%= PascalCase %>[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
   });
+  const createFormColumns = useMemo(() => {
+    return gen<%= PascalCase %>FormColumns({
+      isCreate: true,
+      warehouseCode: contextValues?.warehouseCode!,
+    });
+  }, [contextValues?.warehouseCode]);
+
   // Actions
   const gotoDetailPage = (uid: string) => {
     // TODO: 修改详情页路由
@@ -85,10 +82,20 @@ const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string
       onUpdated={() => props.actionRef.current?.reload()}
       onClose={() => {
         setDetailPageDrawerOpen(false);
-        props.actionRef.current?.reloadAndRest?.();
+        actionRef.current?.reloadAndRest?.();
       }}
       insideDrawer
     />,
+  );
+
+
+  const { ExportData } = useExportData(
+    export<%= PascalCase %>,
+    genExportColumnKeys(gen<%= PascalCase %>Columns, { presetColumns }),
+    {
+      noAttachment: true,
+      bizUid: props.<%= aggrKey  %>,
+    },
   );
 
   return (
@@ -102,18 +109,23 @@ const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string
         <Content style={{ background: '#fff' }}>
           <UltraTable
             rowKey="uid"
-            actionRef={props.actionRef}
+            actionRef={actionRef}
             columns={ultraColumns.getColumns()}
+            embedded={props.embedded}
+            tabbed={props.tabbed}
             request={async (params, sorter) => {
               const { current, pageSize, ...search } = params;
-              const filter: T<%= PascalCase %>Filter = { ...ultraColumns.generateFilter(search), <%= aggrKey %>: props.<%= aggrKey %>};
+              const filter: T<%= PascalCase %>Filter = { 
+                ...ultraColumns.generateFilter(search), 
+                <%= aggrKey %>: props.<%= aggrKey %>,
+              };
               setCurrentFilter(filter);
               const res = await query<%= PascalCase %>List({
                 current,
                 pageSize,
                 columns: ultraColumns.getColumnKeys(),
                 filter,
-                sorter: sorter && Object.keys(sorter).length > 0 ? sorter : undefined,
+                sorter: sorter && Object.keys(sorter).length > 0 ? sorter : { gdsSeqno: 'ascend' },
               });
               return {
                 data: res.result.data,
@@ -122,6 +134,7 @@ const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string
               };
             }}
             toolBarRender={() => [
+              <ExportData key="export" filter={{ invUid: props.<%= aggrKey %> }} sorter={{ gdsSeqno: 'ascend' }} />,
               <Access key="create" accessible={access.canWrite(privileges, contextState)}>
                 <CreateModal
                   title="新建<%= label %>"
@@ -132,15 +145,13 @@ const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string
                     const res = await create<%= PascalCase %>({...values, <%= aggrKey %>: props.<%= aggrKey %>});
                     if (res?.success) {
                       message.success('新建成功');
-                      props.actionRef.current?.reload();
+                      actionRef.current?.reload();
                     }
                     return res.success;
                   }}
                 />
               </Access>,
             ]}
-            embedded={props.embedded}
-            tabbed={props.tabbed}
             cardProps={{ bodyStyle: { padding: 0 } }}
             rowSelection={{}}
             tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
@@ -176,7 +187,7 @@ const <%= PascalCase %>List: React.FC<ListCommonProps & { <%= aggrKey %>: string
             values={currentRow}
             drawerOpen={detailPageDrawerOpen}
             onCancel={() => {
-              props.actionRef.current?.reload();
+              actionRef.current?.reload();
               setDetailPageDrawerOpen(false);
               setCurrentRow(undefined);
             }}

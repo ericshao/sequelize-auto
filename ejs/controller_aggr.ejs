@@ -1,4 +1,11 @@
 import {
+  DestroyPrivilege,
+  ReadPrivilege,
+  SendPrivilege,
+  WritePrivilege,
+} from '@c2pkg/bizmeta';
+import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
+import {
   ALL,
   Body,
   Controller,
@@ -6,14 +13,13 @@ import {
   Get,
   Inject,
   Param,
-  Post,
   Patch,
+  Post,
   Put,
 } from '@midwayjs/core';
 import { Validate } from '@midwayjs/validate';
-import { BaseController, IdentifiersDto } from '@midwayjs-plus/common';
-import { Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
-import { <%= PascalCase %>Service } from '../service';
+import { <%= PascalCase %>Service } from '../domain';
+import { <%= PascalCase %>Bsc } from '../entity';
 
 @Controller('/<%= slashPath%>', { description: '<%= label %>管理' })
 export class <%= PascalCase %>Controller extends BaseController {
@@ -22,45 +28,114 @@ export class <%= PascalCase %>Controller extends BaseController {
   <%= camelCase %>Service: <%= PascalCase %>Service;
 
   @Put('/', {
-    description: '创建<%= label %>',
+    description: '创建完整<%= label %>',
   })
-  @Validate()
-  async create<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Create<%= PascalCase %>Dto) {
-    const result = await this.<%= camelCase %>Service.create(<%= camelCase %>);
-    this.success(result);
-  }
-
-  @Patch('/', {
-    description: '更新<%= label %>',
+  @Validate({
+    validationOptions: { stripUnknown: { arrays: false, objects: true } },
   })
-  @Validate()
-  async update<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Update<%= PascalCase %>Dto) {
-    const result = await this.<%= camelCase %>Service.updateByUid(<%= camelCase %>);
+  async createFull<%= PascalCase %>Bsc(@Body(ALL) <%= camelCase %>: <%= PascalCase %>Bsc) {
+    const result = await this.<%= camelCase %>Service.createFull<%= PascalCase %>Bsc(<%= camelCase %>);
     this.success(result);
   }
 
   @Del('/', {
-    description: '删除<%= label %>',
+    description: '完整删除<%= label %>',
   })
   @Validate()
-  async delete<%= PascalCase %>(@Body() body: IdentifiersDto) {
-    const result = await this.<%= camelCase %>Service.deleteByUid(body.identifiers as string[]);
-    this.success(result);
-  }
-
-  @Post('/list', {
-    description: '<%= label %>列表',
-  })
-  async query<%= PascalCase %>List(@Body(ALL) options: API.ListOptions) {
-    const result = await this.<%= camelCase %>Service.omniQuery(options);
+  @DestroyPrivilege()
+  async deleteFull<%= PascalCase %>Bsc(@Body() body: IdentifiersDto) {
+    const result = await this.<%= camelCase %>Service.deleteFull<%= PascalCase %>Bsc(
+      body.identifiers as string[]
+    );
     this.success(result);
   }
 
   @Get('/:uid', {
-    description: '获取<%= label %>',
+    description: '获取完整<%= label %>',
   })
-  async get<%= PascalCase %>(@Param('uid') uid: string) {
-    const result = await this.<%= camelCase %>Service.getByUid(uid);
+  @ReadPrivilege()
+  async getFull<%= PascalCase %>Bsc(@Param('uid') uid: string) {
+    const <%= camelCase %> = await this.<%= camelCase %>Service.getFull<%= PascalCase %>Bsc(uid);
+    this.success(<%= camelCase %>);
+  }
+
+  @Post('/transit', {
+    description: '<%= label %>状态迁移',
+  })
+  @WritePrivilege()
+  async transit<%= PascalCase %>BscToTargetState(
+    @Body('uid') uid: string[],
+    @Body('stateCode') stateCode: string,
+    @Body('forced') forced: boolean
+  ) {
+    const result = await this.<%= camelCase %>Service.transitToTargetState(
+      uid,
+      stateCode,
+      forced
+    );
     this.success(result);
+  }
+
+  @Patch('/:uid/recycle', {
+    description: '回收<%= label %>',
+  })
+  @WritePrivilege()
+  async recycle<%= PascalCase %>Bsc(@Param('uid') uid: string) {
+    const result = await this.<%= camelCase %>Service.recycle(uid);
+    this.success(result);
+  }
+
+  @Patch('/:uid/recover', {
+    description: '恢复<%= label %>',
+  })
+  @WritePrivilege()
+  async recover<%= PascalCase %>Bsc(@Param('uid') uid: string) {
+    const result = await this.<%= camelCase %>Service.recover(uid);
+    this.success(result);
+  }
+
+  @Put('/save', {
+    description: '暂存<%= label %>',
+  })
+  @SendPrivilege()
+  async save<%= PascalCase %>Bsc(
+    @Body('uid') uid: string[],
+    @Body('chnUid') chnUid: string,
+  ) {
+
+  }
+
+  @Del('/save', {
+    description: '删除<%= label %>暂存数据',
+  })
+  @SendPrivilege()
+  async deleteSaved<%= PascalCase %>Bsc(
+    @Body('uid') uid: string[],
+    @Body('chnUid') chnUid: string,
+  ) {
+
+  }
+
+  @Post('/declare', {
+    description: '申报<%= label %>',
+  })
+  @SendPrivilege()
+  async declare<%= PascalCase %>Bsc(
+    @Body('uid') uid: string[],
+    @Body('chnUid') chnUid: string,
+  ) {
+
+  }
+
+
+  @Post('/invalidate', {
+    description: '作废<%= label %>',
+  })
+  @SendPrivilege()
+  async invalidate<%= PascalCase %>Bsc(    
+    @Body('uid') uid: string[],
+    @Body('chnUid') chnUid: string,
+  ) {
+
   }
 }

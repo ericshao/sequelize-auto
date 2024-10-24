@@ -1,0 +1,40 @@
+import request from '@/shares/services/<%=moduleName %>Api';
+
+export async function create<%= PascalCase %>(data: <%= PascalCase %>) {
+  return request.put<API.BaseResponse<<%= PascalCase %>>>('/<%= slashPath %>', {
+    data,
+  });
+}
+
+export async function update<%= PascalCase %>(data: <%= PascalCase %>) {
+  return request.patch<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>', {
+    data,
+  });
+}
+
+export async function delete<%= PascalCase %>(uids: string[]) {
+  return request.delete<API.BaseResponse<API.DeleteResult>>('/<%= slashPath %>', {
+    data: {
+      identifiers: uids,
+    },
+  });
+}
+
+export async function query<%= PascalCase %>List(data: Partial<API.ListOptions<<%= PascalCase %>>>) {
+  return request.post<API.BaseResponse<API.ListResult<<%= PascalCase %>>>>('/<%= slashPath %>/list', {
+    data,
+  });
+}
+
+export async function get<%= PascalCase %>(uid: string) {
+  return request.get<API.BaseResponse<<%= PascalCase %>>>(`/<%= slashPath %>/${uid}`);
+}
+
+export async function export<%= PascalCase %>(columns: string[], filter?: API.Filter<<%= PascalCase %>>) {
+  return request.post<API.BaseResponse>('/<%= slashPath %>/export', {
+    data: {
+      columns,
+      filter,
+    },
+  });
+}

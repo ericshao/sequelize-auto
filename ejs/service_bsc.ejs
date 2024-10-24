@@ -1,0 +1,202 @@
+import { AuditLog } from '@c2pkg/auditlog';
+import { TenancyService } from '@c2pkg/multi-tenancy';
+import {
+  baseError,
+  CtxTransactional,
+  CtxTXParticipant,
+  omitNil,
+} from '@midwayjs-plus/common';
+import { TraceSpan } from '@midwayjs-plus/otel';
+import { Inject, Provide, Scope, ScopeEnum } from '@midwayjs/core';
+import * as _ from 'lodash';
+import { nanoid } from 'nanoid';
+import { ConversionService, SnowflakeIdService } from '../../common/service';
+import * as _ from 'lodash';
+import { <%= PascalCase %>Model } from '../model';
+import { <%= PascalCase %>, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
+
+
+@Provide()
+@Scope(ScopeEnum.Request, { allowDowngrade: true })
+@CtxTXParticipant()
+export class <%= PascalCase %>Service extends TenancyService {
+  @Inject()
+  snowflakeIdService: SnowflakeIdService;
+
+  @Inject()
+  conversionService: ConversionService;
+
+  @CtxTransactional()
+  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'res.uid', 'create')
+  public async create(createDto: Create<%= PascalCase %>Dto): Promise<<%= PascalCase %>> {
+    const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).create(
+      {
+        ...createDto,
+        ...this.conversionService.transformCurrAndCntryCode(createDto),
+        enterNumber:
+          createDto.enterNumber ?? this.generateInternalNo(),
+        createdBy: createDto.createdBy ?? this.getUserId(),
+        tenantId: this.getTenantId(),
+      },
+      {
+        transaction: this.getTransaction(),
+      }
+    );
+    return _.omit(<%= camelCase %>.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>;
+  }
+
+  @TraceSpan()
+  @CtxTransactional()
+  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'req.Update<%= PascalCase %>Dto.identifiers', 'update')
+  public async updateByUid(
+    updateDto: Update<%= PascalCase %>Dto
+  ): Promise<Record<string, number>> {
+    const updated = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
+      { 
+        ..._.omit(updateDto, ['id', 'uid', 'createdDate', 'tenantId']), 
+        ...this.conversionService.transformCurrAndCntryCode(updateDto),
+        lastUpdatedBy: this.getUserId() 
+      }, {
+        where: this.generateWhereClause(updateDto),
+        transaction: this.getTransaction(),
+    });
+    return { updated: updated[0] };
+  }
+
+
+  @CtxTransactional()
+  public async recycleByUid(
+    identifiers: string[],
+    stateCode?: string
+  ): Promise<Record<string, number>> {
+    const recycled = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
+      {
+        stateCode,
+        tenantId: this.getTenantId(true),
+      },
+      {
+        where: {
+          uid: identifiers,
+          tenantId: this.getTenantId(),
+        },
+        transaction: this.getTransaction(),
+      }
+    );
+    return { recycled: recycled[0] };
+  }
+
+  public async recoverByUid(
+    identifiers: string[]
+  ): Promise<Record<string, number>> {
+    const recovered = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
+      {
+        tenantId: this.getTenantId(),
+      },
+      {
+        where: {
+          uid: identifiers,
+          tenantId: this.getTenantId(true),
+        },
+        transaction: this.getTransaction(),
+      }
+    );
+    return { recovered: recovered[0] };
+  }
+
+  @TraceSpan()
+  @CtxTransactional()
+  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'req.Array', 'delete', '删除')
+  public async deleteByUid(
+    identifiers: string[]
+  ): Promise<Record<string, number>> {
+    const deleted = await <%= PascalCase %>Model.schema(this.getTenantSchema()).destroy({
+      where: {
+        uid: identifiers,
+        tenantId: this.getTenantId(),
+      },
+      transaction: this.getTransaction(),
+    });
+    return { deleted };
+  }
+
+  public async omniQuery(
+    options?: API.ListOptions
+  ): Promise<API.ListResult<<%= PascalCase %>>> {
+    const listResult = await <%= PascalCase %>Model.omniQuery<typeof <%= PascalCase %>Model, <%= PascalCase %>>(this.filterByTenantId(options), this.getTenantSchema());
+      return {
+        ...listResult,
+        data: listResult.data.map(
+          entity =>
+          _.omit(options?.omitNil ? omitNil(entity) : entity, [
+            'id',
+            'tenantId',
+          ]) as <%= PascalCase %>
+        ),
+      };
+  }
+
+  @CtxTransactional()
+  public async getByUid(
+    uid: string,
+    options: API.QueryOptions = { omitNil: true }
+  ): Promise<<%= PascalCase %>> {
+    const entity = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
+      ...this.generateFindOptions(options),
+      where: { uid },
+      transaction: this.getTransaction(),
+    });
+    if (!entity) throw baseError.EntityNotExistsError;
+    return _.omit(
+      options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(),
+      ['id', 'tenantId']
+    ) as <%= PascalCase %>;
+  }
+
+  @CtxTransactional()
+  public async findOne(
+    filter: API.Filter,
+    options: API.QueryOptions = { omitNil: true }
+  ): Promise<<%= PascalCase %>> {
+    const entity = await <%= PascalCase %>Model.schema(
+      this.getTenantSchema()
+    ).findOne({
+    ...this.generateFindOptions(options),
+      where: this.injectTenantId(filter),
+      transaction: this.getTransaction(),
+    });
+    if (entity) {
+      return _.omit(
+        options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(),
+        ['id']
+      ) as <%= PascalCase %>;
+    }
+  }
+
+  @CtxTransactional()
+  public async findAll(
+    filter: API.Filter,
+    options: API.QueryOptions = { omitNil: true, limit: 10000 }
+  ): Promise<<%= PascalCase %>[]> {
+    const entities = await <%= PascalCase %>Model.schema(
+      this.getTenantSchema()
+    ).findAll({
+    ...this.generateFindOptions(options),
+      where: this.injectTenantId(filter),
+      transaction: this.getTransaction(),
+    });
+    return entities.map(
+      entity =>
+        _.omit(options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(), [
+          'id',
+        ]) as <%= PascalCase %>
+    );
+  }
+
+  generateInternalNo(): string {
+    return `${<%= PascalCase %>Model.PREFIX.toUpperCase()}${this.snowflakeIdService.nextId()}`;
+  }
+
+  generateUid(): string {
+    return `${<%= PascalCase %>Model.PREFIX}${nanoid()}`;
+  }
+}

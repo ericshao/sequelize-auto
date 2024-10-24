@@ -7,6 +7,7 @@ import { ControllerGenerator } from './controller-generator';
 import { EventGenerator } from './event-generator';
 import { FeDetailGenerator } from './fe-detail-generator';
 import { FeListGenerator } from './fe-list-generator';
+import { FeIndexGenerator } from './fe-index-generator';
 import { FeStubGenerator } from './fe-stub-generator';
 import { ServiceGenerator } from './service-generator';
 import { StatemachineGenerator } from './statemachine-generator';
@@ -52,6 +53,10 @@ export class MidwayAuto {
     const feList = this.generateFeList(entity, ejsExt);
     entity.text = feList;
     await this.write(entity, 'list', 'tsx');
+    const feIndex = this.generateFeIndex(entity, ejsExt);
+    entity.text = feIndex;
+    await this.write(entity, 'index', 'tsx');
+
     const feDetail = this.generateFeDetail(entity, ejsExt);
     entity.text = feDetail;
     await this.write(entity, 'detail', 'tsx');
@@ -87,6 +92,11 @@ export class MidwayAuto {
 
   generateFeList(entity: Entity, ejsExt?: string) {
     const generator = new FeListGenerator(entity, ejsExt);
+    return generator.generateText();
+  }
+
+  generateFeIndex(entity: Entity, ejsExt?: string) {
+    const generator = new FeIndexGenerator(entity, ejsExt);
     return generator.generateText();
   }
 

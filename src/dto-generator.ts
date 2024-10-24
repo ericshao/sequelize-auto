@@ -86,6 +86,7 @@ export class DtoGenerator {
       str += `@BizmetaProvider('#TABLE#', { title: '', namespace: '${namespace}' })\n`;
       str += 'export class #TABLE# extends #ENTITY# {\n';
       str += `static readonly BIZMETA_KEY = \'${namespace}/#TABLE#\';`;
+      str += `static readonly UID_PREFIX = _PREFIX_;`;
       str += this.addTypeScriptFields(table, true);
 
       if (!this.options.views) {

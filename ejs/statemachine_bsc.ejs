@@ -1,8 +1,7 @@
 import { StandardState, StatusType } from '@c2pkg/statemachine';
 import { Init, Provide, Scope, ScopeEnum } from '@midwayjs/core';
-
 import { BaseBndStateMachine } from '../../common';
-import { <%= PascalCase %>Head } from '../entity';
+import { <%= PascalCase %> } from '../entity';
 
 export enum <%= PascalCase %>StateEnum {}
 
@@ -24,13 +23,12 @@ export class <%= PascalCase %>State extends StandardState {
 @Provide()
 @Scope(ScopeEnum.Singleton)
 export class <%= PascalCase %>StateMachine extends BaseBndStateMachine {
-  bizmetaKey = <%= PascalCase %>Head.BIZMETA_KEY;
+  bizmetaKey = <%= PascalCase %>.BIZMETA_KEY;
 
   @Init()
   async init() {
     super.initCommonStates();
     this.declareExtraStates();
-
   }
 
   declareExtraStates() {
