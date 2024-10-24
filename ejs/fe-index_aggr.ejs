@@ -69,7 +69,7 @@ const <%= PascalCase %>Index: React.FC = (props) => {
         }
         tabList={[
           {
-            tab: '列表',
+            tab: '<%= label %>列表',
             key: 'list',
             children: <<%= PascalCase %>List actionRef={actionRef} reload={tabActiveKey === 'list'} tabbed />,
           },

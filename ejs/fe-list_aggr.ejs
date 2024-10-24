@@ -90,7 +90,7 @@ const <%= PascalCase %>List: React.FC<
   const { TransitStateModal } = useTransitState(transit<%= PascalCase %>BscToTargetState, 'internal/<%= PascalCase %>Bsc');
   // Actions
   const gotoDetailPage = (uid: string) => {
-    openDetailPage('<%= camelCase %>', uid);
+    openDetailPage('<%= moduleName%>/<%= camelCase %>', uid);
   };
   // 流程待办
   const { BacklogList } = useFlowBacklog('internal/<%= PascalCase %>Bsc', gotoDetailPage);

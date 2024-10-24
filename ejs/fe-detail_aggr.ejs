@@ -107,7 +107,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
           }}
           tabList={[
             {
-              tab: '<%= label %>',
+              tab: '<%= label %>表头',
               key: 'bsc',
               children: (
                 <ProCard bordered>
@@ -154,7 +154,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
               ),
             },
             {
-              tab: '表体',
+              tab: '<%= label %>表体',
               key: 'dt',
               children: <<%= PascalCase %>DtList <%= aggrKey %>={uid!} actionRef={itemActionRef}  reload={tabActiveKey === 'dt'} embedded/>,
             },

@@ -1,7 +1,7 @@
 import { CreateModal } from '@/shares/components/CreateModal';
 import { genExportColumnKeys, valueTypeMap } from '@/shares/components/schema-components';
 import UltraTable from '@/shares/components/UltraTable';
-import { useDetailPageDrawer, useExportData, useListState, usePageConfig } from '@/shares/hooks';
+import { useDetailPageDrawer, useExportData, useImportData, useListState, usePageConfig } from '@/shares/hooks';
 import { ListCommonProps } from '@/shares/typings/common';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { ActionType, ProProvider } from '@ant-design/pro-components';
@@ -98,6 +98,15 @@ ListCommonProps & {
     },
   );
 
+  // import<%= PascalCase %>
+  const { ImportData } = useImportData('internal/<%= PascalCase %>', '/<%=moduleName %>/api/<%= slashPath %>/import', {
+    plain: true,
+    initialValues: {
+      <%= aggrKey %>: props.<%= aggrKey %>,
+    },
+    hideFlow: true,
+  });
+
   return (
     <ProProvider.Provider
       value={{
@@ -134,10 +143,11 @@ ListCommonProps & {
               };
             }}
             toolBarRender={() => [
+              <ImportData key="import" onSuccess={() => actionRef.current?.reloadAndRest?.()} />,
               <ExportData key="export" filter={{ invUid: props.<%= aggrKey %> }} sorter={{ gdsSeqno: 'ascend' }} />,
               <Access key="create" accessible={access.canWrite(privileges, contextState)}>
                 <CreateModal
-                  title="新建<%= label %>"
+                  title="新建表体"
                   layoutType="DrawerForm"
                   formLayout="horizontal"
                   formColumns={createFormColumns}

@@ -57,7 +57,7 @@ export class ColumnGenerator {
 
     if (this.options.lang === 'ts') {
       header +=
-        "import { dateTimeRangeSearch, TableColumnsParams, ValueTypeMapKey } from '@/shares/components/schema-components';\n";
+        "import { dateTimeRangeSearch, multipleSearch, TableColumnsParams, ValueTypeMapKey } from '@/shares/components/schema-components';\n";
       header +=
         "import { tableColumnsResult, transformStringToken, convertValueEnum } from '@/shares/components/schema-components/util';\n";
       header +=
@@ -137,13 +137,65 @@ export class ColumnGenerator {
           str += '  {\n';
           str += `    dataIndex: '${name}',\n`;
           str += this.getTitle(table, field);
+          if (field === 'state_code') {
+            str += `    valueType: 'stateMachine',\n`;
+            str += `    fieldProps: { bizmetaKey: 'internal/#TABLE#'},\n`;
+            str += `    sorter: true,\n`;
+          }
+
+          if (field.startsWith('is')) {
+            str += `    valueType: 'select',\n`;
+            str += `    valueEnum: { '1': { text: '1 | 是' }, '0': { text: '0 | 否' } } ,\n`;
+          }
+
+          if (field.indexOf('cuscd') > 0 || field.indexOf('portcd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: 'chnCustoms'},\n`;
+          }
+
+          if (field.indexOf('modecd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: '${name}'},\n`;
+          }
+
+          if (field.indexOf('natcd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: 'countryV1'},\n`;
+          }
+
+          if (field.indexOf('natcd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: 'countryV1'},\n`;
+          }
+          if (field.indexOf('unitcd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: 'unit'},\n`;
+          }
+
+          if (field.indexOf('currcd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: 'currencyV1'},\n`;
+          }
+
+          if (field.indexOf('markcd') > 0 || field.indexOf('typecd') > 0 || field.indexOf('stucd') > 0) {
+            str += `    valueType: 'valueEnum',\n`;
+            str += `    fieldProps: { valueOptionsKey: '${name}'},\n`;
+          }
+
+          if (field === 'created_by' || field === 'lastUpdated_by') {
+            str += `    valueType: 'member',\n`;
+          }
+          if (field.indexOf('_no') > 0) {
+            str += `    filterOp: '$like',\n`;
+            str += `    search: multipleSearch,\n`;
+          }
+          str += this.getDateRangeSearch(table, field);
           // str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
           str += this.getHideInTable(field);
-          str += this.getHideInSearch(field, counter);
+          str += this.getHideInSearch(table, field);
           str += this.getHideInForm(field);
           if (this.isJSONField(table, field)) {
             str += `    hideInTable: true,\n`;
-            str += `    hideInSearch: true,\n`;
             str += `    showInFile: true\n`;
           }
           // str += '    ellipsis: true\n';
@@ -157,10 +209,10 @@ export class ColumnGenerator {
 
   private getTitle(table: string, field: string) {
     if (field === 'created_date') {
-      return "    title: '创建时间',\nvalueType: 'dateTimeRangeSearch',\nsearch: dateTimeRangeSearch,\n";
+      return "    title: '创建时间',\n";
     }
     if (field === 'last_updated_date') {
-      return "    title: '最后更新时间',\nvalueType: 'dateTimeRangeSearch',\nsearch: dateTimeRangeSearch,\n";
+      return "    title: '最后更新时间',\n";
     }
     const fieldObj = this.tables[table][field] as TSField;
     if (fieldObj.comment) {
@@ -171,19 +223,39 @@ export class ColumnGenerator {
   }
 
   private getHideInTable(field: string) {
-    if (/(uid)$/.test(field)) {
+    if (/(uid)$/.test(field) || ['warehouse_code', 'org_id'].includes(field)) {
       return '    hideInTable: true,\n';
     }
-    return '    ellipsis: true,\n';
+    return '';
+    // return '    hideInSearch: true,\n';
   }
 
-  private getHideInSearch(field: string, counter: number) {
-    // if (/(name|_no|_code)$/.test(field) && counter < 11) {
-    //   return '    hideInSearch: false,\n';
-    // }
-    // return '    hideInSearch: true,\n';
-    if (/(uid)$/.test(field)) {
+  private getHideInSearch(table: string, field: string) {
+    const fieldObj = this.tables[table][field] as TSField;
+    const rawFieldType = fieldObj['type'] || '';
+    const fieldType = String(rawFieldType).toLowerCase();
+
+    if (
+      /(uid)$/.test(field) ||
+      this.isJSON(fieldType) ||
+      this.isNumber(fieldType) ||
+      this.isBoolean(fieldType) ||
+      ['warehouse_code', 'org_id', 'channel_props', 'resp_info'].includes(field)
+    ) {
       return '    hideInSearch: true,\n';
+    }
+    return '    hideInSearch: false,\n';
+  }
+
+  private getDateRangeSearch(table: string, field: string) {
+    const fieldObj = this.tables[table][field] as TSField;
+    const rawFieldType = fieldObj['type'] || '';
+    const fieldType = String(rawFieldType).toLowerCase();
+
+    if (this.isDate(fieldType)) {
+      return "    valueType: 'dateRangeSearch',\nsearch: dateRangeSearch,\n";
+    } else if (this.isDateTime(fieldType)) {
+      return "    valueType: 'dateTimeRangeSearch',\nsearch: dateTimeRangeSearch,\n";
     }
     return '';
   }
