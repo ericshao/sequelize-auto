@@ -4,6 +4,15 @@ import { addTicks, DialectOptions, FKRow, makeCondition } from "./dialect-option
 export const mysqlOptions: DialectOptions = {
   name: 'mysql',
   hasSchema: false,
+
+  showTablesQuery: (schemaName?: string) => {
+    return `SELECT table_name, table_comment
+              FROM information_schema.tables
+            WHERE table_type = 'BASE TABLE'
+            AND table_schema NOT IN ('mysql', 'sys', 'information_schema')
+              ${makeCondition("table_schema", schemaName)}`;
+  },
+
   /**
    * Generates an SQL query that returns all foreign keys of a table.
    *

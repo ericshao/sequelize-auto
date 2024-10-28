@@ -7,6 +7,7 @@ import { FKSpec } from "./dialects/dialect-options";
 export interface Table {
   name?: string;
   table_name: string;
+  table_comment?: string;
   table_schema?: string;
 }
 
@@ -84,12 +85,15 @@ export class TableData {
   relations: Relation[];
   /** Text to be written to the model files, indexed by schemaName.tableName */
   text?: { [name: string]: string; };
+
+  tableComments: { [tableName: string]: string; };
   constructor() {
     this.tables = {};
     this.foreignKeys = {};
     this.indexes = {};
     this.hasTriggerTables = {};
     this.relations = [];
+    this.tableComments = {};
   }
 }
 

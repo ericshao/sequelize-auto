@@ -33,6 +33,8 @@
 视图
 ./bin/midway-auto -o ./output -n bondInvtReportView  -a 核注清单报表视图 --ak invUid   -t view --mn bwp --an bondInvt
 
+./bin/midway-auto -o ./output -n declarationReviewView  -a 报关单复核视图 --ak decUid   -t view --mn cmp --an declaration
+
  ./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity -d c2cloud -v -t tcs_permit_trade_view
 
 ./bin/sequelize-auto -x 123456 -o ./output --op 4 --em entity -d c2cloud -t meta_kitting

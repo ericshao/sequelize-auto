@@ -70,6 +70,8 @@ export class AutoBuilder {
       } as Table;
     });
 
+    // console.log('tables', tables);
+
     // include/exclude tables
     if (this.includeTables) {
       const optables = mapOptionTables(this.includeTables, this.schema);
@@ -125,7 +127,11 @@ export class AutoBuilder {
 
   private async mapTable(table: Table) {
     try {
-      const fields = await this.queryInterface.describeTable(table.table_name, table.table_schema);
+      console.log('table =>', table);
+
+      this.tableData.tableComments[makeTableQName(table)] = table.table_comment || "";
+      // const fields = await this.queryInterface.describeTable(table.table_name, table.table_schema);
+      const fields = await this.queryInterface.describeTable(table.table_name);
       this.tableData.tables[makeTableQName(table)] = fields;
 
       // for postgres array or user-defined types, get element type

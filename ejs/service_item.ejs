@@ -82,7 +82,7 @@ export class <%= PascalCase %>Service extends TenancyService {
   @CtxTransactional()
   public async bulkUpsert(
     upsertDtos: Partial<Create<%= PascalCase %>Dto>[],
-    invUid?: string
+      <%= aggrKey %>?: string
   ): Promise<{ total: number; created: number; updated: number }> {
     const result = {
       total: upsertDtos.length,
@@ -98,7 +98,7 @@ export class <%= PascalCase %>Service extends TenancyService {
             {
               ...upsertDto,
               ...this.conversionService.transformCurrAndCntryCode(upsertDto),
-              invUid,
+              <%= aggrKey %>,
               uid: upsertDto.uid || this.generateUid(),
               tenantId: this.getTenantId(),
             },
@@ -163,32 +163,26 @@ export class <%= PascalCase %>Service extends TenancyService {
   @CtxTransactional()
   public async syncByAggrUid(
     <%= aggrKey %>: string,
-    syncDtos: (<%= PascalCase %> & { delete?: boolean })[]
+    syncDtos: <%= PascalCase %>[]
   ): Promise<Record<string, number>> {
     let deleted = 0;
     let created = 0;
     let updated = 0;
     if (!syncDtos) return { deleted, created, updated };
 
-    const toDeleteUids = syncDtos.filter(dto => dto.delete).map(dto => dto.uid);
+    const { toDeleteUids, toCreateDtos, toUpdateDtos } =
+      classifySyncDtos(syncDtos);
 
-    if (toDeleteUids.length > 0) {
-      deleted = await <%= PascalCase %>Model.schema(this.getTenantSchema()).destroy({
-        where: {
-          uid: toDeleteUids,
-          tenantId: this.getTenantId(),
-        },
-        transaction: this.getTransaction(),
-      });
-    }
+      if (toDeleteUids.length > 0) {
+        const deleteRes = await this.deleteByUid(toDeleteUids);
+        deleted = deleteRes.deleted;
+      }
 
-    const toCreateDtos = syncDtos.filter(dto => !dto.uid);
     if (toCreateDtos.length > 0) {
       const createdItems = await this.bulkCreate(toCreateDtos, <%= aggrKey %>);
       created = createdItems.length;
     }
 
-    const toUpdateDtos = syncDtos.filter(dto => dto.uid && !dto.delete);
     if (toUpdateDtos.length > 0) {
       const updatedRes = await Promise.all(
         toUpdateDtos.map(dto =>

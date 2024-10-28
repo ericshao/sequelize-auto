@@ -19,6 +19,7 @@ import _ from 'lodash';
 export class DtoGenerator {
   dialect: DialectOptions;
   tables: { [tableName: string]: { [fieldName: string]: ColumnDescription } };
+  tableComments: { [tableName: string]: string };
   space: string[];
   options: AutoOptions & {
     indentation?: number;
@@ -43,6 +44,7 @@ export class DtoGenerator {
     options: AutoOptions
   ) {
     this.tables = tableData.tables;
+    this.tableComments = tableData.tableComments;
     this.dialect = dialect;
     this.options = options;
     this.options.lang = this.options.lang || 'es5';
@@ -83,7 +85,7 @@ export class DtoGenerator {
 
       const namespace = this.options.views ? 'report' : 'internal';
 
-      str += `@BizmetaProvider('#TABLE#', { title: '', namespace: '${namespace}' })\n`;
+      str += `@BizmetaProvider('#TABLE#', { title: '${this.getTableComment(table)}', namespace: '${namespace}' })\n`;
       str += 'export class #TABLE# extends #ENTITY# {\n';
       str += `static readonly BIZMETA_KEY = \'${namespace}/#TABLE#\';`;
       str += `static readonly UID_PREFIX = _PREFIX_;`;
@@ -166,6 +168,10 @@ export class DtoGenerator {
       }
     });
     return str;
+  }
+
+  private getTableComment(table: string) {
+    return this.tableComments[table] || '';
   }
 
   private getTypeScriptFieldOptional(table: string, field: string) {
