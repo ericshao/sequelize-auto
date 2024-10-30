@@ -34,8 +34,9 @@ export class DtoGenerator {
     singularize: boolean;
     useDefine: boolean;
     noIndexes?: boolean;
-    extendMode?: 'base' | 'entity' | 'vo';
+    extendMode?: 'base' | 'entity' | 'item' | 'vo';
     omitPrefix?: number;
+    uidPrefix?: string;
   };
 
   constructor(
@@ -61,8 +62,11 @@ export class DtoGenerator {
         "import { Rule, RuleType, OmitDto } from '@midwayjs/validate';\n";
       header += "import { ApiProperty } from '@midwayjs/swagger';\n";
       header += "import { omitNil } from '@midwayjs-plus/common';\n";
-      header +=
-        "import { #ENTITY#, BizmetaProvider } from '@c2pkg/bizmeta';\n\n";
+      header += "import { #ENTITY#, BizmetaProvider } from '@c2pkg/bizmeta';\n";
+      if (this.options.extendMode === 'entity') {
+        header += "import { stringToDate } from '../../../util';\n";
+      }
+      header += '\n';
     }
     return header;
   }
@@ -83,12 +87,19 @@ export class DtoGenerator {
         this.options.lang
       );
 
+      const dateFields = this.getDateFields(table);
+
       const namespace = this.options.views ? 'report' : 'internal';
 
-      str += `@BizmetaProvider('#TABLE#', { title: '${this.getTableComment(table)}', namespace: '${namespace}' })\n`;
+      str += `@BizmetaProvider('#TABLE#', { title: '${this.getTableComment(
+        table
+      )}', namespace: '${namespace}' })\n`;
       str += 'export class #TABLE# extends #ENTITY# {\n';
-      str += `static readonly BIZMETA_KEY = \'${namespace}/#TABLE#\';`;
-      str += `static readonly UID_PREFIX = _PREFIX_;`;
+      str += `static readonly BIZMETA_KEY = \'${namespace}/#TABLE#\';\n`;
+      if (this.options.extendMode === 'entity') {
+        str += `static readonly UID_PREFIX = '${this.options.uidPrefix}';\n\n`;
+      }
+      str += '  id?: string; // 外部主键\n\n';
       str += this.addTypeScriptFields(table, true);
 
       if (!this.options.views) {
@@ -106,7 +117,41 @@ export class DtoGenerator {
         str += '    { identifiers }\n';
         str += '  );\n';
         str += '  return dto;\n';
-        str += '  }\n';
+        str += '  }\n\n';
+
+        if (this.options.extendMode === 'entity') {
+          const dates = dateFields.map(f => `'${f}'`).join(', ');
+          str += `  constructor(bsc?: BillDirBsc) {
+    super();
+    if (!bsc) return;
+
+    const { id, ...bscProps } = bsc;
+    this.localSid = id;
+    Object.assign(this, bscProps);
+
+    [${dates}].forEach(key => {
+      if (bsc[key]) {
+        this[key] = stringToDate(bsc[key]);
+      }
+    });
+
+    const getDetailList = (key: string, extraProps?: any) => {
+      return bsc[key]?.map(dt => {
+        const { id, ...dtProps } = dt;
+        return {
+          localSid: id,
+          ...dtProps,
+          ...extraProps,
+        };
+      });
+    };
+
+    //this.billDirDt = getDetailList('billDirDt');
+    //this.billDirWh = getDetailList('billDirWh');
+    //this.billDirStatus = getDetailList('billDirStatus');
+  }\n`;
+        }
+
         str += '}\n\n';
 
         str +=
@@ -136,10 +181,8 @@ export class DtoGenerator {
       str = str.replace(re, tableName.slice(this.options.omitPrefix));
 
       const ere = new RegExp('#ENTITY#', 'g');
-      let entityName = 'DomainObject';
-      if (this.options.extendMode === 'entity') {
-        entityName = 'BaseEntity';
-      } else if (this.options.extendMode === 'vo') {
+      let entityName = 'BaseEntity';
+      if (this.options.extendMode === 'vo') {
         entityName = 'BaseValueObject';
       }
       str = str.replace(ere, entityName);
@@ -168,6 +211,23 @@ export class DtoGenerator {
       }
     });
     return str;
+  }
+
+  private getDateFields(table: string) {
+    const fields = _.keys(this.tables[table]);
+    const dateFields: string[] = [];
+    fields.forEach(field => {
+      const fieldObj = this.tables[table][field] as TSField;
+      const rawFieldType = fieldObj.type || '';
+      const fieldType = String(rawFieldType).toLowerCase();
+      if (
+        this.isDate(fieldType) &&
+        !['created_date', 'last_updated_date'].includes(field)
+      ) {
+        dateFields.push(recase('c', field));
+      }
+    });
+    return dateFields;
   }
 
   private getTableComment(table: string) {
@@ -339,7 +399,7 @@ export class DtoGenerator {
   private isIgnoredField(field: string) {
     if (
       this.options.extendMode === 'entity' ||
-      this.options.extendMode === 'vo'
+      this.options.extendMode === 'item'
     ) {
       return [
         'id',

@@ -145,6 +145,11 @@ const argv = require('yargs')
     type: 'number',
     alias: 'op'
   })
+  .option('uidPrefix', {
+    description: 'UID prefix',
+    type: 'string',
+    alias: 'prefix'
+  })
   // .check(argv => Boolean((argv.database && (argv.host || argv.dialect === 'sqlite')) || argv.config))
   .argv;
 
@@ -232,6 +237,7 @@ async function readPassword() {
   configFile.noIndexes = argv.noIndexes || configFile.noIndexes || false;
   configFile.extendMode = argv.extendMode || configFile.extendMode || 'entity';
   configFile.omitPrefix = argv.omitPrefix || configFile.omitPrefix || 0;
+  configFile.uidPrefix = argv.uidPrefix || configFile.uidPrefix || '_UID_PREFIX_';
 
   console.log(_.omit(configFile, 'password'));
 

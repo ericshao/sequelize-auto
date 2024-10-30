@@ -307,6 +307,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     ).findAll({
       ...this.generateFindOptions(options),
       where: { [aggrUidProp]: aggrUid },
+      order: [['gdsSeqno', 'ASC']],
       transaction: this.getTransaction(),
     });
     return <%= camelCase %>s.map(entity => _.omit(entity.toJSON(), 'tenantId') as <%= PascalCase %>);

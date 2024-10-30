@@ -24,6 +24,7 @@ import {
 export class ModelGenerator {
   dialect: DialectOptions;
   tables: { [tableName: string]: { [fieldName: string]: ColumnDescription } };
+  tableComments: { [tableName: string]: string };
   foreignKeys: { [tableName: string]: { [fieldName: string]: FKSpec } };
   hasTriggerTables: { [tableName: string]: boolean };
   indexes: { [tableName: string]: IndexSpec[] };
@@ -42,8 +43,9 @@ export class ModelGenerator {
     singularize: boolean;
     useDefine: boolean;
     noIndexes?: boolean;
-    extendMode?: 'base' | 'entity' | 'vo';
+    extendMode?: 'base' | 'entity' | 'item';
     omitPrefix?: number;
+    uidPrefix?: string;
   };
 
   constructor(
@@ -52,6 +54,7 @@ export class ModelGenerator {
     options: AutoOptions
   ) {
     this.tables = tableData.tables;
+    this.tableComments = tableData.tableComments;
     this.foreignKeys = tableData.foreignKeys;
     this.hasTriggerTables = tableData.hasTriggerTables;
     this.indexes = tableData.indexes;
@@ -69,14 +72,15 @@ export class ModelGenerator {
     if (this.options.lang === 'ts') {
       header += '/* eslint-disable node/no-extraneous-import */\n';
       header +=
-        this.options.extendMode === 'entity'
-          ? "import { Column, BeforeCreate, BeforeBulkCreate, Table } from 'sequelize-typescript';\n"
-          : "import { Column, Table } from 'sequelize-typescript';\n";
+        "import { Column, BeforeCreate, BeforeBulkCreate, Table } from 'sequelize-typescript';\n";
+      // this.options.extendMode === 'entity'
+      //   ? "import { Column, BeforeCreate, BeforeBulkCreate, Table } from 'sequelize-typescript';\n"
+      //   : "import { Column, Table } from 'sequelize-typescript';\n";
       header += "import { DataTypes } from 'sequelize';\n";
       header += "import { #MODEL# } from '@midwayjs-plus/common';\n";
-      if (this.options.extendMode === 'entity') {
-        header += "import { nanoid } from 'nanoid';\n";
-      }
+      // if (this.options.extendMode === 'entity') {
+      header += "import { nanoid } from 'nanoid';\n";
+      // }
     } else {
       header += "const Sequelize = require('sequelize');\n";
       header += 'module.exports = function(sequelize, DataTypes) {\n';
@@ -154,8 +158,8 @@ export class ModelGenerator {
 
       str += this.addTable(table);
 
-      if (this.options.extendMode === 'entity' && !this.options.views) {
-        str += 'static PREFIX = _PREFIX_;\n\n';
+      if (!this.options.views) {
+        str += `static PREFIX = '${this.options.uidPrefix}';\n\n`;
 
         str += '@BeforeCreate\n';
         str += 'static addUid(instance: #TABLE#Model) {\n';
@@ -178,10 +182,9 @@ export class ModelGenerator {
       str = str.replace(re, tableName.slice(this.options.omitPrefix));
 
       const mre = new RegExp('#MODEL#', 'g');
-      let modelName = 'BaseModel';
-      if (this.options.extendMode === 'entity') {
-        modelName = 'BaseEntityModel';
-      } else if (this.options.extendMode === 'vo') {
+      let modelName = 'BaseEntityModel';
+
+      if (this.options.extendMode === 'base') {
         modelName = 'BaseValueObjectModel';
       }
       str = str.replace(mre, modelName);
@@ -250,6 +253,7 @@ export class ModelGenerator {
       });
     }
 
+    str += space[2] + "comment: '" + this.getTableComment(table) + "',\n";
     // add indexes
     // if (!this.options.noIndexes) {
     str += this.addIndexes(table);
@@ -396,6 +400,14 @@ export class ModelGenerator {
           return true;
         } else if (fieldObj[attr] === '') {
           str += space[3] + attr + ': ' + quoteWrapper + quoteWrapper;
+        } else if (this.isString(String(fieldObj.type || '').toLowerCase())) {
+          str +=
+            space[3] +
+            attr +
+            ': ' +
+            quoteWrapper +
+            fieldObj[attr] +
+            quoteWrapper;
         } else {
           str += space[3] + attr + ': ' + fieldObj[attr];
         }
@@ -497,6 +509,10 @@ export class ModelGenerator {
       str += space[2] + '],\n';
     }
     return str;
+  }
+
+  private getTableComment(table: string) {
+    return this.tableComments[table] || '';
   }
 
   /** Get the sequelize type from the Field */
@@ -841,7 +857,7 @@ export class ModelGenerator {
   private isIgnoredField(field: string) {
     if (
       this.options.extendMode === 'entity' ||
-      this.options.extendMode === 'vo'
+      this.options.extendMode === 'item'
     ) {
       return [
         'id',
