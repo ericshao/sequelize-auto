@@ -68,8 +68,8 @@ export class FormGenerator {
         "import { formColumnsResult } from '@/shares/components/schema-components/util';\n";
       header +=
         "import { ProFormColumnsType } from '@/shares/components/SchemaForm';\n";
-      header +=
-        "import { convertToNumber, convertToString } from '@/utils';\n\n";
+      // header +=
+      //   "import { convertToNumber, convertToString } from '@/utils';\n\n";
     }
     return header;
   }
@@ -138,17 +138,89 @@ export class FormGenerator {
           const name = this.quoteName(recase(this.options.caseProp, field));
           const isOptional = this.getTypeScriptFieldOptional(table, field);
           // str += this.getFieldAnnotation(table, field);
+
+          if (name.indexOf('EtpsSccd') > 0) {
+            str +=  `{
+          dataIndex: '${name}',
+          placeholder: '社会信用编码',
+          colProps: { ...colProps, xl: 8 },
+          renderFormItem: (item, { defaultRender, ...rest }, form) => {
+            return <DomesticPartySelect form={form} partyType="bizopEtps" valueOptionsKey="sccCode" />;
+          },
+        },`;
+        return;
+          }
+          if (name.indexOf('EtpsNo') > 0 || name.indexOf('Etpsno') > 0) {
+            str +=   `{
+          dataIndex: '${name}',
+          placeholder: '企业编号',
+          valueType: 'text',
+          colProps: { ...colProps, xl: 6 },
+          formItemProps: {
+            rules: [{ required: true }],
+          },
+          renderFormItem: (item, { defaultRender, ...rest }, form) => {
+            return <DomesticPartySelect form={form} partyType="bizopEtps" valueOptionsKey="cusCode" />;
+          },
+        },`
+        return;
+          }
+          if (name.indexOf('EtpsNm') > 0) {
+            str +=   `{
+          dataIndex: '${name}',
+          placeholder: '企业名称',
+          valueType: 'text',
+          colProps: { ...colProps, xl: 10 },
+          formItemProps: {
+            rules: [{ required: true }],
+          },
+        },`;
+        return;
+          }
+
+
+
           str += '  {\n';
           str += `    dataIndex: '${name}',\n`;
           str += `    title: '${this.getFieldComment(table, field)}',\n`;
-          str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
+
+          if (field.indexOf('cuscd') > 0 || field.indexOf('portcd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: 'chnCustoms'},\n`;
+          } else if (field.indexOf('modecd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: '${name}'},\n`;
+          } else if (field.indexOf('natcd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: 'countryV1'},\n`;
+          } else if (field.indexOf('natcd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: 'countryV1'},\n`;
+          } else if (field.indexOf('unitcd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: 'unit'},\n`;
+            str += `    hideInSearch: true,\n`;
+          } else if (field.indexOf('currcd') > 0) {
+            str += `    valueType: 'cusParam',\n`;
+            str += `    fieldProps: { valueOptionsKey: 'currencyV1'},\n`;
+            str += `    hideInSearch: true,\n`;
+          } else if (
+            field.indexOf('markcd') > 0 ||
+            field.indexOf('typecd') > 0 ||
+            field.indexOf('stucd') > 0
+          ) {
+            str += `    valueType: 'valueEnum',\n`;
+            str += `    fieldProps: { valueOptionsKey: '${name}'},\n`;
+          } else {
+            str += `    valueType: '${this.getFormValueType(table, field)}',\n`;
+          }
           if (this.isDecimalField(table, field)) {
             str += '    fieldProps: decimalFieldProps,\n';
           }
           if (this.isIntegerField(table, field)) {
             str += '    fieldProps: integerFieldProps,\n';
           }
-          if (this.isUidField(field)) {
+          if (this.isUidField(field) || name.indexOf('GenFlag') > 0 || name.indexOf('Uids') > 0) {
             str += '    hideInForm: true,\n';
           }
           str += '    colProps,\n';
@@ -268,17 +340,25 @@ export class FormGenerator {
       this.options.extendMode === 'entity' ||
       this.options.extendMode === 'item'
     ) {
-      return (
-        [
-          'id',
-          'uid',
-          'tenantId',
-          'createdBy',
-          'createdDate',
-          'lastUpdatedBy',
-          'lastUpdatedDate',
-        ].includes(recase('c', field))
-      );
+      return [
+        'id',
+        'uid',
+        'pid',
+        'tenantId',
+        'createdBy',
+        'createdDate',
+        'lastUpdatedBy',
+        'lastUpdatedDate',
+        'warehouseCode',
+        'localSid',
+        'orgId',
+        'respInfo',
+        'channelProps',
+        'chnUid',
+        ,
+        'stateCode',
+        'ieFlag',
+      ].includes(recase('c', field));
     }
     return this.options.skipFields && this.options.skipFields.includes(field);
   }

@@ -35,7 +35,7 @@ export class ColumnGenerator {
     singularize: boolean;
     useDefine: boolean;
     noIndexes?: boolean;
-    extendMode?: 'base' | 'entity' | 'vo';
+    extendMode?: 'base' | 'entity' | 'item';
     omitPrefix?: number;
   };
 
@@ -170,16 +170,20 @@ export class ColumnGenerator {
           if (field.indexOf('unitcd') > 0) {
             str += `    valueType: 'cusParam',\n`;
             str += `    fieldProps: { valueOptionsKey: 'unit'},\n`;
-            str += `    hideInSearch: true,\n`;
+            // str += `    hideInSearch: true,\n`;
           }
 
           if (field.indexOf('currcd') > 0) {
             str += `    valueType: 'cusParam',\n`;
             str += `    fieldProps: { valueOptionsKey: 'currencyV1'},\n`;
-            str += `    hideInSearch: true,\n`;
+            // str += `    hideInSearch: true,\n`;
           }
 
-          if (field.indexOf('markcd') > 0 || field.indexOf('typecd') > 0 || field.indexOf('stucd') > 0) {
+          if (
+            field.indexOf('markcd') > 0 ||
+            field.indexOf('typecd') > 0 ||
+            field.indexOf('stucd') > 0
+          ) {
             str += `    valueType: 'valueEnum',\n`;
             str += `    fieldProps: { valueOptionsKey: '${name}'},\n`;
           }
@@ -225,7 +229,10 @@ export class ColumnGenerator {
   }
 
   private getHideInTable(field: string) {
-    if (/(uid)$/.test(field) || ['warehouse_code', 'org_id', 'pid'].includes(field)) {
+    if (
+      /(uid)$/.test(field) ||
+      ['warehouse_code', 'org_id', 'pid'].includes(field)
+    ) {
       return '    hideInTable: true,\n';
     }
     return '';
@@ -242,7 +249,16 @@ export class ColumnGenerator {
       this.isJSON(fieldType) ||
       this.isNumber(fieldType) ||
       this.isBoolean(fieldType) ||
-      ['warehouse_code', 'org_id', 'pid', 'rmk', 'channel_props', 'resp_info'].includes(field)
+      [
+        'warehouse_code',
+        'org_id',
+        'pid',
+        'rmk',
+        'channel_props',
+        'resp_info',
+      ].includes(field) ||
+      field.indexOf('unitcd') > 0 ||
+      field.indexOf('currcd') > 0
     ) {
       return '    hideInSearch: true,\n';
     }
@@ -372,11 +388,13 @@ export class ColumnGenerator {
   }
 
   private isIgnoredField(field: string) {
-    if (
-      this.options.extendMode === 'entity' ||
-      this.options.extendMode === 'vo'
-    ) {
+    if (this.options.extendMode === 'entity') {
       return ['id', 'tenantId'].includes(recase('c', field));
+    }
+    if (this.options.extendMode === 'item') {
+      return ['id', 'tenantId', 'pid', 'localSid', 'ieFlag'].includes(
+        recase('c', field)
+      );
     }
     return this.options.skipFields && this.options.skipFields.includes(field);
   }

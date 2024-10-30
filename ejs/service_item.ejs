@@ -13,7 +13,7 @@ import { FindAttributeOptions } from 'sequelize';
 import { <%= PascalCase %>Model } from '../model';
 import { <%= PascalCase %>, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
 import { ConversionService } from '../../common/service';
-import { concurrentLimit10 } from '../../../util';
+import { classifySyncDtos, concurrentLimit10 } from '../../../util';
 
 @Provide()
 @Scope(ScopeEnum.Request, { allowDowngrade: true })
