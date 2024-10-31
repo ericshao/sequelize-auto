@@ -29,11 +29,11 @@ export async function transit<%= PascalCase %>BscToTargetState(uid: string[], ta
 }
 
 export async function recycle<%= PascalCase %>Bsc(uid: string) {
-  return request.patch<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/${uid}/recycle');
+  return request.patch<API.BaseResponse<API.UpdateResult>>(`/<%= slashPath %>/${uid}/recycle`);
 }
 
 export async function recover<%= PascalCase %>Bsc(uid: string) {
-  return request.patch<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/${uid}/recover');
+  return request.patch<API.BaseResponse<API.UpdateResult>>(`/<%= slashPath %>/${uid}/recover`);
 }
 
 export async function save<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
@@ -63,8 +63,8 @@ export async function declare<%= PascalCase %>Bsc(uid: string[], chnUid: string)
   });
 }
 
-export async function invalidate<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
-  return request.post<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/invalidate', {
+export async function revoke<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
+  return request.post<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/revoke', {
     data: {
       uid,
       chnUid,

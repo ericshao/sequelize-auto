@@ -61,11 +61,13 @@ export class DtoGenerator {
       header +=
         "import { Rule, RuleType, OmitDto } from '@midwayjs/validate';\n";
       header += "import { ApiProperty } from '@midwayjs/swagger';\n";
-      header += "import { omitNil } from '@midwayjs-plus/common';\n";
+      header += "import { omitNil, omitUndefined } from '@midwayjs-plus/common';\n";
       header += "import { #ENTITY#, BizmetaProvider } from '@c2pkg/bizmeta';\n";
       if (this.options.extendMode === 'entity') {
         header += "import { stringToDate } from '../../../util';\n";
       }
+      header += "import { COMMON_EXT_COLUMNS } from './common';\n";
+      header += "import * as _ from 'lodash';\n";
       header += '\n';
     }
     return header;
@@ -99,6 +101,9 @@ export class DtoGenerator {
       if (this.options.extendMode === 'entity') {
         str += `static readonly UID_PREFIX = '${this.options.uidPrefix}';\n\n`;
       }
+
+      str += '    static readonly EXT_COLUMNS: (keyof #TABLE#)[] = [  ...(COMMON_EXT_COLUMNS as (keyof #TABLE#)[])];';
+
       str += '  id?: string; // 外部主键\n\n';
       str += this.addTypeScriptFields(table, true);
 
@@ -152,6 +157,12 @@ export class DtoGenerator {
   }\n`;
         }
 
+        str += 
+`  static toJSON(instance: #TABLE#): #TABLE# {
+    instance.id = instance.localSid || null;
+    return omitUndefined(_.omit(instance, #TABLE#.EXT_COLUMNS)) as #TABLE#;
+  }`
+
         str += '}\n\n';
 
         str +=
@@ -160,7 +171,7 @@ export class DtoGenerator {
           "export class Update#TABLE#Dto extends OmitDto(#TABLE#, ['createdDate']) {\n";
         str += "@ApiProperty({ description: '批量更新UID' })\n";
         str += '@Rule(RuleType.array().allow(null))\n';
-        str += 'identifiers: number[] | string[];\n\n';
+        str += 'identifiers: string[];\n\n';
         str += "@ApiProperty({ description: '更新前值' })\n";
         str += '@Rule(RuleType.object())\n';
         str += 'oldValues?: Partial<#TABLE#>;\n';

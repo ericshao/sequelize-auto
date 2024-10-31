@@ -128,11 +128,11 @@ export class <%= PascalCase %>Controller extends BaseController {
   }
 
 
-  @Post('/invalidate', {
+  @Post('/revoke', {
     description: '作废<%= label %>',
   })
   @SendPrivilege()
-  async invalidate<%= PascalCase %>Bsc(    
+  async revoke<%= PascalCase %>Bsc(    
     @Body('uid') uid: string[],
     @Body('chnUid') chnUid: string,
   ) {

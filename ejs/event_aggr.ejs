@@ -1,0 +1,216 @@
+import { EventHubEvent, EventMetadata } from '@c2pkg/eventhub';
+import { <%= PascalCase %>Bsc } from '../entity';
+
+export enum <%= PascalCase %>EventEnum {
+  CREATED = 'bwp:lingang:<%= PascalCase %>:Lifecycle:Created',
+  CANCELLED = 'bwp:lingang:<%= PascalCase %>:Lifecycle:Cancelled',
+  DESTROYED = 'bwp:lingang:<%= PascalCase %>:Lifecycle:Destroyed',
+
+  CUS_DECLARED = 'bwp:lingang:<%= PascalCase %>:Approval:CusDeclared', // 入库成功事件
+  CUS_DECLARE_FAILED = 'bwp:lingang:<%= PascalCase %>:Approval:CusDeclareFailed', // 入库失败事件
+  CUS_APPROVED = 'bwp:lingang:<%= PascalCase %>:Approval:CusApproved', // 审批通过事件
+  CUS_REJECTED = 'bwp:lingang:<%= PascalCase %>:Approval:CusRejected', // 海关退单事件
+
+  CUS_SUSPENDED = 'bwp:lingang:<%= PascalCase %>:Approval:CusSuspended', // 转人工事件
+  CUS_CONFIRMED = 'bwp:lingang:<%= PascalCase %>:Approval:CusConfirmed', // 已确认事件
+
+  CUS_REVOKE_APPLIED = 'bwp:lingang:<%= PascalCase %>:Approval:CusRevokeApplied', // 作废申请事件
+  CUS_REVOKED = 'bwp:lingang:<%= PascalCase %>:Approval:CusRevoked', // 已作废事件
+  CUS_DELETED = 'bwp:lingang:<%= PascalCase %>:Approval:CusDeleted', // 已删除事件
+}
+
+/**
+ * @description <%= label %>事件基类
+ */
+export class <%= PascalCase %>Event<
+  T extends Partial<<%= PascalCase %>Bsc>
+> extends EventHubEvent<T> {
+  optStatus?: string;
+  constructor(
+    type: <%= PascalCase %>EventEnum,
+    data: T,
+    options?: {
+      flowuid?: string;
+      dataschema?: string;
+      source?: string;
+      createdBy?: number;
+      requestId?: string;
+      optStatus?: string;
+    }
+  ) {
+    super({
+      source: options?.source ?? '<%= moduleName%>',
+      type,
+      dataschema: options?.dataschema ?? <%= PascalCase %>Bsc.BIZMETA_KEY,
+      data,
+      subject: data.uid,
+      bizmetaKey: <%= PascalCase %>Bsc.BIZMETA_KEY,
+      createdBy: options?.createdBy,
+      requestId: options?.requestId,
+    });
+    this.flowuid = options?.flowuid;
+    this.optStatus = options?.optStatus;
+  }
+  public setTrigger(actionCode: string) {
+    this.trigger = actionCode;
+  }
+}
+
+/**
+ * @description <%= label %>创建事件
+ * @domainObjectType DomainEvent
+ */
+@EventMetadata({
+  name: '<%= label %>创建事件',
+  type: <%= PascalCase %>EventEnum.CREATED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>CreatedEvent extends <%= PascalCase %>Event<<%= PascalCase %>Bsc> {
+  constructor(data: <%= PascalCase %>Bsc, flowuid?: string) {
+    super(<%= PascalCase %>EventEnum.CREATED, data, {
+      flowuid,
+      createdBy: data.createdBy,
+    });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>取消事件',
+  type: <%= PascalCase %>EventEnum.CANCELLED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>CancelledEvent extends <%= PascalCase %>Event<Partial<<%= PascalCase %>Bsc>> {
+  constructor(data: Partial<<%= PascalCase %>Bsc>, flowuid?: string) {
+    super(<%= PascalCase %>EventEnum.CANCELLED, data, {
+      flowuid,
+    });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>销毁事件',
+  type: <%= PascalCase %>EventEnum.DESTROYED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>DestroyedEvent extends <%= PascalCase %>Event<Partial<<%= PascalCase %>Bsc>> {
+  constructor(data: Partial<<%= PascalCase %>Bsc>, flowuid?: string) {
+    super(<%= PascalCase %>EventEnum.DESTROYED, data, {
+      flowuid,
+    });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>入库成功事件',
+  type: <%= PascalCase %>EventEnum.CUS_DECLARED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>CusDeclaredEvent extends <%= PascalCase %>Event<Partial<<%= PascalCase %>Bsc>> {
+  constructor(data?: Partial<<%= PascalCase %>Bsc>) {
+    super(<%= PascalCase %>EventEnum.CUS_DECLARED, data);
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>入库失败事件',
+  type: <%= PascalCase %>EventEnum.CUS_DECLARE_FAILED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>CusDeclareFailedEvent extends <%= PascalCase %>Event<
+  Partial<<%= PascalCase %>Bsc>
+> {
+  constructor(data?: Partial<<%= PascalCase %>Bsc>) {
+    super(<%= PascalCase %>EventEnum.CUS_DECLARE_FAILED, data);
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>审核通过事件',
+  type: <%= PascalCase %>EventEnum.CUS_APPROVED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>BscCusApprovedEvent extends <%= PascalCase %>Event<
+  Partial<<%= PascalCase %>Bsc>
+> {
+  constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
+    super(<%= PascalCase %>EventEnum.CUS_APPROVED, data, { optStatus });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>审核拒绝事件',
+  type: <%= PascalCase %>EventEnum.CUS_REJECTED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>BscCusRejectedEvent extends <%= PascalCase %>Event<
+  Partial<<%= PascalCase %>Bsc>
+> {
+  constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
+    super(<%= PascalCase %>EventEnum.CUS_REJECTED, data, { optStatus });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>转人工事件',
+  type: <%= PascalCase %>EventEnum.CUS_SUSPENDED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>BscCusSuspendedEvent extends <%= PascalCase %>Event<
+  Partial<<%= PascalCase %>Bsc>
+> {
+  constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
+    super(<%= PascalCase %>EventEnum.CUS_SUSPENDED, data, { optStatus });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>已确认事件',
+  type: <%= PascalCase %>EventEnum.CUS_CONFIRMED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>BscCusConfirmedEvent extends <%= PascalCase %>Event<
+  Partial<<%= PascalCase %>Bsc>
+> {
+  constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
+    super(<%= PascalCase %>EventEnum.CUS_CONFIRMED, data, { optStatus });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>作废申请事件',
+  type: <%= PascalCase %>EventEnum.CUS_REVOKE_APPLIED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>BscCusRevokeAppliedEvent extends <%= PascalCase %>Event<
+  Partial<<%= PascalCase %>Bsc>
+> {
+  constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
+    super(<%= PascalCase %>EventEnum.CUS_REVOKE_APPLIED, data, { optStatus });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>已作废事件',
+  type: <%= PascalCase %>EventEnum.CUS_REVOKED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>BscCusRevokedEvent extends <%= PascalCase %>Event<
+  Partial<<%= PascalCase %>Bsc>
+> {
+  constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
+    super(<%= PascalCase %>EventEnum.CUS_REVOKED, data, { optStatus });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>删除事件',
+  type: <%= PascalCase %>EventEnum.CUS_DELETED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>BscCusDeletedEvent extends <%= PascalCase %>Event<
+  Partial<<%= PascalCase %>Bsc>
+> {
+  constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
+    super(<%= PascalCase %>EventEnum.CUS_DELETED, data, { optStatus });
+  }
+}

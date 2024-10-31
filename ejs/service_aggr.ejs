@@ -13,9 +13,9 @@ import * as _ from 'lodash';
 import { ActionNotAllowedError } from '../../common/bizError';
 import { StateMachineFactory } from '../../common/statemachine';
 import { Create<%= PascalCase %>BscDto, <%= PascalCase %>Bsc } from '../entity';
-import { <%= PascalCase %>BscCreatedEvent, <%= PascalCase %>BscCancelledEvent } from '../event';
+import { <%= PascalCase %>CreatedEvent, <%= PascalCase %>CancelledEvent } from '../event';
 import { <%= PascalCase %>DtService, <%= PascalCase %>BscService } from '../service';
-import { <%= PascalCase %>BscStateMachine } from '../statemachine';
+import { <%= PascalCase %>StateMachine } from '../statemachine';
 
 /**
  * @description <%= label %>聚合领域服务
@@ -37,7 +37,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
   stateMachineFactory: StateMachineFactory;
 
   @Inject()
-  <%= camelCase %>BscStateMachine: <%= PascalCase %>BscStateMachine;
+  <%= camelCase %>StateMachine: <%= PascalCase %>StateMachine;
 
   @Inject()
   validateService: ValidateService;
@@ -70,7 +70,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
     }
     if (!options?.omitEvent) {
       await this.eventHub.emitPersistentEvent(
-        new <%= PascalCase %>BscCreatedEvent(<%= camelCase %>Bsc, options?.flowuid),
+        new <%= PascalCase %>CreatedEvent(<%= camelCase %>Bsc, options?.flowuid),
         { delay: 5000 }
       );
     }
@@ -198,7 +198,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
     const flowuid = await this.getContextFlowuid(uid);
 
     const { eventMsgId } = await this.eventHub.emitPersistentEvent(
-      new <%= PascalCase %>BscCancelledEvent(currentBsc, flowuid)
+      new <%= PascalCase %>CancelledEvent(currentBsc, flowuid)
     );
     return eventMsgId;
   }
@@ -209,8 +209,6 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
       columns: [
         'uid',
         'stateCode',
-        'batUid',
-
       ],
     });
    // if (currentBsc.decUid) {
@@ -281,7 +279,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
   public async transitState(
     <%= aggrKey%>: string,
     event: EventHubEvent<any>,
-    stateMachine: <%= PascalCase %>BscStateMachine,
+    stateMachine: <%= PascalCase %>StateMachine,
     targetStateCode?: string
   ): Promise<{
     success: boolean;
@@ -383,9 +381,9 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
 
   public async getStateMachine(
     useDefault = false
-  ): Promise<<%= PascalCase %>BscStateMachine> {
+  ): Promise<<%= PascalCase %>StateMachine> {
     if (useDefault) {
-      return this.<%= camelCase %>BscStateMachine;
+      return this.<%= camelCase %>StateMachine;
     }
     let stateMachine = await this.stateMachineFactory.createInstance(
       this.getTenantId(),
@@ -396,15 +394,15 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
         <%= PascalCase %>Bsc.BIZMETA_KEY,
         `state machine for ${this.getTenantId()}  not defined, use default`
       );
-      stateMachine = this.<%= camelCase %>BscStateMachine;
+      stateMachine = this.<%= camelCase %>StateMachine;
     }
-    return stateMachine as unknown as <%= PascalCase %>BscStateMachine;
+    return stateMachine as unknown as <%= PascalCase %>StateMachine;
   }
 
   @TraceSpan()
   @CtxTransactional()
   public async getExecutable<%= PascalCase %>Bsc(
-    stateMachine: <%= PascalCase %>BscStateMachine,
+    stateMachine: <%= PascalCase %>StateMachine,
     actionCode: string,
     <%= aggrKey%>s?: string[],
     options?: API.QueryOptions
