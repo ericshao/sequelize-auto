@@ -18,11 +18,11 @@ export async function getFull<%= PascalCase %>Bsc(uid: string) {
   return request.get<API.BaseResponse<<%= PascalCase %>Bsc>>(`/<%= slashPath %>/${uid}`);
 }
 
-export async function transit<%= PascalCase %>BscToTargetState(uid: string[], targetState: string, forced: boolean) {
+export async function transit<%= PascalCase %>BscToTargetState(uid: string[], stateCode: string, forced: boolean) {
   return request.post<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/transit', {
     data: {
       uid,
-      targetState,
+      stateCode,
       forced,
     },
   });

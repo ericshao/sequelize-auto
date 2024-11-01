@@ -163,7 +163,8 @@ export class <%= PascalCase %>Service extends TenancyService {
   @CtxTransactional()
   public async syncByAggrUid(
     <%= aggrKey %>: string,
-    syncDtos: <%= PascalCase %>[]
+    syncDtos: <%= PascalCase %>[],
+    forced?: boolean
   ): Promise<Record<string, number>> {
     let deleted = 0;
     let created = 0;
@@ -171,7 +172,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     if (!syncDtos) return { deleted, created, updated };
 
     const { toDeleteUids, toCreateDtos, toUpdateDtos } =
-      classifySyncDtos(syncDtos);
+      classifySyncDtos(syncDtos, forced);
 
       if (toDeleteUids.length > 0) {
         const deleteRes = await this.deleteByUid(toDeleteUids);

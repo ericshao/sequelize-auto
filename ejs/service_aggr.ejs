@@ -132,7 +132,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
   @CtxTransactional()
   @TraceSpan()
   @StateMachineLog(<%= PascalCase %>Bsc.BIZMETA_KEY, '$.uid')
-  public async updateFull<%= PascalCase %>Bsc(bscData: <%= PascalCase %>Bsc): Promise<{
+  public async updateFull<%= PascalCase %>Bsc(bscData: <%= PascalCase %>Bsc, forced?: boolean): Promise<{
     success: boolean;
     stateCode?: string;
   }> {
@@ -159,7 +159,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
         })
       ),
       <%= camelCase%>Dt?.length > 0 &&
-        this.<%= camelCase %>DtService.syncByAggrUid(currentBsc.uid, <%= camelCase%>Dt),
+        this.<%= camelCase %>DtService.syncByAggrUid(currentBsc.uid, <%= camelCase%>Dt, forced),
     ]);
     return { success: true, stateCode: currentBsc.stateCode };
   }
@@ -275,7 +275,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
   }
 
   @CtxTransactional()
-  @TraceSpan()
+  @StateMachineLog(<%= PascalCase %>Bsc.BIZMETA_KEY)
   public async transitState(
     <%= aggrKey%>: string,
     event: EventHubEvent<any>,
@@ -314,13 +314,6 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
 
           identifiers: [<%= aggrKey%>],
         })
-      );
-      this.logger.info(
-        `<%= PascalCase %>Bsc ${<%= aggrKey%>} TranistStateSuccess to: ${targetStateCode} event: ${event.type}`
-      );
-    } else {
-      this.logger.warn(
-        `<%= PascalCase %>Bsc ${<%= aggrKey%>} TranistStateFailed from: ${<%= camelCase %>Bsc.stateCode} event: ${event.type}`
       );
     }
     return res;
