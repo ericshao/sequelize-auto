@@ -56,6 +56,8 @@ const <%= PascalCase %>List: React.FC<
     currentFilter,
     setCurrentSorter,
     currentSorter,
+    totalCount,
+    setTotalCount,
     ultraColumns, 
   } = useListState<<%= PascalCase %>>(actionRef,
     {
@@ -83,6 +85,7 @@ const <%= PascalCase %>List: React.FC<
     'report/<%= PascalCase %>',
     request<%= PascalCase %>Generating,
     ultraColumns.getColumnKeys(),
+    totalCount,
   );
 
   return (
@@ -118,6 +121,7 @@ const <%= PascalCase %>List: React.FC<
                   filter,
                   sorter: sorter && Object.keys(sorter).length > 0 ? sorter : undefined,
                 });
+                setTotalCount(res.result.total || 0);
                 return {
                   data: res.result.data,
                   success: res.success,

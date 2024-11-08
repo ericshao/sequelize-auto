@@ -42,6 +42,7 @@ export class <%= PascalCase %>Event extends EventHubEvent<<%= PascalCase %>Reque
       dataschema: dataschema ?? <%= PascalCase %>Request.BIZMETA_KEY,
       data,
       subject: `RPT${nanoid()}`,
+      requestId: `req-${nanoid()}`,
     });
     this.flowuid = flowuid;
   }

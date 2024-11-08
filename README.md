@@ -39,7 +39,7 @@
 
 ./bin/sequelize-auto -x 123456 -o ./output --op 4 --em entity -d c2cloud -t meta_kitting
 
-./bin/sequelize-auto -h pc-uf6e83x2j0m347qu1.mysql.polardb.rds.aliyuncs.com -u c2cloud  -x App#3220 -o ./output --op 3 --em entity -d c2cloud -t bwp_req_resp
+./bin/sequelize-auto -h pc-uf6lazro89v382bag.rwlb.rds.aliyuncs.com -u c2cloud  -x App#3220 -o ./output --op 3 --em entity -d c2cloud -t bwp_req_resp
 
 ./bin/sequelize-auto -h pc-uf6e83x2j0m347qu1.mysql.polardb.rds.aliyuncs.com -u c2cloud  -x App#3220 -o ./output --op 3 --em entity -d c2cloud -v -t bwp_blc_bws_balance_seqno_view
 
