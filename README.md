@@ -26,7 +26,7 @@
 ./bin/sequelize-auto -x 123456 -o ./output --op 3 --em entity -d c2cloud -t bwp_blc_exception
 ./bin/midway-auto -o ./output -n sasApplUcns  -a 业务申报表单耗 --ak aplUid   -t entity --mn bwp --an sasAppl
 
-./bin/midway-auto -o ./output -n lgBillDirBsc  -a 径予自主申报表头 --ak    -t entity --mn bwp --an lingang
+./bin/midway-auto -o ./output -n lgBillDirBsc  -a 径予放行表头 --ak    -t entity --mn bwp --an lingang
 
 ./bin/midway-auto -o ./output -n tradeFranchiseUsage  -a 特许权使用 --ak repoUid   -t entity --mn tcs --an classification
 

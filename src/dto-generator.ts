@@ -62,11 +62,11 @@ export class DtoGenerator {
         "import { Rule, RuleType, OmitDto } from '@midwayjs/validate';\n";
       header += "import { ApiProperty } from '@midwayjs/swagger';\n";
       header += "import { omitNil, omitUndefined } from '@midwayjs-plus/common';\n";
-      header += "import { #ENTITY#, BizmetaProvider } from '@c2pkg/bizmeta';\n";
+      header += "import { BizmetaProvider } from '@c2pkg/bizmeta';\n";
       if (this.options.extendMode === 'entity') {
         header += "import { stringToDate } from '../../../util';\n";
       }
-      header += "import { COMMON_EXT_COLUMNS } from './common';\n";
+      header += "import { BaseLgEntity, COMMON_EXT_COLUMNS } from './common';\n";
       header += "import * as _ from 'lodash';\n";
       header += '\n';
     }
@@ -96,7 +96,7 @@ export class DtoGenerator {
       str += `@BizmetaProvider('#TABLE#', { title: '${this.getTableComment(
         table
       )}', namespace: '${namespace}' })\n`;
-      str += 'export class #TABLE# extends #ENTITY# {\n';
+      str += 'export class #TABLE# extends BaseLgEntity {\n';
       str += `static readonly BIZMETA_KEY = \'${namespace}/#TABLE#\';\n`;
       if (this.options.extendMode === 'entity') {
         str += `static readonly UID_PREFIX = '${this.options.uidPrefix}';\n\n`;
@@ -104,7 +104,7 @@ export class DtoGenerator {
 
       str += '    static readonly EXT_COLUMNS: (keyof #TABLE#)[] = [  ...(COMMON_EXT_COLUMNS as (keyof #TABLE#)[])];';
 
-      str += '  id?: string; // 外部主键\n\n';
+      // str += '  id?: string; // 外部主键\n\n';
       str += this.addTypeScriptFields(table, true);
 
       if (!this.options.views) {

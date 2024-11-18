@@ -17,9 +17,9 @@ export class ServiceGenerator {
 
   }
   generateText() {
-    const path = join(__dirname, this.ejsExt);
+    let path = join(__dirname, this.ejsExt);
     if (!existsSync(path)) {
-      return ''
+      path = join(__dirname, '../../ejs/service.ejs');
     }
     return ejs.compile(readFileSync(path, 'utf8'), { filename: path })(this.entity);
   }

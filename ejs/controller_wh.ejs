@@ -1,0 +1,124 @@
+import { EventResource, EventResourceMethod } from '@c2pkg/eventhub';
+import { IdentifiersDto } from '@midwayjs-plus/common';
+import {
+  ALL,
+  Body,
+  Controller,
+  Del,
+  Fields,
+  File,
+  Get,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  Put,
+} from '@midwayjs/core';
+import { Validate } from '@midwayjs/validate';
+import * as _ from 'lodash';
+import { BaseFileController } from '../../common/controller/baseFileController';
+import { <%= PascalCase %>, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
+import { <%= PascalCase %>Service } from '../service';
+import { GLOBAL_PREFIX } from '../../../global/constants';
+
+@Controller('/<%= slashPath%>', { description: '<%= label %>管理' })
+@EventResource({
+  type: 'http',
+  url: `http://${process.env.C2BWP_API_HOST}:${process.env.C2BWP_HTTP_PORT}${GLOBAL_PREFIX}/<%= slashPath%>`,
+})
+export class <%= PascalCase %>Controller extends BaseFileController {
+
+  @Inject()
+  <%= camelCase %>Service: <%= PascalCase %>Service;
+
+  @Put('/', {
+    description: '创建<%= label %>',
+  })
+  @Validate()
+  async create<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Create<%= PascalCase %>Dto) {
+    const result = await this.<%= camelCase %>Service.create(<%= camelCase %>);
+    this.success(result);
+  }
+
+  @Patch('/', {
+    description: '更新<%= label %>',
+  })
+  @Validate()
+  async update<%= PascalCase %>(@Body(ALL) <%= camelCase %>: Update<%= PascalCase %>Dto) {
+    const result = await this.<%= camelCase %>Service.updateByUid(<%= camelCase %>);
+    this.success(result);
+  }
+
+  @Del('/', {
+    description: '删除<%= label %>',
+  })
+  @Validate()
+  async delete<%= PascalCase %>(@Body() body: IdentifiersDto) {
+    const result = await this.<%= camelCase %>Service.deleteByUid(body.identifiers as string[]);
+    this.success(result);
+  }
+
+  @Post('/list', {
+    description: '<%= label %>列表',
+  })
+  @EventResourceMethod({
+    method: 'POST',
+    path: '/list',
+    querySchema: <%= PascalCase %>.BIZMETA_KEY,
+  })
+  async query<%= PascalCase %>List(@Body(ALL) options: API.ListOptions) {
+    const result = await this.<%= camelCase %>Service.omniQuery(options);
+    this.success(result);
+  }
+
+  @Get('/:uid', {
+    description: '获取<%= label %>',
+  })
+  async get<%= PascalCase %>(@Param('uid') uid: string) {
+    const result = await this.<%= camelCase %>Service.getByUid(uid);
+    this.success(result);
+  }
+
+
+  @Post('/import', {
+    description: '导入<%= label %>',
+  })
+  async import<%= PascalCase %>(
+    @File() file: API.UploadFile,
+    @Fields() fields: { <%= aggrKey %>?: string }
+  ) {
+    const { items, columns, error } = await this.prepareImport(
+      <%= PascalCase %>.BIZMETA_KEY,
+      file
+    );
+    const result = await this.<%= camelCase %>Service.bulkUpsert(
+      items.map(item => ({
+        ..._.omit(item, [
+          'createdDate',
+          'lastUpdatedDate',
+          'createdBy',
+          'lastUpdatedBy',
+        ]),
+      })),
+      fields?.<%= aggrKey %>
+    );
+
+    this.success({ result, columns, error });
+  }
+
+  @Post('/export', {
+    description: '导出<%= label %>',
+  })
+  public async export<%= PascalCase %>(
+    @Body('columns') columns: string[],
+    @Body('filter') filter: API.Filter,
+    @Body('sorter') sorter: Record<string, API.SortOrder>
+  ) {
+    await this.doExport(
+      <%= PascalCase %>.BIZMETA_KEY,
+      this.<%= camelCase %>Service,
+      columns,
+      { filter, sorter, bizUid: filter['<%= aggrKey %>'] as string }
+    );
+  }
+}

@@ -134,7 +134,7 @@ ListCommonProps & {
                 pageSize,
                 columns: ultraColumns.getColumnKeys(),
                 filter,
-                sorter: sorter && Object.keys(sorter).length > 0 ? sorter : { gdsSeqno: 'ascend' },
+                sorter: sorter && Object.keys(sorter).length > 0 ? sorter : undefined,
               });
               return {
                 data: res.result.data,
@@ -144,7 +144,7 @@ ListCommonProps & {
             }}
             toolBarRender={() => [
               <ImportData key="import" onSuccess={() => actionRef.current?.reloadAndRest?.()} />,
-              <ExportData key="export" filter={{ <%= aggrKey %>: props.<%= aggrKey %> }} sorter={{ gdsSeqno: 'ascend' }} />,
+              <ExportData key="export" filter={{ <%= aggrKey %>: props.<%= aggrKey %> }} sorter={{ }} />,
               <Access key="create" accessible={access.canWrite(privileges, contextState)}>
                 <CreateModal
                   title="新增"

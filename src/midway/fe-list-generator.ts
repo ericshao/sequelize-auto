@@ -18,9 +18,9 @@ export class FeListGenerator {
 
   }
   generateText() {
-    const path = join(__dirname, this.ejsExt);
+    let path = join(__dirname, this.ejsExt);
     if (!existsSync(path)) {
-      return ''
+      path = join(__dirname, '../../ejs/fe-list.ejs');
     }
     return ejs.compile(readFileSync(path, 'utf8'), { filename: path })(this.entity);
   }

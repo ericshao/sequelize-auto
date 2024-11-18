@@ -1,0 +1,143 @@
+import { queryAuditLogList } from '@/services/bwp/audit/log';
+import AuditLog from '@/shares/components/AuditLog';
+import { valueTypeMap, ValueTypeMapKey } from '@/shares/components/schema-components';
+import BetaSchemaForm from '@/shares/components/SchemaForm';
+import { ActionMap, renderActions } from '@/shares/components/utils';
+import { useFormState, usePageConfig, usePageParam } from '@/shares/hooks';
+import { SaveOutlined } from '@ant-design/icons';
+import { PageContainer, ProCard, ProFormInstance, ProProvider, TableDropdown } from '@ant-design/pro-components';
+import React, { useContext, useMemo, useRef, useState } from 'react';
+
+import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/<%= moduleName%>/<%= aggrName %>';
+import { ParentContext } from '../<%= aggrName %>.detail';
+import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
+
+
+type <%= PascalCase %>DetailProps = {
+  uid: string;
+  onUpdated?: () => void;
+  onClose?: () => void;
+  insideDrawer?: boolean;
+};
+
+const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) => {
+  // 引用上下文
+  const contextFormValues = useContext(ProProvider);
+  const { contextState, contextRouteKey } = useContext(ParentContext);
+  // 页面参数
+  const { uid } = usePageParam(props);
+  // 页面配置
+  const { access, privileges } = usePageConfig({ contextRouteKey });
+
+  // useRef
+  const formRef = useRef<ProFormInstance<<%= PascalCase %>>>();
+  // 表单状态
+  const {
+    loading,
+    setLoading,
+    formLayout,
+    FormLayoutSegmented,
+    currentValues,
+    setCurrentValues,
+    valuesChanged,
+    setValuesChanged,
+    updateCurrentValues,
+    Reload,
+    ResolveConflictModal,
+  } = useFormState<<%= PascalCase %>>(formRef, get<%= PascalCase %>, update<%= PascalCase %>);
+
+  const [tabActiveKey, setTabActiveKey] = useState('dt');
+
+  const actions: ActionMap = useMemo(() => {
+    return {
+      save: {
+        text: '保存',
+        icon: <SaveOutlined />,
+        type: 'primary',
+        disabled: !valuesChanged,
+        onClick: () => formRef.current?.submit(),
+        accessible: access.canWrite(privileges),
+      },
+    };
+  }, [valuesChanged, access, privileges, formRef]);
+
+  return (
+      <PageContainer
+        ghost
+        header={{
+          title: currentValues?.uid,
+          onBack: props.insideDrawer ? () => props.onClose?.() : () => history.back(),
+          breadcrumb: {
+            items: [
+              {
+                path: '/',
+                title: '<%= label %>',
+              },
+            ],
+          },
+          style: { zIndex: 10 },
+        }}
+        tabList={[
+          {
+            tab: '表体信息',
+            key: 'dt',
+            children: (          <ProProvider.Provider
+            value={{
+              ...contextFormValues,
+              valueTypeMap,
+            }}
+          >
+            <ProCard bordered>
+              <BetaSchemaForm<<%= PascalCase %>, ValueTypeMapKey>
+                loading={loading}
+                layout={formLayout}
+                layoutType="Form"
+                rowProps={{
+                  gutter: [16, 16],
+                }}
+                grid
+                columns={gen<%= PascalCase %>FormColumns({
+                  uid,
+                })}
+                formRef={formRef}
+                request={async () => {
+                  const res = await get<%= PascalCase %>(uid!);
+                  setCurrentValues(res.result!);
+                  setLoading(false);
+                  return res.result!;
+                }}
+                //** 允许字段更新为null */
+                omitNil={false}
+                onFinish={async (values: any) => {
+                  updateCurrentValues(values);
+                }}
+                onValuesChange={async (changedValues: any) => {
+                  setValuesChanged(true);
+                }}
+                submitter={false}
+              />
+            </ProCard>
+          </ProProvider.Provider>)
+          },
+          {
+            tab: '操作记录',
+            key: 'auditLog',
+            children: (
+              <ProCard bordered>
+                <AuditLog queryFn={queryAuditLogList} bizUid={uid!} reload={tabActiveKey === 'auditLog'} />
+              </ProCard>
+            )
+          },
+        ]}
+        tabActiveKey={tabActiveKey}
+        onTabChange={(key: string) => setTabActiveKey(key)}
+        extra={[
+          ...renderActions(actions, contextState),
+          <Reload key="reload" />,
+          <ResolveConflictModal key="resolveConflict" />,
+          <TableDropdown key="dropdown" menus={[FormLayoutSegmented]} onSelect={(key: string) => {}} />,
+        ]}
+      />
+  );
+};
+export default <%= PascalCase %>Detail;

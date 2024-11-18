@@ -1,43 +1,29 @@
-import { AuditLog } from '@c2pkg/auditlog';
-import { TenancyService } from '@c2pkg/multi-tenancy';
+import { Provide, Scope, ScopeEnum } from '@midwayjs/core';
 import {
   baseError,
   CtxTransactional,
   CtxTXParticipant,
   omitNil,
 } from '@midwayjs-plus/common';
-import { Inject, Provide, Scope, ScopeEnum } from '@midwayjs/core';
-import * as _ from 'lodash';
+import { TraceSpan } from '@midwayjs-plus/otel';
+import { TenancyService } from '@c2pkg/multi-tenancy';
+import { AuditLog } from '@c2pkg/auditlog';
 import { nanoid } from 'nanoid';
-import { FindAttributeOptions } from 'sequelize';
+import * as _ from 'lodash';
+import { concurrentLimit20 } from '../../../util';
 import { <%= PascalCase %>Model } from '../model';
 import { <%= PascalCase %>, Create<%= PascalCase %>Dto, Update<%= PascalCase %>Dto } from '../entity';
-import { ConversionService } from '../../common/service';
-import { classifySyncDtos, concurrentLimit10 } from '../../../util';
+
 
 @Provide()
 @Scope(ScopeEnum.Request, { allowDowngrade: true })
 @CtxTXParticipant()
 export class <%= PascalCase %>Service extends TenancyService {
-  @Inject()
-  conversionService: ConversionService;
-
   @CtxTransactional()
-  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'res.uid', 'create')
   public async create(createDto: Create<%= PascalCase %>Dto): Promise<<%= PascalCase %>> {
-    const uidProp = '<%= aggrKey %>';
-    //if (createDto.incUid) {
-    //  uidProp = 'incUid';
-    //}
-
-    const maxGdsSeqno = await this.max('gdsSeqno', {
-      [uidProp]: createDto[uidProp],
-    });
     const <%= camelCase %> = await <%= PascalCase %>Model.schema(this.getTenantSchema()).create(
       {
         ...createDto,
-        ...this.conversionService.transformCurrAndCntryCode(createDto),
-        gdsSeqno: createDto.gdsSeqno ?? maxGdsSeqno + 1,
         createdBy: createDto.createdBy ?? this.getUserId(),
         tenantId: this.getTenantId(),
       },
@@ -51,18 +37,11 @@ export class <%= PascalCase %>Service extends TenancyService {
   @CtxTransactional()
   public async bulkCreate(
     createDtos: Create<%= PascalCase %>Dto[],
-    aggrUid: string,
-    options?: {
-      warehouseCode?: string;
-      aggrUidProp?: string;
-    }
+    <%= aggrKey %>?: string
   ): Promise<<%= PascalCase %>[]> {
-    const aggrUidProp = options?.aggrUidProp ?? '<%= aggrKey %>';
     const <%= camelCase %>s = createDtos.map(createDto => ({
       ...createDto,
-      ...this.conversionService.transformCurrAndCntryCode(createDto),
-      [aggrUidProp]: aggrUid,
-      warehouseCode: options?.warehouseCode,
+      <%= aggrKey %>,
       createdBy: createDto.createdBy ?? this.getUserId(),
       tenantId: this.getTenantId(),
       uid: this.generateUid(),
@@ -75,14 +54,14 @@ export class <%= PascalCase %>Service extends TenancyService {
       }
     );
     return <%= camelCase %>s.map(
-      entity => _.omit(entity, ['id', 'tenantId']) as <%= PascalCase %>
+      entity => _.omit(entity, 'tenantId') as <%= PascalCase %>
     );
   }
 
   @CtxTransactional()
   public async bulkUpsert(
     upsertDtos: Partial<Create<%= PascalCase %>Dto>[],
-      <%= aggrKey %>?: string
+    <%= aggrKey %>?: string
   ): Promise<{ total: number; created: number; updated: number }> {
     const result = {
       total: upsertDtos.length,
@@ -91,13 +70,12 @@ export class <%= PascalCase %>Service extends TenancyService {
     };
     await Promise.all(
       upsertDtos.map(async upsertDto => {
-        return await concurrentLimit10(async () => {
+        return await concurrentLimit20(async () => {
           const [, created] = await <%= PascalCase %>Model.schema(
             this.getTenantSchema()
           ).upsert(
             {
               ...upsertDto,
-              ...this.conversionService.transformCurrAndCntryCode(upsertDto),
               <%= aggrKey %>,
               uid: upsertDto.uid || this.generateUid(),
               tenantId: this.getTenantId(),
@@ -117,89 +95,18 @@ export class <%= PascalCase %>Service extends TenancyService {
     return result;
   }
 
+  @TraceSpan()
   @CtxTransactional()
-  @AuditLog(
-    <%= PascalCase %>.BIZMETA_KEY,
-    'req.Update<%= PascalCase %>Dto.identifiers',
-    'update'
-  )
+  @AuditLog(<%= PascalCase %>.BIZMETA_KEY, 'req.Update<%= PascalCase %>Dto.identifiers', 'update')
   public async updateByUid(
     updateDto: Update<%= PascalCase %>Dto
   ): Promise<Record<string, number>> {
     const updated = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
-      {
-        ..._.omit(updateDto, ['id', 'uid', 'createdDate', 'tenantId']),
-        ...this.conversionService.transformCurrAndCntryCode(updateDto),
-        lastUpdatedBy: this.getUserId(),
-      },
-      {
+      { ..._.omit(updateDto, ['id', 'uid', 'createdDate', 'tenantId']), lastUpdatedBy: this.getUserId() }, {
         where: this.generateWhereClause(updateDto),
         transaction: this.getTransaction(),
-      }
-    );
+    });
     return { updated: updated[0] };
-  }
-
-  @CtxTransactional()
-  public async updateByAggrUid(
-    updateDto: Update<%= PascalCase %>Dto,
-    aggrUid: string,
-    aggrUidProp = '<%= aggrKey %>'
-  ): Promise<Record<string, number>> {
-    const updated = await <%= PascalCase %>Model.schema(this.getTenantSchema()).update(
-      {
-        ..._.omit(updateDto, ['id', 'uid', 'createdDate', 'tenantId']),
-        ...this.conversionService.transformCurrAndCntryCode(updateDto),
-        lastUpdatedBy: this.getUserId(),
-      },
-      {
-        where: { [aggrUidProp]: aggrUid },
-        transaction: this.getTransaction(),
-      }
-    );
-    return { updated: updated[0] };
-  }
-
-  @CtxTransactional()
-  public async syncByAggrUid(
-    <%= aggrKey %>: string,
-    syncDtos: <%= PascalCase %>[],
-    forced?: boolean
-  ): Promise<Record<string, number>> {
-    let deleted = 0;
-    let created = 0;
-    let updated = 0;
-    if (!syncDtos) return { deleted, created, updated };
-
-    const { toDeleteUids, toCreateDtos, toUpdateDtos } =
-      classifySyncDtos(syncDtos, forced);
-
-    if (forced) {
-      await this.deleteByAggrUid([<%= aggrKey %>]);
-    }
-
-      if (toDeleteUids.length > 0) {
-        const deleteRes = await this.deleteByUid(toDeleteUids);
-        deleted = deleteRes.deleted;
-      }
-
-    if (toCreateDtos.length > 0) {
-      const createdItems = await this.bulkCreate(toCreateDtos, <%= aggrKey %>);
-      created = createdItems.length;
-    }
-
-    if (toUpdateDtos.length > 0) {
-      const updatedRes = await Promise.all(
-        toUpdateDtos.map(dto =>
-          concurrentLimit10(() =>
-            this.updateByUid(<%= PascalCase %>.getUpdateDto(dto))
-          )
-        )
-      );
-      updated = updatedRes.reduce((acc, cur) => acc + cur.updated, 0);
-    }
-
-    return { deleted, created, updated };
   }
 
   @CtxTransactional()
@@ -251,7 +158,7 @@ export class <%= PascalCase %>Service extends TenancyService {
   ): Promise<Record<string, number>> {
     const deleted = await <%= PascalCase %>Model.schema(this.getTenantSchema()).destroy({
       where: {
-        id: identifiers,
+        uid: identifiers,
         tenantId: this.getTenantId(),
       },
       transaction: this.getTransaction(),
@@ -261,14 +168,13 @@ export class <%= PascalCase %>Service extends TenancyService {
 
   @CtxTransactional()
   public async deleteByAggrUid(
-    identifiers: string[],
-    aggrUidProp = '<%= aggrKey %>'
+    identifiers: string[]
   ): Promise<Record<string, number>> {
     const deleted = await <%= PascalCase %>Model.schema(
       this.getTenantSchema()
     ).destroy({
       where: {
-        [aggrUidProp]: identifiers,
+        <%= aggrKey %>: identifiers,
       },
       transaction: this.getTransaction(),
     });
@@ -282,7 +188,11 @@ export class <%= PascalCase %>Service extends TenancyService {
       return {
         ...listResult,
         data: listResult.data.map(
-          item => _.omit(item, ['id', 'tenantId']) as <%= PascalCase %>
+          entity =>
+          _.omit(options?.omitNil ? omitNil(entity) : entity, [
+            'id',
+            'tenantId',
+          ]) as <%= PascalCase %>
         ),
       };
   }
@@ -298,7 +208,10 @@ export class <%= PascalCase %>Service extends TenancyService {
       transaction: this.getTransaction(),
     });
     if (!entity) throw baseError.EntityNotExistsError;
-    return _.omit(entity.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>;
+    return _.omit(
+      options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(),
+      ['id', 'tenantId']
+    ) as <%= PascalCase %>;
   }
 
   @CtxTransactional()
@@ -312,10 +225,9 @@ export class <%= PascalCase %>Service extends TenancyService {
     ).findAll({
       ...this.generateFindOptions(options),
       where: { [aggrUidProp]: aggrUid },
-      order: [['gdsSeqno', 'ASC']],
       transaction: this.getTransaction(),
     });
-    return <%= camelCase %>s.map(entity => _.omit(entity.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>);
+    return <%= camelCase %>s.map(entity => _.omit(options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(), ['id', 'tenantId']) as <%= PascalCase %>);
   }
 
   @CtxTransactional()
@@ -323,13 +235,13 @@ export class <%= PascalCase %>Service extends TenancyService {
     filter: API.Filter,
     options: API.QueryOptions = { omitNil: true }
   ): Promise<<%= PascalCase %>> {
-    const entity = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne(
-      {
-        ...this.generateFindOptions(options),
-        where: this.injectTenantId(filter),
-        transaction: this.getTransaction(),
-      }
-    );
+    const entity = await <%= PascalCase %>Model.schema(
+      this.getTenantSchema()
+    ).findOne({
+    ...this.generateFindOptions(options),
+      where: this.injectTenantId(filter),
+      transaction: this.getTransaction(),
+    });
     if (entity) {
       return _.omit(
         options?.omitNil ? omitNil(entity.toJSON()) : entity.toJSON(),
@@ -346,7 +258,7 @@ export class <%= PascalCase %>Service extends TenancyService {
     const entities = await <%= PascalCase %>Model.schema(
       this.getTenantSchema()
     ).findAll({
-      ...this.generateFindOptions(options),
+    ...this.generateFindOptions(options),
       where: this.injectTenantId(filter),
       transaction: this.getTransaction(),
     });
@@ -356,53 +268,6 @@ export class <%= PascalCase %>Service extends TenancyService {
           'id',
         ]) as <%= PascalCase %>
     );
-  }
-
-  @CtxTransactional()
-  public async max(field: string, filter: API.Filter): Promise<number> {
-    return <%= PascalCase %>Model.schema(this.getTenantSchema()).max(field, {
-      where: this.injectTenantId(filter),
-      transaction: this.getTransaction(),
-    });
-  }
-
-  @CtxTransactional()
-  public async summary(filter: API.Filter): Promise<any> {
-    const sequelize = <%= PascalCase %>Model.sequelize;
-    let attributes: FindAttributeOptions = [
-      'netWt',
-      'grossWt',
-      'lawfQty',
-      'dclQty',
-    ].map(column => [
-      sequelize.fn('sum', sequelize.col(_.snakeCase(column))),
-      `sum${_.upperFirst(column)}`,
-    ]);
-
-    const res1 = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findOne({
-      attributes,
-      where: this.injectTenantId(filter),
-      transaction: this.getTransaction(),
-    });
-
-    attributes = [
-      [
-        sequelize.fn('sum', sequelize.col(_.snakeCase('dclTotalAmt'))),
-        'dclTotalAmt',
-      ],
-      'dclCurrcd',
-    ];
-    const res2 = await <%= PascalCase %>Model.schema(this.getTenantSchema()).findAll({
-      attributes,
-      where: this.injectTenantId(filter),
-      group: ['dclCurrcd'],
-      transaction: this.getTransaction(),
-    });
-
-    return {
-      ...res1.toJSON(),
-      sumDclTotalAmt: res2.map(item => item.toJSON()),
-    };
   }
 
   generateUid(): string {
