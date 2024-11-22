@@ -126,7 +126,7 @@ export class DtoGenerator {
 
         if (this.options.extendMode === 'entity') {
           const dates = dateFields.map(f => `'${f}'`).join(', ');
-          str += `  constructor(bsc?: BillDirBsc) {
+          str += `  constructor(bsc?: #TABLE#) {
     super();
     if (!bsc) return;
 

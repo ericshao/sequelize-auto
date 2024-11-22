@@ -6,11 +6,14 @@ import React, { useContext, useEffect, useRef } from 'react';
 import { WarehouseContext } from '@/pages';
 import { getClassNameByStateCode } from '@/utils';
 import { 
+  declare<%= PascalCase %>,
   delete<%= PascalCase %>, 
   export<%= PascalCase %>,
+  get<%= PascalCase %>Detail,
   query<%= PascalCase %>List,
   recover<%= PascalCase %>, 
   recycle<%= PascalCase %>, 
+  save<%= PascalCase %>,
   transit<%= PascalCase %>ToTargetState 
 } from '@/services/<%= moduleName%>/<%= aggrName %>';
 import UltraTable from '@/shares/components/UltraTable';
@@ -81,6 +84,7 @@ const <%= PascalCase %>List: React.FC<
         warehouseCode,
         embedded: props.embedded,
         onRefresh: () => actionRef.current?.reload(),
+        getDetailFn: get<%= PascalCase %>Detail,
       },
       onDelete: (records: <%= PascalCase %>[]) => delete<%= PascalCase %>(records.map((record) => record.uid)),
     },
@@ -106,6 +110,11 @@ const <%= PascalCase %>List: React.FC<
       insideDrawer 
     />,
   );
+
+  const { LgBatchSaveModal, LgBatchDeclareModal } = useLgTransmission({
+    saveFn: save<%= PascalCase %>,
+    declareFn: declare<%= PascalCase %>,
+  });
 
   const { BatchRecycleModal, BatchRecoverModal } = useRecycleBin(recycle<%= PascalCase %>, recover<%= PascalCase %>);
 
@@ -212,6 +221,24 @@ const <%= PascalCase %>List: React.FC<
                 return (
                   <Space size={8}>
                     <span>已选 {selectedRowKeys.length} 项</span>
+                    <Access accessible={!!currentState?.actions.includes('save<%= PascalCase %>') && !recycled}>
+                      <LgBatchSaveModal
+                        selectedRows={selectedRows}
+                        onSuccess={() => {
+                          actionRef.current?.reload();
+                          onCleanSelected();
+                        }}
+                      />
+                    </Access>
+                    <Access accessible={!!currentState?.actions.includes('declare<%= PascalCase %>') && !recycled}>
+                      <LgBatchDeclareModal
+                        selectedRows={selectedRows}
+                        onSuccess={() => {
+                          actionRef.current?.reload();
+                          onCleanSelected();
+                        }}
+                      />
+                    </Access>
                     <Access accessible={!!currentState?.actions.includes('recycle<%= PascalCase %>') && !recycled}>
                       <BatchRecycleModal
                         selectedRows={selectedRows}

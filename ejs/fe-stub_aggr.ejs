@@ -37,7 +37,7 @@ export async function recover<%= PascalCase %>Bsc(uid: string) {
 }
 
 export async function save<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
-  return request.put<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/save', {
+  return request.put<API.BaseResponse>('/<%= slashPath %>/save', {
     data: {
       uid,
       chnUid,
@@ -46,7 +46,7 @@ export async function save<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
 }
 
 export async function deleteSaved<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
-  return request.delete<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/save', {
+  return request.delete<API.BaseResponse>('/<%= slashPath %>/save', {
     data: {
       uid,
       chnUid,
@@ -55,7 +55,7 @@ export async function deleteSaved<%= PascalCase %>Bsc(uid: string[], chnUid: str
 }
 
 export async function declare<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
-  return request.post<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/declare', {
+  return request.post<API.BaseResponse>('/<%= slashPath %>/declare', {
     data: {
       uid,
       chnUid,
@@ -64,7 +64,7 @@ export async function declare<%= PascalCase %>Bsc(uid: string[], chnUid: string)
 }
 
 export async function revoke<%= PascalCase %>Bsc(uid: string[], chnUid: string) {
-  return request.post<API.BaseResponse<API.UpdateResult>>('/<%= slashPath %>/revoke', {
+  return request.post<API.BaseResponse>('/<%= slashPath %>/revoke', {
     data: {
       uid,
       chnUid,

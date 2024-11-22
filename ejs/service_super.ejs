@@ -290,7 +290,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
     stateCode?: string;
     targetStateCode?: string;
   }> {
-    if (!<%= aggrKey%> || !<%= aggrKey%>.startsWith(<%= PascalCase %>Bsc.UID_PREFIX)) {
+    if (!<%= aggrKey%> || !<%= aggrKey%>.startsWith('inv')) {
       return { success: false };
     }
 
@@ -411,6 +411,7 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
 
   @CtxTransactional()
   public async getExecutable<%= PascalCase %>Bsc(
+    stateMachine: <%= PascalCase %>StateMachine,
     actionCode: string,
     <%= aggrKey%>s?: string[],
     options?: API.QueryOptions
@@ -419,7 +420,6 @@ export class <%= PascalCase %>Service extends <%= PascalCase %>BscService {
     notAllowedUids?: string[];
     executableStateCodes?: string[];
   }> {
-    const stateMachine = await this.getStateMachine();
     const executableStateCodes = stateMachine
       .getStatesCanExecute(actionCode)
       .map(({ stateCode }) => stateCode);

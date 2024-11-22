@@ -6,6 +6,10 @@ export enum <%= PascalCase %>EventEnum {
   CANCELLED = 'bwp:lingang:<%= PascalCase %>:Lifecycle:Cancelled',
   DESTROYED = 'bwp:lingang:<%= PascalCase %>:Lifecycle:Destroyed',
 
+  CUS_SAVED = 'bwp:lingang:<%= PascalCase %>:Approval:CusSaved', // 暂存成功事件
+  CUS_SAVE_FAILED = 'bwp:lingang:<%= PascalCase %>:Approval:CusSaveFailed', // 暂存失败事件
+  CUS_SAVE_DELETED = 'bwp:lingang:<%= PascalCase %>:Approval:CusSaveDeleted', // 暂存删除事件
+
   CUS_DECLARED = 'bwp:lingang:<%= PascalCase %>:Approval:CusDeclared', // 入库成功事件
   CUS_DECLARE_FAILED = 'bwp:lingang:<%= PascalCase %>:Approval:CusDeclareFailed', // 入库失败事件
   CUS_APPROVED = 'bwp:lingang:<%= PascalCase %>:Approval:CusApproved', // 审批通过事件
@@ -25,6 +29,7 @@ export enum <%= PascalCase %>EventEnum {
 export class <%= PascalCase %>Event<
   T extends Partial<<%= PascalCase %>Bsc>
 > extends EventHubEvent<T> {
+  ieTypecd: string;
   optStatus?: string;
   constructor(
     type: <%= PascalCase %>EventEnum,
@@ -36,6 +41,7 @@ export class <%= PascalCase %>Event<
       createdBy?: number;
       requestId?: string;
       optStatus?: string;
+      ieTypecd?: string;
     }
   ) {
     super({
@@ -45,10 +51,11 @@ export class <%= PascalCase %>Event<
       data,
       subject: data.uid,
       bizmetaKey: <%= PascalCase %>Bsc.BIZMETA_KEY,
+      flowuid: options?.flowuid,
       createdBy: options?.createdBy,
       requestId: options?.requestId,
     });
-    this.flowuid = options?.flowuid;
+    this.ieTypecd = options?.ieTypecd;
     this.optStatus = options?.optStatus;
   }
   public setTrigger(actionCode: string) {
@@ -68,6 +75,7 @@ export class <%= PascalCase %>Event<
 export class <%= PascalCase %>CreatedEvent extends <%= PascalCase %>Event<<%= PascalCase %>Bsc> {
   constructor(data: <%= PascalCase %>Bsc, flowuid?: string) {
     super(<%= PascalCase %>EventEnum.CREATED, data, {
+      ieTypecd: data.ieTypecd,
       flowuid,
       createdBy: data.createdBy,
     });
@@ -82,6 +90,7 @@ export class <%= PascalCase %>CreatedEvent extends <%= PascalCase %>Event<<%= Pa
 export class <%= PascalCase %>CancelledEvent extends <%= PascalCase %>Event<Partial<<%= PascalCase %>Bsc>> {
   constructor(data: Partial<<%= PascalCase %>Bsc>, flowuid?: string) {
     super(<%= PascalCase %>EventEnum.CANCELLED, data, {
+      ieTypecd: data.ieTypecd,
       flowuid,
     });
   }
@@ -95,8 +104,47 @@ export class <%= PascalCase %>CancelledEvent extends <%= PascalCase %>Event<Part
 export class <%= PascalCase %>DestroyedEvent extends <%= PascalCase %>Event<Partial<<%= PascalCase %>Bsc>> {
   constructor(data: Partial<<%= PascalCase %>Bsc>, flowuid?: string) {
     super(<%= PascalCase %>EventEnum.DESTROYED, data, {
+      ieTypecd: data.ieTypecd,
       flowuid,
     });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>暂存成功事件',
+  type: <%= PascalCase %>EventEnum.CUS_SAVED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>CusSavedEvent extends <%= PascalCase %>Event<Partial<<%= PascalCase %>Bsc>> {
+  constructor(data?: Partial<<%= PascalCase %>Bsc>) {
+    super(<%= PascalCase %>EventEnum.CUS_SAVED, data, { ieTypecd: data.ieTypecd });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>暂存失败事件',
+  type: <%= PascalCase %>EventEnum.CUS_SAVE_FAILED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>CusSaveFailedEvent extends <%= PascalCase %>Event<
+  Partial<<%= PascalCase %>Bsc>
+> {
+  constructor(data?: Partial<<%= PascalCase %>Bsc>) {
+    super(<%= PascalCase %>EventEnum.CUS_SAVE_FAILED, data, { ieTypecd: data.ieTypecd });
+  }
+}
+
+@EventMetadata({
+  name: '<%= label %>暂存删除事件',
+  type: <%= PascalCase %>EventEnum.CUS_SAVE_DELETED,
+  dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
+})
+export class <%= PascalCase %>CusSaveDeletedEvent extends <%= PascalCase %>Event<
+  Partial<<%= PascalCase %>Bsc>
+> {
+  constructor(data?: Partial<<%= PascalCase %>Bsc>) {
+    data.optStatus = '99';
+    super(<%= PascalCase %>EventEnum.CUS_SAVE_DELETED, data, { ieTypecd: data.ieTypecd });
   }
 }
 
@@ -106,8 +154,11 @@ export class <%= PascalCase %>DestroyedEvent extends <%= PascalCase %>Event<Part
   dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
 })
 export class <%= PascalCase %>CusDeclaredEvent extends <%= PascalCase %>Event<Partial<<%= PascalCase %>Bsc>> {
-  constructor(data?: Partial<<%= PascalCase %>Bsc>) {
-    super(<%= PascalCase %>EventEnum.CUS_DECLARED, data);
+  constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
+    super(<%= PascalCase %>EventEnum.CUS_DECLARED, data, {
+      optStatus,
+      ieTypecd: data.ieTypecd,
+    });
   }
 }
 
@@ -119,8 +170,11 @@ export class <%= PascalCase %>CusDeclaredEvent extends <%= PascalCase %>Event<Pa
 export class <%= PascalCase %>CusDeclareFailedEvent extends <%= PascalCase %>Event<
   Partial<<%= PascalCase %>Bsc>
 > {
-  constructor(data?: Partial<<%= PascalCase %>Bsc>) {
-    super(<%= PascalCase %>EventEnum.CUS_DECLARE_FAILED, data);
+  constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
+    super(<%= PascalCase %>EventEnum.CUS_DECLARE_FAILED, data, {
+      optStatus,
+      ieTypecd: data.ieTypecd,
+    });
   }
 }
 
@@ -129,11 +183,14 @@ export class <%= PascalCase %>CusDeclareFailedEvent extends <%= PascalCase %>Eve
   type: <%= PascalCase %>EventEnum.CUS_APPROVED,
   dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
 })
-export class <%= PascalCase %>BscCusApprovedEvent extends <%= PascalCase %>Event<
+export class <%= PascalCase %>CusApprovedEvent extends <%= PascalCase %>Event<
   Partial<<%= PascalCase %>Bsc>
 > {
   constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
-    super(<%= PascalCase %>EventEnum.CUS_APPROVED, data, { optStatus });
+    super(<%= PascalCase %>EventEnum.CUS_APPROVED, data, {
+      optStatus,
+      ieTypecd: data.ieTypecd,
+    });
   }
 }
 
@@ -142,11 +199,14 @@ export class <%= PascalCase %>BscCusApprovedEvent extends <%= PascalCase %>Event
   type: <%= PascalCase %>EventEnum.CUS_REJECTED,
   dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
 })
-export class <%= PascalCase %>BscCusRejectedEvent extends <%= PascalCase %>Event<
+export class <%= PascalCase %>CusRejectedEvent extends <%= PascalCase %>Event<
   Partial<<%= PascalCase %>Bsc>
 > {
   constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
-    super(<%= PascalCase %>EventEnum.CUS_REJECTED, data, { optStatus });
+    super(<%= PascalCase %>EventEnum.CUS_REJECTED, data, {
+      optStatus,
+      ieTypecd: data.ieTypecd,
+    });
   }
 }
 
@@ -155,11 +215,14 @@ export class <%= PascalCase %>BscCusRejectedEvent extends <%= PascalCase %>Event
   type: <%= PascalCase %>EventEnum.CUS_SUSPENDED,
   dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
 })
-export class <%= PascalCase %>BscCusSuspendedEvent extends <%= PascalCase %>Event<
+export class <%= PascalCase %>CusSuspendedEvent extends <%= PascalCase %>Event<
   Partial<<%= PascalCase %>Bsc>
 > {
   constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
-    super(<%= PascalCase %>EventEnum.CUS_SUSPENDED, data, { optStatus });
+    super(<%= PascalCase %>EventEnum.CUS_SUSPENDED, data, {
+      optStatus,
+      ieTypecd: data.ieTypecd,
+    });
   }
 }
 
@@ -168,11 +231,14 @@ export class <%= PascalCase %>BscCusSuspendedEvent extends <%= PascalCase %>Even
   type: <%= PascalCase %>EventEnum.CUS_CONFIRMED,
   dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
 })
-export class <%= PascalCase %>BscCusConfirmedEvent extends <%= PascalCase %>Event<
+export class <%= PascalCase %>CusConfirmedEvent extends <%= PascalCase %>Event<
   Partial<<%= PascalCase %>Bsc>
 > {
   constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
-    super(<%= PascalCase %>EventEnum.CUS_CONFIRMED, data, { optStatus });
+    super(<%= PascalCase %>EventEnum.CUS_CONFIRMED, data, {
+      optStatus,
+      ieTypecd: data.ieTypecd,
+    });
   }
 }
 
@@ -181,11 +247,14 @@ export class <%= PascalCase %>BscCusConfirmedEvent extends <%= PascalCase %>Even
   type: <%= PascalCase %>EventEnum.CUS_REVOKE_APPLIED,
   dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
 })
-export class <%= PascalCase %>BscCusRevokeAppliedEvent extends <%= PascalCase %>Event<
+export class <%= PascalCase %>CusRevokeAppliedEvent extends <%= PascalCase %>Event<
   Partial<<%= PascalCase %>Bsc>
 > {
   constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
-    super(<%= PascalCase %>EventEnum.CUS_REVOKE_APPLIED, data, { optStatus });
+    super(<%= PascalCase %>EventEnum.CUS_REVOKE_APPLIED, data, {
+      optStatus,
+      ieTypecd: data.ieTypecd,
+    });
   }
 }
 
@@ -194,11 +263,14 @@ export class <%= PascalCase %>BscCusRevokeAppliedEvent extends <%= PascalCase %>
   type: <%= PascalCase %>EventEnum.CUS_REVOKED,
   dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
 })
-export class <%= PascalCase %>BscCusRevokedEvent extends <%= PascalCase %>Event<
+export class <%= PascalCase %>CusRevokedEvent extends <%= PascalCase %>Event<
   Partial<<%= PascalCase %>Bsc>
 > {
   constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
-    super(<%= PascalCase %>EventEnum.CUS_REVOKED, data, { optStatus });
+    super(<%= PascalCase %>EventEnum.CUS_REVOKED, data, {
+      optStatus,
+      ieTypecd: data.ieTypecd,
+    });
   }
 }
 
@@ -207,10 +279,13 @@ export class <%= PascalCase %>BscCusRevokedEvent extends <%= PascalCase %>Event<
   type: <%= PascalCase %>EventEnum.CUS_DELETED,
   dataschema: <%= PascalCase %>Bsc.BIZMETA_KEY,
 })
-export class <%= PascalCase %>BscCusDeletedEvent extends <%= PascalCase %>Event<
+export class <%= PascalCase %>CusDeletedEvent extends <%= PascalCase %>Event<
   Partial<<%= PascalCase %>Bsc>
 > {
   constructor(data: Partial<<%= PascalCase %>Bsc>, optStatus: string) {
-    super(<%= PascalCase %>EventEnum.CUS_DELETED, data, { optStatus });
+    super(<%= PascalCase %>EventEnum.CUS_DELETED, data, {
+      optStatus,
+      ieTypecd: data.ieTypecd,
+    });
   }
 }

@@ -1,7 +1,13 @@
-import { StandardState, StatusType } from '@c2pkg/statemachine';
+import {
+  StandardState,
+  StandardTransition,
+  StatusType,
+} from '@c2pkg/statemachine';
 import { Init, Provide, Scope, ScopeEnum } from '@midwayjs/core';
 import { <%= PascalCase %>Bsc } from '../entity';
 import { LgCommonStateMachine } from './lgCommonStatemachine';
+import { LgCommonStateEnum } from './lgCommonState.enum';
+import { <%= PascalCase %>EventEnum } from '../event/<%= camelCase %>.event';
 
 export enum <%= PascalCase %>StateEnum {}
 
@@ -43,11 +49,61 @@ export class <%= PascalCase %>StateMachine extends LgCommonStateMachine {
       'save<%= PascalCase %>Bsc',
     ]);
 
+    this.cancelledState.addActions(['recycle<%= PascalCase %>Bsc']);
+
     this.cusSavedState.addActions([
+      'update<%= PascalCase %>Bsc',
+      'save<%= PascalCase %>Bsc',
       'deleteSaved<%= PascalCase %>Bsc',
       'declare<%= PascalCase %>Bsc',
     ]);
+    this.cusSavedState.addTransitions([
+      new StandardTransition(
+        LgCommonStateEnum.CUS_SAVED,
+        LgCommonStateEnum.CREATED,
+        <%= PascalCase %>EventEnum.CUS_SAVE_DELETED
+      ),
+      new StandardTransition(
+        LgCommonStateEnum.CUS_SAVED,
+        LgCommonStateEnum.CUS_DECLARED,
+        <%= PascalCase %>EventEnum.CUS_DECLARED
+      ),
+      new StandardTransition(
+        LgCommonStateEnum.CUS_SAVED,
+        LgCommonStateEnum.CUS_DECLARE_FAILED,
+        <%= PascalCase %>EventEnum.CUS_DECLARE_FAILED
+      ),
+      new StandardTransition(
+        LgCommonStateEnum.CUS_SAVED,
+        LgCommonStateEnum.CUS_APPROVED,
+        <%= PascalCase %>EventEnum.CUS_APPROVED
+      ),
+      new StandardTransition(
+        LgCommonStateEnum.CUS_SAVED,
+        LgCommonStateEnum.CUS_REJECTED,
+        <%= PascalCase %>EventEnum.CUS_REJECTED
+      ),
+    ]);
+
+    this.cusSaveFailedState.addActions([
+      'update<%= PascalCase %>Bsc',
+      'recycle<%= PascalCase %>Bsc',
+      'save<%= PascalCase %>Bsc',
+    ]);
 
     this.cusDeclaredState.addActions(['revoke<%= PascalCase %>Bsc']);
+    this.cusDeclaredState.addTransitions([
+      new StandardTransition(
+        LgCommonStateEnum.CUS_DECLARED,
+        LgCommonStateEnum.CUS_APPROVED,
+        <%= PascalCase %>EventEnum.CUS_APPROVED
+      ),
+      new StandardTransition(
+        LgCommonStateEnum.CUS_DECLARED,
+        LgCommonStateEnum.CUS_REJECTED,
+        <%= PascalCase %>EventEnum.CUS_REJECTED
+      ),
+    ]);
+
   }
 }

@@ -27,6 +27,9 @@ export class <%= PascalCase %>Controller extends BaseController {
   @Inject()
   <%= camelCase %>Service: <%= PascalCase %>Service;
 
+  @Inject()
+  <%= camelCase %>SuperviseService: <%= PascalCase %>SuperviseService;
+
   @Put('/', {
     description: '创建完整<%= label %>',
   })
@@ -102,7 +105,11 @@ export class <%= PascalCase %>Controller extends BaseController {
     @Body('uid') uid: string[],
     @Body('chnUid') chnUid: string,
   ) {
-
+    const result = await this.<%= camelCase %>SuperviseService.save<%= PascalCase %>Bsc(
+      uid,
+      chnUid
+    );
+    this.success(result);
   }
 
   @Del('/save', {
@@ -113,7 +120,11 @@ export class <%= PascalCase %>Controller extends BaseController {
     @Body('uid') uid: string[],
     @Body('chnUid') chnUid: string,
   ) {
-
+    const result = await this.<%= camelCase %>SuperviseService.deleteSaved<%= PascalCase %>Bsc(
+      uid,
+      chnUid
+    );
+    this.success(result);
   }
 
   @Post('/declare', {
@@ -124,7 +135,11 @@ export class <%= PascalCase %>Controller extends BaseController {
     @Body('uid') uid: string[],
     @Body('chnUid') chnUid: string,
   ) {
-
+    const result = await this.<%= camelCase %>SuperviseService.declare<%= PascalCase %>Bsc(
+      uid,
+      chnUid
+    );
+    this.success(result);
   }
 
 
@@ -136,6 +151,75 @@ export class <%= PascalCase %>Controller extends BaseController {
     @Body('uid') uid: string[],
     @Body('chnUid') chnUid: string,
   ) {
+    const result = await this.<%= camelCase %>SuperviseService.revoke<%= PascalCase %>Bsc(
+      uid,
+      chnUid
+    );
+    this.success(result);
+  }
 
+  @Post('/detail', {
+    description: '获取<%= label %>详情',
+  })
+  @SendPrivilege()
+  async get<%= PascalCase %>BscDetail(@Body('uid') uid: string) {
+    const result = await this.<%= camelCase %>SuperviseService.get<%= PascalCase %>BscDetail(uid);
+    this.success(result);
+  }
+
+  @Post('/getList', {
+    description: '查询<%= label %>列表',
+  })
+  @SendPrivilege()
+  async get<%= PascalCase %>BscList(
+    @Body('query') query: <%= PascalCase %>BscQuery,
+    @Body('chnUid') chnUid: string
+  ) {
+    const result = await this.<%= camelCase %>SuperviseService.get<%= PascalCase %>BscList(
+      query,
+      chnUid
+    );
+    this.success(result);
+  }
+
+  @Put('/:<%= aggrKey %>/inExp', {
+    description: '新增关联出入库',
+  })
+  @SendPrivilege()
+  async save<%= PascalCase %>InExp(
+    @Param('<%= aggrKey %>') <%= aggrKey %>: string,
+    @Body(ALL) <%= camelCase %>Wh: <%= PascalCase %>Wh
+  ) {
+    const result = await this.<%= camelCase %>SuperviseService.save<%= PascalCase %>InExp(
+      <%= aggrKey %>,
+      <%= camelCase %>Wh
+    );
+    this.success(result);
+  }
+
+  @Del('/:<%= aggrKey %>/inExp', {
+    description: '删除关联出入库',
+  })
+  @SendPrivilege()
+  async delete<%= PascalCase %>InExp(
+    @Param('<%= aggrKey %>') <%= aggrKey %>: string,
+    @Body('bdwUids') bdwUids: string[]
+  ) {
+    const result = await this.<%= camelCase %>SuperviseService.delete<%= PascalCase %>InExp(
+      <%= aggrKey %>,
+      bdwUids
+    );
+    this.success(result);
+  }
+
+  @Patch('/:<%= aggrKey %>/inExp', {
+    description: '确认关联出入库',
+  })
+  @SendPrivilege()
+  async confirm<%= PascalCase %>InExp(@Param('<%= aggrKey %>') <%= aggrKey %>: string) {
+    const result = await this.<%= camelCase %>SuperviseService.confirm<%= PascalCase %>InExp(
+      <%= aggrKey %>
+    );
+    this.success(result);
   }
 }
