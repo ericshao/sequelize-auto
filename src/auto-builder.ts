@@ -62,10 +62,11 @@ export class AutoBuilder {
     // The first happens for dialects which support schemas (e.g. mssql, postgres).
     // The second happens for dialects which do not support schemas (e.g. sqlite).
 
+    console.log('tableResult', tableResult);
     let tables = _.map(tableResult, t => {
       return {
-        table_name: t.table_name || t.tableName || t.name || String(t),
-        table_comment: t.table_comment,
+        table_name: t.table_name || t.tableName || t.TABLE_NAME || t.name || String(t),
+        table_comment: t.table_comment || t.TABLE_COMMENT,
         table_schema: t.table_schema || t.tableSchema || t.schema || this.schema || null
       } as Table;
     });
