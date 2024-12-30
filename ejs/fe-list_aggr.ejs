@@ -128,7 +128,7 @@ const <%= PascalCase %>List: React.FC<
   return (
 
         <Layout className="ant-layout-has-sider">
-          <Content style={{ background: '#fff' }}>
+          <Content>
             <UltraTable
               virtual
               rowKey="uid"
@@ -165,14 +165,14 @@ const <%= PascalCase %>List: React.FC<
                 const { current, pageSize, ...search } = params;
                 const filter: T<%= PascalCase %>BscFilter = { ...ultraColumns.generateFilter(search), ...viewFilterEnum[view!]};
                 setCurrentFilter(filter);
-                const currentSorter = sorter && Object.keys(sorter).length > 0 ? sorter : undefined;
-                setCurrentSorter(currentSorter);
+                const activeSorter = sorter && Object.keys(sorter).length > 0 ? sorter : undefined;
+                setCurrentSorter(activeSorter);
                 const res = await query<%= PascalCase %>BscList({
                   current,
                   pageSize,
                   columns: ultraColumns.getColumnKeys(),
                   filter,
-                  sorter: currentSorter,
+                  sorter: activeSorter,
                   recycled,
                 });
                 return {
@@ -271,7 +271,7 @@ const <%= PascalCase %>List: React.FC<
                 }
               }
               columnsState={{
-                persistenceKey: routeKey,
+                persistenceKey,
                 persistenceType: 'localStorage',
               }}
               scroll={{ x: ultraColumns.totalWidth }}

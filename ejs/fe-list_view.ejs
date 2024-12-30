@@ -39,7 +39,7 @@ const <%= PascalCase %>List: React.FC<
   const actionRef = useRef<ActionType>();
 
   // 页面配置
-  const { routeKey, presetColumns, presetFilters, viewFilterEnum, ClearCache } = usePageConfig(
+  const { persistenceKey, presetColumns, presetFilters, viewFilterEnum, ClearCache } = usePageConfig(
     undefined,
     {
       childKey: '<%= camelCase %>',
@@ -90,7 +90,7 @@ const <%= PascalCase %>List: React.FC<
 
   return (
         <Layout className="ant-layout-has-sider">
-          <Content style={{ background: '#fff' }}>
+          <Content>
             <UltraTable
               rowKey="uid"
               headerTitle={
@@ -146,7 +146,7 @@ const <%= PascalCase %>List: React.FC<
                 }
               }
               columnsState={{
-                persistenceKey: routeKey,
+                persistenceKey,
                 persistenceType: 'localStorage',
               }}
               scroll={{ x: ultraColumns.totalWidth }}

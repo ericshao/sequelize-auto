@@ -251,7 +251,7 @@ export class <%= PascalCase %>Service extends TenancyService {
   ): Promise<Record<string, number>> {
     const deleted = await <%= PascalCase %>Model.schema(this.getTenantSchema()).destroy({
       where: {
-        id: identifiers,
+        uid: identifiers,
         tenantId: this.getTenantId(),
       },
       transaction: this.getTransaction(),
