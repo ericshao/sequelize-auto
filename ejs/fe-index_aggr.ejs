@@ -33,7 +33,7 @@ const <%= PascalCase %>Index: React.FC = (props) => {
       genFormColumns: gen<%= PascalCase %>BscFormColumns,
     },
   );
-  const [tabActiveKey, settabActiveKey] = useState<string>('list');
+  const [tabActiveKey, setTabActiveKey] = useState<string>('list');
 
   return (
     <ProProvider.Provider
@@ -76,7 +76,7 @@ const <%= PascalCase %>Index: React.FC = (props) => {
         ]}
         tabActiveKey={tabActiveKey}
         onTabChange={(key) => {
-          settabActiveKey(key);
+          setTabActiveKey(key);
         }}
       />
     </ProProvider.Provider>
