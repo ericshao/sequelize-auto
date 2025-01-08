@@ -14,7 +14,7 @@ import { gen<%= PascalCase %>BscFormColumns } from './bsc/<%= camelCase %>Bsc.fo
 
 const <%= PascalCase %>Index: React.FC = (props) => {
   // 引用上下文
-  const contextFormValues = useContext(ProProvider);
+
   // useRef
   const actionRef = useRef<ActionType>();
   // 页面参数
@@ -36,12 +36,7 @@ const <%= PascalCase %>Index: React.FC = (props) => {
   const [tabActiveKey, setTabActiveKey] = useState<string>('list');
 
   return (
-    <ProProvider.Provider
-      value={{
-        ...contextFormValues,
-        valueTypeMap,
-      }}
-    >
+
       <PageContainer
         ghost
         token={pageContainerToken}
@@ -79,7 +74,7 @@ const <%= PascalCase %>Index: React.FC = (props) => {
           setTabActiveKey(key);
         }}
       />
-    </ProProvider.Provider>
+
   );
 };
 export default <%= PascalCase %>Index;

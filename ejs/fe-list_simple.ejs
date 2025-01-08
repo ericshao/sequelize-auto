@@ -29,7 +29,7 @@ type T<%= PascalCase %>Filter = API.Filter<<%= PascalCase %>>;
 
 const <%= PascalCase %>List: React.FC = () => {
   // 引用上下文
-  const contextFormValues = useContext(ProProvider);
+
   // useRef
   const actionRef = useRef<ActionType>();
   // 列表状态
@@ -85,12 +85,7 @@ const <%= PascalCase %>List: React.FC = () => {
   );
 
   return (
-    <ProProvider.Provider
-      value={{
-        ...contextFormValues,
-        valueTypeMap,
-      }}
-    >
+
     <Layout className="ant-layout-has-sider">
       <Content>
           <UltraTable
@@ -169,7 +164,7 @@ const <%= PascalCase %>List: React.FC = () => {
           />
           </Content>
     </Layout>
-    </ProProvider.Provider>
+
   );
 };
 export default <%= PascalCase %>List;

@@ -32,7 +32,7 @@ export const ParentContext = React.createContext<{
 
 const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) => {
   // 引用上下文
-  const contextFormValues = useContext(ProProvider);
+
   // 页面参数
   const { uid } = usePageParam(props);
   // 页面配置
@@ -59,12 +59,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
   const [tabActiveKey, setTabActiveKey] = useState('head');
 
   return (
-    <ProProvider.Provider
-      value={{
-        ...contextFormValues,
-        valueTypeMap,
-      }}
-    >
+
       <ParentContext.Provider
         value={{ contextRouteKey: routeKey, contextValues: currentValues }}
       >
@@ -134,7 +129,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         >
         </PageContainer>
       </ParentContext.Provider>
-    </ProProvider.Provider>
+
   );
 };
 export default <%= PascalCase %>Detail;

@@ -22,7 +22,7 @@ type <%= PascalCase %>DetailProps = {
 
 const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) => {
   // 引用上下文
-  const contextFormValues = useContext(ProProvider);
+
   const { contextState, contextRouteKey } = useContext(ParentContext);
   // 页面参数
   const { uid } = usePageParam(props);
@@ -117,7 +117,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
                 submitter={false}
               />
             </ProCard>
-          </ProProvider.Provider>)
+      )
           },
           {
             tab: '操作记录',

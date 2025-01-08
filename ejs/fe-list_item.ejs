@@ -32,7 +32,7 @@ ListCommonProps & {
    actionRef?: React.MutableRefObject<ActionType | undefined> 
 }> = (props) => {
   // 引用上下文
-  const contextFormValues = useContext(ProProvider);
+
   const { contextValues, contextState, contextRouteKey } = useContext(ParentContext);
   // useRef
   const actionRef = props.actionRef || useRef<ActionType>();
@@ -108,12 +108,7 @@ ListCommonProps & {
   });
 
   return (
-    <ProProvider.Provider
-      value={{
-        ...contextFormValues,
-        valueTypeMap,
-      }}
-    >
+
       <Layout className="ant-layout-has-sider">
         <Content>
           <UltraTable
@@ -204,7 +199,7 @@ ListCommonProps & {
           />
         </Content>
       </Layout>
-    </ProProvider.Provider>
+
   );
 };
 export default <%= PascalCase %>List;

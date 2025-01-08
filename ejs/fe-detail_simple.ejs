@@ -32,7 +32,7 @@ type <%= PascalCase %>DetailProps = {
 
 const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) => {
   // 引用上下文
-  const contextFormValues = useContext(ProProvider);
+
   const { contextValues, contextState, contextRouteKey } = useContext(ParentContext);
   // 页面参数
   const { uid } = usePageParam(props);
@@ -118,12 +118,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         style={{ marginBottom: 45 }}
       >
         {tabActiveKey === 'main' && (
-          <ProProvider.Provider
-          value={{
-            ...contextFormValues,
-            valueTypeMap,
-          }}
-        >
+  
           <ProCard bordered>
             <BetaSchemaForm<<%= PascalCase %>, ValueTypeMapKey>
               loading={loading}
@@ -154,7 +149,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
               submitter={false}
             />
           </ProCard>
-        </ProProvider.Provider>
+    
         )}
         {tabActiveKey === 'auditLog' && (
           <ProCard bordered>
