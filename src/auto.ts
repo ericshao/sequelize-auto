@@ -24,22 +24,6 @@ export class SequelizeAuto {
     password: string,
     options: AutoOptions
   ) {
-    if (
-      options &&
-      options.dialect === 'sqlite' &&
-      !options.storage &&
-      database
-    ) {
-      options.storage = database as string;
-    }
-    if (options && options.dialect === 'mssql') {
-      // set defaults for tedious, to silence the warnings
-      options.dialectOptions = options.dialectOptions || {};
-      options.dialectOptions.options = options.dialectOptions.options || {};
-      options.dialectOptions.options.trustServerCertificate = true;
-      options.dialectOptions.options.enableArithAbort = true;
-      options.dialectOptions.options.validateBulkLoadParameters = true;
-    }
 
     if (database instanceof Sequelize) {
       this.sequelize = database;
@@ -178,10 +162,6 @@ export class SequelizeAuto {
 
   getDefaultPort(dialect?: Dialect) {
     switch (dialect) {
-      case 'mssql':
-        return 1433;
-      case 'postgres':
-        return 5432;
       default:
         return 3306;
     }
