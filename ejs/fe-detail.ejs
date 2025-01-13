@@ -1,4 +1,4 @@
-import { queryAuditLogList } from '@/services/bwp/audit/log';
+
 import AuditLog from '@/shares/components/AuditLog';
 import { valueTypeMap, ValueTypeMapKey } from '@/shares/components/schema-components';
 import BetaSchemaForm from '@/shares/components/SchemaForm';
@@ -43,7 +43,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
     setValuesChanged,
     updateCurrentValues,
     Reload,
-    ResolveConflictModal,
+
   } = useFormState<<%= PascalCase %>>(formRef, get<%= PascalCase %>, update<%= PascalCase %>);
 
   const [tabActiveKey, setTabActiveKey] = useState('dt');
@@ -130,11 +130,11 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
           },
         ]}
         tabActiveKey={tabActiveKey}
-        onTabChange={(key: string) => setTabActiveKey(key)}
+        onTabChange={setTabActiveKey}
         extra={[
           ...renderActions(actions, contextState),
           <Reload key="reload" />,
-          <ResolveConflictModal key="resolveConflict" />,
+  
           <TableDropdown key="dropdown" menus={[FormLayoutSegmented]} onSelect={(key: string) => {}} />,
         ]}
       />

@@ -4,7 +4,7 @@ import { Typography } from 'antd';
 import React, { useContext, useMemo, useRef, useState } from 'react';
 import { pageContainerToken } from '@/pages';
 import StateTag from '@/shares/components/StateTag';
-import { queryAuditLogList } from '@/services/bwp/audit/log';
+
 import { get<%= PascalCase %>Bsc, update<%= PascalCase %>Bsc } from '@/services/<%= moduleName%>/<%= aggrName %>';
 import AuditLog from '@/shares/components/AuditLog';
 import BetaSchemaForm from '@/shares/components/SchemaForm';
@@ -49,7 +49,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
     updateCurrentValues,
     getUpdateValues,
     Reload,
-    ResolveConflictModal,
+
   } = useFormState<<%= PascalCase %>Bsc>(formRef, get<%= PascalCase %>Bsc, update<%= PascalCase %>Bsc);
   // 状态机
   const { currentState } = useStateMachine('internal/<%= PascalCase %>Bsc', currentValues?.stateCode!);
@@ -164,12 +164,12 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
             },
           ]}
           tabActiveKey={tabActiveKey}
-          onTabChange={(key: string) => setTabActiveKey(key)}
+          onTabChange={setTabActiveKey}
           extra={[
             ...renderActions(actions, currentState!),
             <Reload key="reload" />,
             <EventViewer key="eventViewer" />,
-            <ResolveConflictModal key="resolveConflict" />,
+    
             <TableDropdown key="dropdown" menus={[ClearCache]} onSelect={(key: string) => {}} />,
           ]}
         />
