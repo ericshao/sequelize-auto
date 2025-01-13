@@ -69,7 +69,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
     };
   }, [valuesChanged, access, privileges, formRef.current, currentValues, currentState]);
 
-  const { EventViewer } = useEventViewer(currentValues?.uid!);
+  const { EventViewer } = useEventViewer(uid);
 
 
   return (
