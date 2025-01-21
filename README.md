@@ -43,6 +43,8 @@
 
 ./bin/sequelize-auto -h pc-uf6167ejxjyeqivjn.mysql.polardb.rds.aliyuncs.com -u c2cloud  -x App#3220 -o ./output --op 3 --em entity -d c2cloud -v -t bwp_blc_bws_balance_seqno_view
 
+./bin/sequelize-auto -h pc-uf6167ejxjyeqivjn.mysql.polardb.rds.aliyuncs.com -u c2cloud  -x App#3220 -o ./output --op 3 --em entity -d c2cloud  -t job_task
+
 # Sequelize-Auto
 
 <!-- [![Greenkeeper badge](https://badges.greenkeeper.io/sequelize/sequelize-auto.svg)](https://greenkeeper.io/) -->

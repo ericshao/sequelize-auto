@@ -127,7 +127,7 @@ const <%= PascalCase %>List: React.FC = () => {
             ]}
             embedded={props.embedded}
             tabbed={props.tabbed}
-            cardProps={{ bodyStyle: { padding: 0 } }}
+  
             rowSelection={{}}
             tableAlertRender={({ selectedRowKeys, selectedRows, onCleanSelected }) => (
               <Space size={8}>
@@ -150,7 +150,7 @@ const <%= PascalCase %>List: React.FC = () => {
               }
             }
             scroll={{ x: ultraColumns.totalWidth }}
-            // scrollYOffset={344}
+    
           />
 
           <DetailPageDrawer
