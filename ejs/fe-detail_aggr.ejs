@@ -7,9 +7,9 @@ import StateTag from '@/shares/components/StateTag';
 
 import { get<%= PascalCase %>Bsc, update<%= PascalCase %>Bsc } from '@/services/<%= moduleName%>/<%= aggrName %>';
 import AuditLog from '@/shares/components/AuditLog';
-import BetaSchemaForm from '@/shares/components/SchemaForm';
-import { ValueTypeMapKey, valueTypeMap } from '@/shares/components/schema-components';
-import { ActionMap, renderActions } from '@/shares/components/utils';
+import { BetaSchemaForm } from '@/shares/components';
+import { ValueTypeMapKey, valueTypeMap } from '@/shares/components';
+import { ActionMap, renderActions } from '@/shares/components';
 import { useEventViewer, useFormState, usePageConfig, usePageParam, useStateMachine } from '@/shares/hooks';
 import { gen<%= PascalCase %>BscFormColumns } from './bsc/<%= camelCase %>Bsc.form';
 import <%= PascalCase %>DtList from './dt/<%= camelCase %>Dt.list';
@@ -106,7 +106,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
               key: 'bsc',
               children: (
                 <ProCard bordered>
-                  <BetaSchemaForm<<%= PascalCase %>Bsc, ValueTypeMapKey>
+                  <BetaSchemaForm<<%= PascalCase %>Bsc>
                     loading={loading}
                     layout={formLayout}
                     layoutType="Form"

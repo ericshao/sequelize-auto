@@ -57,11 +57,11 @@ export class ColumnGenerator {
 
     if (this.options.lang === 'ts') {
       header +=
-        "import { dateTimeRangeSearch, multipleSearch, TableColumnsParams, ValueTypeMapKey } from '@/shares/components/schema-components';\n";
+        "import { dateTimeRangeSearch, multipleSearch, TableColumnsParams } from '@/shares/components';\n";
       header +=
-        "import { tableColumnsResult, transformStringToken, convertValueEnum } from '@/shares/components/schema-components/util';\n";
+        "import { tableColumnsResult, transformStringToken, convertValueEnum } from '@/shares/components';\n";
       header +=
-        "import { UltraColumnType } from '@/shares/components/UltraColumns';\n\n";
+        "import type { UltraColumnType } from '@/shares/components';\n\n";
     }
     return header;
   }
@@ -83,9 +83,9 @@ export class ColumnGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `export function gen#TABLE#Columns(params?: TableColumnsParams): UltraColumnType<#TABLE#, ValueTypeMapKey>[] {\n`;
+        str += `export function gen#TABLE#Columns(params?: TableColumnsParams): UltraColumnType<#TABLE#>[] {\n`;
         str +=
-          'const columns: UltraColumnType<#TABLE#, ValueTypeMapKey>[] = [\n';
+          'const columns: UltraColumnType<#TABLE#>[] = [\n';
         str += this.addFormColumns(table, true);
         str += ']\n';
         str += `  return tableColumnsResult(columns, params);\n`;

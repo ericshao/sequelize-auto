@@ -5,18 +5,18 @@ import { SaveOutlined } from '@ant-design/icons';
 import { PageContainer, ProCard, ProFormInstance, ProProvider, TableDropdown } from '@ant-design/pro-components';
 // Umi
 // Components
-import { valueTypeMap, ValueTypeMapKey } from '@/shares/components/schema-components';
-import BetaSchemaForm from '@/shares/components/SchemaForm';
+import { valueTypeMap } from '@/shares/components';
+import { BetaSchemaForm } from '@/shares/components';
 import AuditLog from '@/shares/components/AuditLog';
 // Services
 import { queryAuditLogList } from '@/services/<%= moduleName%>/audit/log';
 import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/<%= moduleName%>/<%= aggrName %>';
 // Utils
-import { ActionMap, renderActions } from '@/shares/components/utils';
+import { ActionMap, renderActions } from '@/shares/components';
 // Hooks
 
-import { useFormState } from '@/shares/hooks/formState';
-import { usePageConfig } from '@/shares/hooks/pageConfig';
+import { useFormState } from '@/shares/hooks';
+import { usePageConfig } from '@/shares/hooks';
 import { usePageParam } from '@/shares/hooks/pageParam';
 // Definitions
 //import { ParentContext } from '../<%= camelCase %>.detail';
@@ -113,7 +113,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
         {tabActiveKey === 'main' && (
   
           <ProCard bordered>
-            <BetaSchemaForm<<%= PascalCase %>, ValueTypeMapKey>
+            <BetaSchemaForm<<%= PascalCase %>>
               loading={loading}
               layout={formLayout}
               layoutType="Form"

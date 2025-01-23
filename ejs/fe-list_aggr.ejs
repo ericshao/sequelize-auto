@@ -1,5 +1,5 @@
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
-import { ActionType } from '@ant-design/pro-components';
+import type { ActionType } from '@ant-design/pro-components';
 import { Access } from '@umijs/max';
 import { Button, Layout, Segmented, Space, notification } from 'antd';
 import React, { useContext, useEffect, useRef } from 'react';
@@ -13,8 +13,8 @@ import {
   recycle<%= PascalCase %>Bsc, 
   transit<%= PascalCase %>BscToTargetState 
 } from '@/services/<%= moduleName%>/<%= aggrName %>';
-import UltraTable from '@/shares/components/UltraTable';
-import { genExportColumnKeys } from '@/shares/components/schema-components/util';
+import { UltraTable } from '@/shares/components';
+import { genExportColumnKeys } from '@/shares/components';
 import { 
   useDetailPageDrawer, 
   useExportData, 
@@ -26,7 +26,7 @@ import {
   useStateMachine, 
   useTransitState 
 } from '@/shares/hooks';
-import { ListCommonProps } from '@/shares/typings/common';
+import type { ListCommonProps } from '@/shares/components';
 import { gen<%= PascalCase %>BscColumns } from './bsc/<%= camelCase %>Bsc.column';
 import { gen<%= PascalCase %>BscFormColumns } from './bsc/<%= camelCase %>Bsc.form';
 import <%= PascalCase %>Detail from './<%= camelCase %>.detail';

@@ -8,14 +8,14 @@ import { Button, Layout, Segmented, Space } from 'antd';
 import { Access } from '@umijs/max';
 import { history } from 'umi';
 // Components
-import { valueTypeMap } from '@/shares/components/schema-components';
-import UltraTable from '@/shares/components/UltraTable';
+import { valueTypeMap } from '@/shares/components';
+import { UltraTable } from '@/shares/components';
 // Services
 import { query<%= PascalCase %>List } from '@/services/<%= moduleName%>/<%= aggrName %>';
 // Hooks
-import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
-import { useListState } from '@/shares/hooks/listState';
-import { usePageConfig } from '@/shares/hooks/pageConfig';
+import { useDetailPageDrawer } from '@/shares/hooks';
+import { useListState } from '@/shares/hooks';
+import { usePageConfig } from '@/shares/hooks';
 // Definitions
 import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';

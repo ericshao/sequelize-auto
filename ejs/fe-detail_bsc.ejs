@@ -6,9 +6,9 @@ import React, { useContext, useMemo, useRef, useState } from 'react';
 
 import { get<%= PascalCase %>, update<%= PascalCase %> } from '@/services/<%= moduleName%>/<%= aggrName %>';
 import AuditLog from '@/shares/components/AuditLog';
-import BetaSchemaForm from '@/shares/components/SchemaForm';
-import { ValueTypeMapKey, valueTypeMap } from '@/shares/components/schema-components';
-import { ActionMap, renderActions } from '@/shares/components/utils';
+import { BetaSchemaForm } from '@/shares/components';
+import { ValueTypeMapKey, valueTypeMap } from '@/shares/components';
+import { ActionMap, renderActions } from '@/shares/components';
 import { useEventViewer, useFormState, usePageConfig, usePageParam, useStateMachine } from '@/shares/hooks';
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
 import <%= PascalCase %>List from './dt/<%= camelCase %>Dt.list';
@@ -105,7 +105,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
               key: 'bsc',
               children: (
                 <ProCard bordered>
-                  <BetaSchemaForm<<%= PascalCase %>, ValueTypeMapKey>
+                  <BetaSchemaForm<<%= PascalCase %>>
                     loading={loading}
                     layout={formLayout}
                     layoutType="Form"

@@ -1,8 +1,8 @@
 
 import AuditLog from '@/shares/components/AuditLog';
-import { valueTypeMap, ValueTypeMapKey } from '@/shares/components/schema-components';
-import BetaSchemaForm from '@/shares/components/SchemaForm';
-import { ActionMap, renderActions } from '@/shares/components/utils';
+import { valueTypeMap } from '@/shares/components';
+import { BetaSchemaForm } from '@/shares/components';
+import { ActionMap, renderActions } from '@/shares/components';
 import { useFormState, usePageConfig, usePageParam } from '@/shares/hooks';
 import { SaveOutlined } from '@ant-design/icons';
 import { PageContainer, ProCard, ProFormInstance, ProProvider, TableDropdown } from '@ant-design/pro-components';
@@ -88,7 +88,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
             }}
           >
             <ProCard bordered>
-              <BetaSchemaForm<<%= PascalCase %>, ValueTypeMapKey>
+              <BetaSchemaForm<<%= PascalCase %>>
                 loading={loading}
                 layout={formLayout}
                 layoutType="Form"

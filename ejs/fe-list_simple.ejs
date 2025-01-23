@@ -8,15 +8,15 @@ import { Button, Layout, message, Space, Typography } from 'antd';
 import { Access } from '@umijs/max';
 import { history } from 'umi';
 // Components
-import { CreateModal } from '@/shares/components/CreateModal';
-import { valueTypeMap } from '@/shares/components/schema-components';
-import { UltraColumns } from '@/shares/components/UltraColumns';
-import UltraTable from '@/shares/components/UltraTable';
+import { CreateModal } from '@/shares/components';
+import { valueTypeMap } from '@/shares/components';
+import { UltraColumns } from '@/shares/components';
+import { UltraTable } from '@/shares/components';
 // Services
 import { create<%= PascalCase %>, delete<%= PascalCase %>, query<%= PascalCase %>List } from '@/services/<%= moduleName%>/<%= aggrName %>';
 // Hooks
-import { useDetailPageDrawer } from '@/shares/hooks/detailPageDrawer';
-import { useListState } from '@/shares/hooks/listState';
+import { useDetailPageDrawer } from '@/shares/hooks';
+import { useListState } from '@/shares/hooks';
 import { usePageParam } from '@/shares/hooks/pageParam';
 // Definitions
 import { gen<%= PascalCase %>Columns } from './<%= camelCase %>.column';

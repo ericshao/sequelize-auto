@@ -63,11 +63,11 @@ export class FormGenerator {
           integerFieldProps,
           metaCollapsibleProps,
           ValueTypeMapKey,
-        } from '@/shares/components/schema-components';\n`;
+        } from '@/shares/components';\n`;
       header +=
-        "import { formColumnsResult } from '@/shares/components/schema-components/util';\n";
+        "import { formColumnsResult } from '@/shares/components';\n";
       header +=
-        "import { ProFormColumnsType } from '@/shares/components/SchemaForm';\n";
+        "import { ProFormColumnsType } from '@/shares/components';\n";
       // header +=
       //   "import { convertToNumber, convertToString } from '@/utils';\n\n";
     }
@@ -91,9 +91,9 @@ export class FormGenerator {
       );
 
       if (this.options.lang === 'ts') {
-        str += `export function gen#TABLE#FormColumns(params?: FormColumnsParams, access?: AccessType): ProFormColumnsType<#TABLE#, ValueTypeMapKey>[]  {\n`;
+        str += `export function gen#TABLE#FormColumns(params?: FormColumnsParams, access?: AccessType): ProFormColumnsType<#TABLE#>[]  {\n`;
         str +=
-          'const columns: ProFormColumnsType<#TABLE#, ValueTypeMapKey>[] = [\n';
+          'const columns: ProFormColumnsType<#TABLE#>[] = [\n';
         str += this.addFormColumns(table, true);
         str += ']\n';
         str += `return formColumnsResult(columns, params);\n`;

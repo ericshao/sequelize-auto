@@ -1,8 +1,8 @@
-import { CreateModal } from '@/shares/components/CreateModal';
-import { genExportColumnKeys, valueTypeMap } from '@/shares/components/schema-components';
-import UltraTable from '@/shares/components/UltraTable';
+import { CreateModal } from '@/shares/components';
+import { genExportColumnKeys, valueTypeMap } from '@/shares/components';
+import { UltraTable } from '@/shares/components';
 import { useDetailPageDrawer, useExportData, useImportData, useListState, usePageConfig } from '@/shares/hooks';
-import { ListCommonProps } from '@/shares/typings/common';
+import type { ListCommonProps } from '@/shares/components';
 import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
 import { ActionType, ProProvider } from '@ant-design/pro-components';
 import { Access } from '@umijs/max';

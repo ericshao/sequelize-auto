@@ -5,13 +5,13 @@ import { ActionType, PageContainer, ProCard, ProFormInstance, ProProvider, Table
 import { Typography } from 'antd';
 // Umi
 // Components
-import { valueTypeMap, ValueTypeMapKey } from '@/shares/components/schema-components';
-import BetaSchemaForm from '@/shares/components/SchemaForm';
+import { valueTypeMap } from '@/shares/components';
+import { BetaSchemaForm } from '@/shares/components';
 // Services
 import { get<%= PascalCase %> } from '@/services/<%= moduleName%>/<%= aggrName %>';
 // Hooks
-import { useFormState } from '@/shares/hooks/formState';
-import { usePageConfig } from '@/shares/hooks/pageConfig';
+import { useFormState } from '@/shares/hooks';
+import { usePageConfig } from '@/shares/hooks';
 import { usePageParam } from '@/shares/hooks/pageParam';
 // Definitions
 import { gen<%= PascalCase %>FormColumns } from './<%= camelCase %>.form';
@@ -89,7 +89,7 @@ const <%= PascalCase %>Detail: React.FC<<%= PascalCase %>DetailProps> = (props) 
               key: 'head',
               children: (
                 <ProCard bordered>
-                  <BetaSchemaForm<<%= PascalCase %>, ValueTypeMapKey>
+                  <BetaSchemaForm<<%= PascalCase %>>
                     loading={loading}
                     layout={formLayout}
                     layoutType="Form"
